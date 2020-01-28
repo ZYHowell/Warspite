@@ -1,19 +1,9 @@
-#define MAXVARIABLES 1000
-#define MAXLINES 10000
+#include "includes.h"
+//this is a easy liveness analysis before the register allocation
 
 int LineNum, varNum;
-enum InstType {Jump, Conditional, RR, RI, Move, Ret};
 bool Liveliness[MAXVARIABLES][MAXLINES];
-
-struct Line_t
-{
-    InstType type;
-    int JDestO, JDestT;
-    int Dest;
-    int Source[2];
-    int SourceNum;
-};
-Line_t Line[MAXLINES];
+AssLine_t Line[MAXLINES];
 
 inline void Anal(int LineNow, 
                  int VarNow, 
@@ -38,7 +28,7 @@ inline void Anal(int LineNow,
 }
 inline void AnalAll(int LineNow, bool *visit, bool Liveliness[][MAXLINES])
 {
-    for (int i = 0;i < Line[LineNow].SourceNum;++i) {
+    for (int i = 0;i < 2 && Line[LineNow].Source[i] != -1;+i) {
         for (int i = 0;i < LineNum;++i) visit[i] = false;
         Anal(LineNow, Line[LineNow].Source[i], visit, Liveliness);
     }
