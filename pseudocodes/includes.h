@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <algorithm>
+#include <string>
 #include "defines.h"
 #include "myStructs.h"
 

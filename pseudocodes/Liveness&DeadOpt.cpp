@@ -1,5 +1,6 @@
 #include "includes.h"
-//this is a easy liveness analysis before the register allocation
+//this is an easy liveness analysis before the register allocation
+//add neededness analysis also in order to remove dead (IR) code here
 
 int LineNum, varNum;
 bool Liveliness[MAXVARIABLES][MAXLINES];

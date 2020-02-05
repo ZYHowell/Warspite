@@ -43,12 +43,12 @@ inline void GetSourceVer(SSALine_t &it)
 /*
  * Lengauer-Tarjan Algorithm
  */
-//generate the DFS order first
 std::vector<int> DFSorder, DFSindex;
 std::vector<int> Fathers, sdom, idom, UnionRoot, MinVer;
 std::vector<std::vector<int>> bucket;
 int tot;
 int cnt = 0;
+//generate the DFS order first
 void DFS(int it)
 {
     if (DFSorder[it]) return;
@@ -93,7 +93,7 @@ void idomGen(int CFGroot)
     for (int i = tot;i > 1;--i) {
         tmp = DFSindex[i];
         for (int pre : precursor[tmp])
-            //if (DFSorder[pre]) no need since the graph is connected. 
+            //if (DFSorder[pre]) //no need since the graph is connected. 
             sdom[tmp] = std::min(sdom[tmp], sdom[eval(pre)]);
         //cal idom by the way
         bucket[DFSindex[sdom[tmp]]].push_back(tmp);
