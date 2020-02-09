@@ -21,8 +21,9 @@ suite : '{' statement* '}';
 
 statement
     : suite                                                 #block
-    | varDef                                                #vardef
-    | If '(' expression ')' statement (Else statement)?     #ifStmt
+    | varDef                                                #vardefStmt
+    | If '(' expression ')' trueStmt=statement 
+        (Else falseStmt=statement)?                         #ifStmt
     | For '(' init=expression? ';' cond=expression? ';'
                 incr=expression? ')' statement              #forStmt
     | While '(' expression ')' statement                    #whileStmt
@@ -42,7 +43,7 @@ expression
     | expression '.' Identifier                             #memberExpr
     | <assoc=right> 'new' creator                           #newExpr
     | expression '[' expression ']'                         #subscript
-    | expression '(' expressionList? ')'                    #arglist
+    | expression '(' expressionList? ')'                    #funcCall
     | expression op=('++' | '--')                           #suffixExpr
     | <assoc=right> op=('+' | '-' | '++' | '--') expression #prefixExpr
     | <assoc=right> op=('~' | '!' ) expression              #prefixExpr

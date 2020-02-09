@@ -1,3 +1,4 @@
+package Parser;
 // Generated from Mx.g4 by ANTLR 4.7.2
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -147,13 +148,13 @@ public class MxBaseListener implements MxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVardef(MxParser.VardefContext ctx) { }
+	@Override public void enterVardefStmt(MxParser.VardefStmtContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVardef(MxParser.VardefContext ctx) { }
+	@Override public void exitVardefStmt(MxParser.VardefStmtContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -315,18 +316,6 @@ public class MxBaseListener implements MxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArglist(MxParser.ArglistContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitArglist(MxParser.ArglistContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterSuffixExpr(MxParser.SuffixExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -358,6 +347,18 @@ public class MxBaseListener implements MxListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBinaryExpr(MxParser.BinaryExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFuncCall(MxParser.FuncCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFuncCall(MxParser.FuncCallContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

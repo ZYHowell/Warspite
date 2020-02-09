@@ -1,0 +1,12 @@
+package AST;
+
+import Util.position;
+public class intLiteral extends exprNode {
+
+    private int value;
+
+    public intLiteral(int value, position pos) {
+        super(pos);
+        this.value = value;
+    }
+}
