@@ -32,4 +32,9 @@ public class funDef extends ASTNode {
     public String Identifier() {
         return name;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

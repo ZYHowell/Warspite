@@ -15,4 +15,9 @@ public class varNode extends exprNode {
     public void setType(typeNode type) {
         this.type = type;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

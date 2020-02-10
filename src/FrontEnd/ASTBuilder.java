@@ -15,25 +15,25 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override
-    //should return classDef(class name is main)
+    //should return rootNode
     public ASTNode visitProgram(MxParser.ProgramContext ctx) {
-        ArrayList<varDef> variables = new ArrayList<>();
-        ArrayList<funDef> functions = new ArrayList<>();
-        ArrayList<funDef> constructors = new ArrayList<>();
-        if (!ctx.varDef().isEmpty()) {
-            for (ParserRuleContext varDef : ctx.varDef()) {
-                ASTNode tmp = visit(varDef);
-                variables.addAll(((varDefList)tmp).getList());
+        ArrayList<ASTNode> allDefs = new ArrayList<>();
+        if (!ctx.programfragment().isEmpty()) {
+            for (ParserRuleContext fragment : ctx.programfragment()) {
+                ASTNode tmp = visit(fragment);
+                if (tmp instanceof varDefList) {
+                    allDefs.addAll(((varDefList) tmp).getList());
+                } else allDefs.add(tmp);
             }
         }
-        if (!ctx.funcDef().isEmpty()) {
-            for (ParserRuleContext funcDef : ctx.funcDef()) {
-                ASTNode tmp = visit(funcDef);
-                functions.add(((funDef)tmp));
-            }
-        }
-        return new classDef("main", new position(ctx),
-                            variables, functions, constructors, false);
+        return new rootNode(allDefs, new position(ctx));
+    }
+
+    @Override
+    public ASTNode visitProgramfragment(MxParser.ProgramfragmentContext ctx) {
+        if (ctx.classDef() != null) return visit(ctx.classDef());
+        else if (ctx.funcDef() != null) return visit(ctx.funcDef());
+        else return visit(ctx.varDef());
     }
 
     @Override
@@ -355,12 +355,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     }
 
     @Override
-    //should return a newExpr
-    public ASTNode visitCreator(MxParser.CreatorContext ctx) {
+    public ASTNode visitArrayCreator(MxParser.ArrayCreatorContext ctx) {
         String baseTypeName;
         ArrayList<exprNode> exprs = new ArrayList<>();
         position typePos;
-        int dim = -1;
         if (ctx.basicType() != null) {
             typePos = new position(ctx.basicType());
             baseTypeName = ctx.basicType().toString();
@@ -369,15 +367,45 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
             typePos = new position(ctx.Identifier());
             baseTypeName = ctx.Identifier().toString();
         }
-        if (ctx.expression() != null){
+        if (!ctx.expression().isEmpty()){
             for (ParserRuleContext expr : ctx.expression())
                 exprs.add((exprNode)visit(expr));
         }
-        if (ctx.LeftBracket() != null) {
-            dim = ctx.LeftBracket().size();
+        return new newExpr(new typeNode(baseTypeName, ctx.LeftBracket().size(), typePos),
+                exprs, new position(ctx));
+    }
+
+    @Override
+    public ASTNode visitClassCreator(MxParser.ClassCreatorContext ctx) {
+        String baseTypeName;
+        ArrayList<exprNode> exprs = new ArrayList<>();
+        position typePos;
+        if (ctx.basicType() != null) {
+            typePos = new position(ctx.basicType());
+            baseTypeName = ctx.basicType().toString();
         }
-        else dim = 0;
-        return new newExpr(new typeNode(baseTypeName, dim, typePos),
-                           exprs, new position(ctx));
+        else {
+            typePos = new position(ctx.Identifier());
+            baseTypeName = ctx.Identifier().toString();
+        }
+        return new newExpr(new typeNode(baseTypeName, 0, typePos),
+                exprs, new position(ctx));
+    }
+
+    @Override
+    public ASTNode visitBasicCreator(MxParser.BasicCreatorContext ctx) {
+        String baseTypeName;
+        ArrayList<exprNode> exprs = new ArrayList<>();
+        position typePos;
+        if (ctx.basicType() != null) {
+            typePos = new position(ctx.basicType());
+            baseTypeName = ctx.basicType().toString();
+        }
+        else {
+            typePos = new position(ctx.Identifier());
+            baseTypeName = ctx.Identifier().toString();
+        }
+        return new newExpr(new typeNode(baseTypeName, 0, typePos),
+                exprs, new position(ctx));
     }
 }

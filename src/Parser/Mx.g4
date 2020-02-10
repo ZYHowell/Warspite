@@ -1,6 +1,8 @@
 grammar Mx;
 
-program : (varDef | funcDef | classDef)* EOF;
+program : programfragment* EOF;
+
+programfragment : varDef | funcDef | classDef;
 
 classDef : Class Identifier '{' (varDef | funcDef)* '}';
 funcDef : type Identifier '(' paramList? ')' suite ';';
@@ -75,9 +77,9 @@ literal
     ;
 
 creator
-    : (basicType | Identifier) ('[' expression ']')+ ('[' ']')* 
-    | (basicType | Identifier) '(' ')'
-    | (basicType | Identifier) 
+    : (basicType | Identifier) ('[' expression ']')+ ('[' ']')* #arrayCreator
+    | (basicType | Identifier) '(' ')'                          #classCreator
+    | (basicType | Identifier)                                  #basicCreator
     ;
 
 Bool : 'bool';

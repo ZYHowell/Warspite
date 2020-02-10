@@ -17,6 +17,12 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitProgram(MxParser.ProgramContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MxParser#programfragment}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitProgramfragment(MxParser.ProgramfragmentContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MxParser#classDef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -215,9 +221,24 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLiteral(MxParser.LiteralContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link MxParser#creator}.
+	 * Visit a parse tree produced by the {@code arrayCreator}
+	 * labeled alternative in {@link MxParser#creator}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitCreator(MxParser.CreatorContext ctx);
+	T visitArrayCreator(MxParser.ArrayCreatorContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code classCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClassCreator(MxParser.ClassCreatorContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code basicCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBasicCreator(MxParser.BasicCreatorContext ctx);
 }

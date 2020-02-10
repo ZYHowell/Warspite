@@ -18,6 +18,16 @@ public interface MxListener extends ParseTreeListener {
 	 */
 	void exitProgram(MxParser.ProgramContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MxParser#programfragment}.
+	 * @param ctx the parse tree
+	 */
+	void enterProgramfragment(MxParser.ProgramfragmentContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MxParser#programfragment}.
+	 * @param ctx the parse tree
+	 */
+	void exitProgramfragment(MxParser.ProgramfragmentContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MxParser#classDef}.
 	 * @param ctx the parse tree
 	 */
@@ -354,13 +364,39 @@ public interface MxListener extends ParseTreeListener {
 	 */
 	void exitLiteral(MxParser.LiteralContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link MxParser#creator}.
+	 * Enter a parse tree produced by the {@code arrayCreator}
+	 * labeled alternative in {@link MxParser#creator}.
 	 * @param ctx the parse tree
 	 */
-	void enterCreator(MxParser.CreatorContext ctx);
+	void enterArrayCreator(MxParser.ArrayCreatorContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link MxParser#creator}.
+	 * Exit a parse tree produced by the {@code arrayCreator}
+	 * labeled alternative in {@link MxParser#creator}.
 	 * @param ctx the parse tree
 	 */
-	void exitCreator(MxParser.CreatorContext ctx);
+	void exitArrayCreator(MxParser.ArrayCreatorContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code classCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassCreator(MxParser.ClassCreatorContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code classCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassCreator(MxParser.ClassCreatorContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code basicCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void enterBasicCreator(MxParser.BasicCreatorContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code basicCreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void exitBasicCreator(MxParser.BasicCreatorContext ctx);
 }

@@ -10,4 +10,9 @@ public class exprStmt extends stmtNode {
         super(pos);
         this.expr = expr;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

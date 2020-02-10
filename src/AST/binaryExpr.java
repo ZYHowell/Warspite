@@ -21,4 +21,9 @@ public class binaryExpr extends exprNode{
         this.src2 = src2;
         this.opCode = opCode;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

@@ -15,4 +15,8 @@ public class newExpr extends exprNode {
         this.exprs = exprs;
     }
 
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

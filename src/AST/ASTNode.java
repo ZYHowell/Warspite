@@ -11,4 +11,6 @@ abstract public class ASTNode {
     public position pos() {
         return pos;
     }
+
+    abstract public void accept(ASTVisitor visitor);
 }

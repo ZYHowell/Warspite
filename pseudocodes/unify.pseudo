@@ -1,3 +1,0 @@
-#include "includes.h"
-
-//this is the part to do type deduction(and inference), but not used in homework, so is not robust. 

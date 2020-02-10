@@ -20,4 +20,9 @@ public class classDef extends ASTNode {
         this.constructors = constructors;
         this.hasConstructor = hasConstructor;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

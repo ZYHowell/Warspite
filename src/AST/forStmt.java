@@ -14,4 +14,8 @@ public class forStmt extends stmtNode{
         this.body = body;
     }
 
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

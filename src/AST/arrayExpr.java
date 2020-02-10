@@ -11,4 +11,9 @@ public class arrayExpr extends exprNode{
         this.base = base;
         this.width = width;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

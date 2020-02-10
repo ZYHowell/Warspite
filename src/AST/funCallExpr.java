@@ -13,4 +13,9 @@ public class funCallExpr extends exprNode {
         this.callee = callee;
         this.params = params == null ? new ArrayList<>() : params.params();
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

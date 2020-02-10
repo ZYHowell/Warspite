@@ -13,4 +13,9 @@ public class blockNode extends stmtNode{
     public void addStmt(stmtNode stmt) {
         stmtList.add(stmt);
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

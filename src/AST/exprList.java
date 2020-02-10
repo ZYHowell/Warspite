@@ -18,4 +18,9 @@ public class exprList extends ASTNode {
     public ArrayList<exprNode> params() {
         return params;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

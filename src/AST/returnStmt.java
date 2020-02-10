@@ -10,4 +10,9 @@ public class returnStmt extends stmtNode {
         super(pos);
         this.returnValue = returnValue;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

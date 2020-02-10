@@ -9,4 +9,9 @@ public class intLiteral extends exprNode {
         super(pos);
         this.value = value;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

@@ -12,4 +12,9 @@ public class suffixExpr extends exprNode {
         this.src = src;
         this.opCode = opCode;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

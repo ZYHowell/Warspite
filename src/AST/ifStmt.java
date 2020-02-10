@@ -12,4 +12,9 @@ public class ifStmt extends stmtNode {
         this.trueStmt  = trueStmt;
         this.falseStmt = falseStmt;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }

@@ -1,5 +1,5 @@
-/.vscode/*
-/pseudocodes/*
+.vscode/
+.pseudocodes/
 .idea/
 *.iml
 out/
@@ -15,3 +15,5 @@ IgnoreLexer.java~
 .DS_Store
 
 /verification
+/src/MIR/*
+/src/BackEnd/*

@@ -18,4 +18,9 @@ public class varDefList extends ASTNode {
     public ArrayList<varDef> getList() {
         return varDefs;
     }
+
+    @Override
+    public void accept(ASTVisitor visitor) {
+        visitor.visit(this);
+    }
 }
