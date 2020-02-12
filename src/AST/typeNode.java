@@ -14,6 +14,13 @@ public class typeNode extends ASTNode {
         this.dim = dim;
     }
 
+    public String typeName() {
+        return baseTypeName;
+    }
+
+    public int dim() {
+        return dim;
+    }
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

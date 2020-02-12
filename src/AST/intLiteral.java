@@ -6,7 +6,7 @@ public class intLiteral extends exprNode {
     private int value;
 
     public intLiteral(int value, position pos) {
-        super(pos);
+        super(pos, false);
         this.value = value;
     }
 

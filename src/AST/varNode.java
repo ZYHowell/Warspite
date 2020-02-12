@@ -5,15 +5,15 @@ import Util.position;
 public class varNode extends exprNode {
 
     private String varName;
-    private typeNode type;
+    private typeNode typeNod;
 
     public varNode(String name, position pos) {
-        super(pos);
+        super(pos, true);
         this.varName = name;
     }
 
-    public void setType(typeNode type) {
-        this.type = type;
+    public String name() {
+        return varName;
     }
 
     @Override

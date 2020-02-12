@@ -14,7 +14,7 @@ public class prefixExpr extends exprNode{
      */
 
     public prefixExpr(exprNode src, int opCode, position pos) {
-        super(pos);
+        super(pos, false);
         this.src = src;
         this.opCode = opCode;
     }

@@ -8,7 +8,7 @@ public class suffixExpr extends exprNode {
     private int opCode;//++: 0, --: 1;
 
     public suffixExpr(exprNode src, int opCode, position pos) {
-        super(pos);
+        super(pos, false);
         this.src = src;
         this.opCode = opCode;
     }

@@ -12,7 +12,15 @@ public class varDef extends stmtNode {
         this.init = expr;
     }
 
-    public void setType(typeNode type) {
+    public String name() {
+        return name;
+    }
+
+    public typeNode type() {
+        return type;
+    }
+
+    public void setTypeNode(typeNode type) {
         this.type = type;
     }
 

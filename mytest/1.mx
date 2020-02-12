@@ -1,0 +1,14 @@
+//this is a semantic test overwhelming me. 
+void setB() {
+    b = 1;  //should CE here;
+}
+
+int b;
+
+int main() {
+    setB();
+    print(b);
+    int a = a * 1 + 1;  //should CE here;
+    print(a);
+    return 0;
+}

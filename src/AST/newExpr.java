@@ -2,7 +2,6 @@ package AST;
 
 import java.util.ArrayList;
 import Util.position;
-import Util.type.*;
 
 public class newExpr extends exprNode {
 
@@ -10,9 +9,17 @@ public class newExpr extends exprNode {
     private ArrayList<exprNode> exprs;
 
     public newExpr(typeNode type, ArrayList<exprNode> exprs, position pos) {
-        super(pos);
+        super(pos, false);
         this.type = type;
         this.exprs = exprs;
+    }
+
+    public typeNode typeN() {
+        return type;
+    }
+
+    public ArrayList<exprNode> exprs() {
+        return exprs;
     }
 
     @Override

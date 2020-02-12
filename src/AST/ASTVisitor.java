@@ -12,7 +12,6 @@ public interface ASTVisitor {
 
     void visit(blockNode it);
 
-    void visit(assignStmt it);
     void visit(exprStmt it);
     void visit(ifStmt it);
     void visit(forStmt it);
@@ -29,7 +28,6 @@ public interface ASTVisitor {
     void visit(arrayExpr it);
     void visit(binaryExpr it);
     void visit(prefixExpr it);
-    void visit(subscriptExpr it);
     void visit(suffixExpr it);
 
     void visit(thisExpr it);

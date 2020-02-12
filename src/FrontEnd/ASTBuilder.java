@@ -93,7 +93,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         if (!ctx.singleVarDef().isEmpty()) {
             for (ParserRuleContext singleVarDef : ctx.singleVarDef()) {
                 varDef tmp = (varDef)visit(singleVarDef);
-                tmp.setType(type);
+                tmp.setTypeNode(type);
                 defs.addVarDef(tmp);
             }
         }
@@ -123,7 +123,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     public ASTNode visitParam(MxParser.ParamContext ctx) {
         typeNode type = (typeNode)visit(ctx.type());
         varDef param = new varDef(ctx.Identifier().toString(), null, new position(ctx));
-        param.setType(type);
+        param.setTypeNode(type);
         return param;
     }
 

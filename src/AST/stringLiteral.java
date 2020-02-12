@@ -6,7 +6,7 @@ public class stringLiteral extends exprNode {
     private String value;
 
     public stringLiteral(String value, position pos) {
-        super(pos);
+        super(pos, false);
         this.value = value;
     }
 

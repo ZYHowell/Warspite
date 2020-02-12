@@ -10,6 +10,8 @@ public class blockNode extends stmtNode{
         super(pos);
     }
 
+    public ArrayList<stmtNode> getStmtList() {return stmtList;}
+
     public void addStmt(stmtNode stmt) {
         stmtList.add(stmt);
     }

@@ -11,6 +11,9 @@ public class returnStmt extends stmtNode {
         this.returnValue = returnValue;
     }
 
+    public exprNode retValue() {
+        return returnValue;
+    }
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

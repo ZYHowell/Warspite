@@ -14,6 +14,22 @@ public class forStmt extends stmtNode{
         this.body = body;
     }
 
+    public exprNode condition() {
+        return condition;
+    }
+
+    public exprNode incr() {
+        return incr;
+    }
+
+    public exprNode init() {
+        return init;
+    }
+
+    public stmtNode body() {
+        return body;
+    }
+
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

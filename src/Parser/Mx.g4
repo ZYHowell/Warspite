@@ -5,7 +5,7 @@ program : programfragment* EOF;
 programfragment : varDef | funcDef | classDef;
 
 classDef : Class Identifier '{' (varDef | funcDef)* '}';
-funcDef : type Identifier '(' paramList? ')' suite ';';
+funcDef : type? Identifier '(' paramList? ')' suite ';';
 varDef : type singleVarDef (',' singleVarDef)* ';';
 
 singleVarDef : Identifier ('=' expression)?;

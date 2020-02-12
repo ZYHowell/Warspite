@@ -6,7 +6,7 @@ public class boolLiteral extends exprNode{
     private boolean value;
 
     public boolLiteral(boolean value, position pos) {
-        super(pos);
+        super(pos, false);
         this.value = value;
     }
 

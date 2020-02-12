@@ -13,6 +13,17 @@ public class ifStmt extends stmtNode {
         this.falseStmt = falseStmt;
     }
 
+    public exprNode condition() {
+        return condition;
+    }
+
+    public stmtNode trueStmt() {
+        return trueStmt;
+    }
+
+    public stmtNode falseStmt() {
+        return falseStmt;
+    }
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

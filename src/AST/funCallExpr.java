@@ -9,9 +9,17 @@ public class funCallExpr extends exprNode {
     private exprNode callee;
 
     public funCallExpr(exprNode callee, exprList params, position pos) {
-        super(pos);
+        super(pos, false);
         this.callee = callee;
         this.params = params == null ? new ArrayList<>() : params.params();
+    }
+
+    public exprNode callee() {
+        return callee;
+    }
+
+    public ArrayList<exprNode> params() {
+        return params;
     }
 
     @Override

@@ -2,7 +2,6 @@ package AST;
 
 import java.util.ArrayList;
 import Util.position;
-import Util.type.Type;
 
 public class funDef extends ASTNode {
     private String name;
@@ -31,6 +30,14 @@ public class funDef extends ASTNode {
 
     public String Identifier() {
         return name;
+    }
+
+    public blockNode body() {
+        return body;
+    }
+
+    public ArrayList<varDef> parameters() {
+        return parameters;
     }
 
     @Override

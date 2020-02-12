@@ -1,9 +1,11 @@
-package Util.type;
+package Util.symbol;
 
+//int, bool, void, null
 public class primitiveType extends BaseType {
     private TypeCategory typeCategory;
 
-    public primitiveType(TypeCategory it) {
+    public primitiveType(String name, TypeCategory it) {
+        super(name);
         this.typeCategory = it;
     }
 

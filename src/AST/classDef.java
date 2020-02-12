@@ -21,6 +21,16 @@ public class classDef extends ASTNode {
         this.hasConstructor = hasConstructor;
     }
 
+    public String Identifier() {
+        return identifier;
+    }
+
+    public ArrayList<varDef> members(){ return variables; }
+
+    public ArrayList<funDef> methods(){ return methods; }
+
+    public ArrayList<funDef> constructors(){ return constructors; }
+
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);
