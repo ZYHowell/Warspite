@@ -12,6 +12,9 @@ import Util.position;
 import Util.error.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import static AST.binaryExpr.opCategory.*;
+import static AST.prefixExpr.prefixCode.*;
+
 public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override
@@ -77,7 +80,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
             isConstructor = false;
             type = null;
         }
-        if (ctx.paramList() == null) parameters = null;
+        if (ctx.paramList() == null) parameters = new ArrayList<>();
         else {
             parameters = ((varDefList)visit(ctx.paramList())).getList();
         }
@@ -252,13 +255,14 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override
     //should return an exprNode(prefixExpr)
     public ASTNode visitPrefixExpr(MxParser.PrefixExprContext ctx) {
-        int opCode = -1;
-        if (ctx.Plus() != null) opCode = 0;
-        else if (ctx.Minus() != null) opCode = 1;
-        else if (ctx.PlusPlus() != null) opCode = 2;
-        else if (ctx.MinusMinus() != null) opCode = 3;
-        else if (ctx.Tilde() != null) opCode = 4;
-        else if (ctx.Not() != null) opCode = 5;
+        prefixExpr.prefixCode opCode;
+        if (ctx.Plus() != null) opCode = Positive;
+        else if (ctx.Minus() != null) opCode = Negative;
+        else if (ctx.PlusPlus() != null) opCode = Increment;
+        else if (ctx.MinusMinus() != null) opCode = Decrement;
+        else if (ctx.Tilde() != null) opCode = Tilde;
+        else if (ctx.Not() != null) opCode = Not;
+        else throw new internalError("prefixExpr has no correct opCode", new position(ctx));
         return new prefixExpr((exprNode)visit(ctx.expression()), opCode, new position(ctx));
     }
 
@@ -303,26 +307,27 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override
     //should return an exprNode(binaryExpr)
     public ASTNode visitBinaryExpr(MxParser.BinaryExprContext ctx) {
-        int opCode = -1;
-        if      (ctx.Star() != null)         opCode = 0;
-        else if (ctx.Div() != null)          opCode = 1;
-        else if (ctx.Mod() != null)          opCode = 2;
-        else if (ctx.LeftShift() != null)    opCode = 3;
-        else if (ctx.RightShift() != null)   opCode = 4;
-        else if (ctx.And() != null)          opCode = 5;
-        else if (ctx.Or() != null)           opCode = 6;
-        else if (ctx.Caret() != null)        opCode = 7;
-        else if (ctx.Minus() != null)        opCode = 8;
-        else if (ctx.Plus() != null)         opCode = 9;
-        else if (ctx.Less() != null)         opCode = 10;
-        else if (ctx.Greater() != null)      opCode = 11;
-        else if (ctx.LessEqual() != null)    opCode = 12;
-        else if (ctx.GreaterEqual() != null) opCode = 13;
-        else if (ctx.AndAnd() != null)       opCode = 14;
-        else if (ctx.OrOr() != null)         opCode = 15;
-        else if (ctx.Equal() != null)        opCode = 16;
-        else if (ctx.NotEqual() != null)     opCode = 17;
-        else if (ctx.Assign() != null)       opCode = 18;
+        AST.binaryExpr.opCategory opCode;
+        if      (ctx.Star() != null)         opCode = Star;
+        else if (ctx.Div() != null)          opCode = Div;
+        else if (ctx.Mod() != null)          opCode = Mod;
+        else if (ctx.LeftShift() != null)    opCode = LeftShift;
+        else if (ctx.RightShift() != null)   opCode = RightShift;
+        else if (ctx.And() != null)          opCode = And;
+        else if (ctx.Or() != null)           opCode = Or;
+        else if (ctx.Caret() != null)        opCode = Caret;
+        else if (ctx.Minus() != null)        opCode = Minus;
+        else if (ctx.Plus() != null)         opCode = Plus;
+        else if (ctx.Less() != null)         opCode = Less;
+        else if (ctx.Greater() != null)      opCode = Greater;
+        else if (ctx.LessEqual() != null)    opCode = LessEqual;
+        else if (ctx.GreaterEqual() != null) opCode = GreaterEqual;
+        else if (ctx.AndAnd() != null)       opCode = AndAnd;
+        else if (ctx.OrOr() != null)         opCode = OrOr;
+        else if (ctx.Equal() != null)        opCode = Equal;
+        else if (ctx.NotEqual() != null)     opCode = NotEqual;
+        else if (ctx.Assign() != null)       opCode = Assign;
+        else throw new internalError("no correct opCode", new position(ctx));
         return new binaryExpr((exprNode)visit(ctx.expression(0)),
                               (exprNode)visit(ctx.expression(1)),
                               opCode, new position(ctx));

@@ -55,4 +55,20 @@ public class globalScope extends Scope {
         return getType(it.typeName(), it.pos());
     }
 
+    public Type getIntType() {
+        return intInstance;
+    }
+    public Type getBoolType() {
+        return boolInstance;
+    }
+    public Type getVoidType() {
+        return voidInstance;
+    }
+    public Type getNullType() {
+        return nullInstance;
+    }
+    public Type getStringType() {
+        return typeMap.get("string");
+    }
+
 }

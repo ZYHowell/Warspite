@@ -4,21 +4,27 @@ import java.util.ArrayList;
 import AST.ASTNode;
 import Util.error.*;
 import Util.position;
-import Util.scope.Scope;
+import Util.scope.functionScope;
 
-//todo: add parameters
 public class funcDecl extends BaseType {
 
     private String FuncName;
     private Type type;
     private ASTNode block;
-    private ArrayList<Type> paramsType;
-    private Scope localScope;
+    private functionScope localScope;
 
     public funcDecl(String name, ASTNode block) {
         super("funcDecl" + name);
         this.FuncName = name;
         this.block = block;
+    }
+
+    public void setScope(functionScope localScope) {
+        this.localScope = localScope;
+    }
+
+    public functionScope scope() {
+        return localScope;
     }
 
     public void setRetType(Type t) {

@@ -3,19 +3,23 @@ package AST;
 import Util.position;
 
 public class binaryExpr extends exprNode{
-
-    private exprNode src1, src2;
-    private int opCode;
+    public enum opCategory {
+        Star, Div, Mod, LeftShift, RightShift, And, Or, Caret, Minus, Plus,
+        Less, Greater, LessEqual, GreaterEqual, AndAnd, OrOr,
+        Equal, NotEqual, Assign
+    }
     /*
      * *, /, %, <<, >>, &, |, ^, -, +,  <,  >, <=, >=, &&, ||, ==, !=, =
      * 0, 1, 2,  3,  4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
-     * 0~9: only int
+     * 0~9: only int, return int
      * 9~13: int, String
-     * 14~15: boolean
+     * 14~15: only int, return boolean
      * 16~18: all same type(include class and array)
      */
+    private exprNode src1, src2;
+    private opCategory opCode;
 
-    public binaryExpr(exprNode src1, exprNode src2, int opCode, position pos) {
+    public binaryExpr(exprNode src1, exprNode src2, opCategory opCode, position pos) {
         super(pos, false);
         this.src1 = src1;
         this.src2 = src2;
@@ -30,7 +34,7 @@ public class binaryExpr extends exprNode{
         return src2;
     }
 
-    public int opCode() {
+    public opCategory opCode() {
         return opCode;
     }
 

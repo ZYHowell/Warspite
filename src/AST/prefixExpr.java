@@ -4,8 +4,11 @@ import Util.position;
 
 public class prefixExpr extends exprNode{
 
+    public enum prefixCode {
+        Positive, Negative, Increment, Decrement, Tilde, Not
+    }
     private exprNode src;
-    private int opCode;
+    private prefixCode opCode;
     /*
      * +, -, ++, --, ~, !
      * 0, 1,  2,  3, 4, 5
@@ -13,10 +16,18 @@ public class prefixExpr extends exprNode{
      * 5: boolean
      */
 
-    public prefixExpr(exprNode src, int opCode, position pos) {
+    public prefixExpr(exprNode src, prefixCode opCode, position pos) {
         super(pos, false);
         this.src = src;
         this.opCode = opCode;
+    }
+
+    public prefixCode opCode() {
+        return opCode;
+    }
+
+    public exprNode src() {
+        return src;
     }
 
     @Override

@@ -1,16 +1,25 @@
 package FrontEnd;
 
+import java.util.ArrayList;
 import java.util.Stack;
 import AST.*;
 import Util.scope.*;
 import Util.symbol.*;
 import Util.error.*;
+import Util.position;
 
 //principle: set new scope before visit its body;
 //(so check condition: {...;{};...})
 //principle: always visit a node before get its type;
 //check type and variable principle
 public class SemanticChecker implements ASTVisitor {
+
+    private semanticError binaryCalError(Type typeO, Type typeT,
+                                         AST.binaryExpr.opCategory opCode, position pos) {
+        return new semanticError("Incorrect calculation, type Error, type is: '" +
+                                 typeO.toString() + "' and '" + typeT.toString() +
+                                 "', opCode is " + opCode.toString(), pos);
+    }
 
     globalScope gScope;
     Scope currentScope;
@@ -49,13 +58,13 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(funDef it) {
         if(it.isConstructor()) {
-            currentRetType = gScope.getType("void", it.pos());
+            currentRetType = gScope.getVoidType();
         } else currentRetType = currentScope.getMethod(it.Identifier(), it.pos()).returnType();
 
-        Scope localScope = new Scope(currentScope);
-        currentScope = localScope;
+        //parameters are already in the scope(in TypeFilter)
+        currentScope = currentScope.getMethod(it.Identifier(), it.pos()).scope();
         it.body().accept(this);
-        currentScope = localScope.parentScope();
+        currentScope = currentScope.parentScope();
 
         currentRetType = null;
     }
@@ -79,7 +88,7 @@ public class SemanticChecker implements ASTVisitor {
                 stmt.accept(this);
                 currentScope = currentScope.parentScope();
             } else stmt.accept(this);
-        });
+        }); //cannot be null
     }
 
 
@@ -173,7 +182,7 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override   //more check in funcCall
     public void visit(exprList it) {
-        it.params().forEach(param -> param.accept(this));
+        it.params().forEach(param -> param.accept(this));   //cannot be null
     }
 
     //no need to visit it, only use it to form type;
@@ -195,23 +204,46 @@ public class SemanticChecker implements ASTVisitor {
         Type typeO, typeT;
         typeO = it.src1().type();
         typeT = it.src2().type();
-        int opCode = it.opCode();
-        if (opCode < 10) {
+        AST.binaryExpr.opCategory opCode = it.opCode();
+        if (opCode.ordinal() < 10) {
             if (!(typeO.isInt() && typeT.isInt()))
-                throw new semanticError("Incorrect calculation, type Error", it.pos());
+                throw binaryCalError(typeO, typeT, opCode, it.pos());
+            it.setType(gScope.getIntType());
+        } else if (opCode.ordinal() < 14) {
+            if (!( (typeO.isInt() || typeO.sameType(gScope.getStringType()))
+                    && (typeO.sameType(typeT)) ))
+                throw binaryCalError(typeO, typeT, opCode, it.pos());
+            it.setType(typeO);
+        } else if (opCode.ordinal() < 16) {
+            if (!(typeO.isInt() && typeT.isInt()))
+                throw binaryCalError(typeO, typeT, opCode, it.pos());
+            it.setType(gScope.getBoolType());
+        } else if (opCode.ordinal() < 18) {
+            if (!typeO.sameType(typeT))
+                throw binaryCalError(typeO, typeT, opCode, it.pos());
+            it.setType(gScope.getBoolType());
+        } else {
+            if (!typeO.sameType(typeT))
+                throw binaryCalError(typeO, typeT, opCode, it.pos());
+            it.setType(typeO);
         }
-        /*
-         * todo: check if the opcode is correct and set the type according to the opcode
-         */
-
     }
 
     @Override
-    public void visit(prefixExpr it) {}
-
+    public void visit(prefixExpr it) {
+        it.src().accept(this);
+        if (!it.src().type().isInt())
+            throw new semanticError("operator not match. Type: " +
+                                    it.src().type().toString(), it.pos());
+    }
 
     @Override
-    public void visit(suffixExpr it) {}
+    public void visit(suffixExpr it) {
+        it.src().accept(this);
+        if (!it.src().type().isInt())
+            throw new semanticError("operator not match. Type: " +
+                    it.src().type().toString(), it.pos());
+    }
 
 
     @Override
@@ -228,8 +260,17 @@ public class SemanticChecker implements ASTVisitor {
         it.callee().accept(this);
         if (it.callee().type() instanceof funcDecl) {
             funcDecl func = (funcDecl)it.callee().type();
-
-            //todo: check parameters
+            ArrayList<varEntity> args = func.scope().params();
+            ArrayList<exprNode> params = it.params();
+            params.forEach(param -> param.accept(this));   //cannot be null
+            if (params.size() != args.size())
+                throw new semanticError("", it.pos());
+            for (int i = 0; i < args.size(); i++) {
+                if (!(args.get(i).type().sameType(params.get(i).type())) )
+                    throw new semanticError("parameter type not match. is: '" +
+                                            params.get(i).type().toString() + "', should be :'" +
+                                            args.get(i).type().toString() + "'", params.get(i).pos());
+            }
         } else throw new semanticError("function not defined(as a function)", it.callee().pos());
     }
 
@@ -252,7 +293,7 @@ public class SemanticChecker implements ASTVisitor {
             expr.accept(this);
             if (expr.type().isInt())
                 throw new semanticError("not a int", expr.pos());
-        });
+        }); //cannot be null
         it.setType(gScope.generateType(it.typeN()));
     }
 
@@ -264,17 +305,17 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(intLiteral it) {
-        it.setType(gScope.getType("int", it.pos()));
+        it.setType(gScope.getIntType());
     }
 
     @Override
     public void visit(boolLiteral it) {
-        it.setType(gScope.getType("bool", it.pos()));
+        it.setType(gScope.getBoolType());
     }
 
     @Override
     public void visit(nullLiteral it){
-        it.setType(gScope.getType("null", it.pos()));
+        it.setType(gScope.getNullType());
     }
 
     @Override

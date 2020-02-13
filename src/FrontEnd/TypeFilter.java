@@ -1,12 +1,12 @@
 package FrontEnd;
 
 import AST.*;
-import Util.scope.Scope;
-import Util.scope.globalScope;
+import Util.scope.*;
 import Util.symbol.*;
+import Util.error.internalError;
+import Util.position;
 
 //mention that in this language, forwarding reference of class member is also not allowed!!!
-//todo: get the type of parameters
 public class TypeFilter implements ASTVisitor {
 
     globalScope gScope;
@@ -33,9 +33,9 @@ public class TypeFilter implements ASTVisitor {
     public void visit(classDef it) {
         classType defClass = (classType)gScope.getType(it.Identifier(), it.pos());
         currentScope = defClass.scope();
-        // it.members().forEach(member -> member.accept(this));
-        it.methods().forEach(method -> method.accept(this));
-        it.constructors().forEach(constructor-> constructor.accept(this));
+        // it.members().forEach(member -> member.accept(this));                    //cannot be null
+        it.methods().forEach(method -> method.accept(this));                //cannot be null
+        it.constructors().forEach(constructor-> constructor.accept(this));  //cannot be null
         currentScope = currentScope.parentScope();
         gScope.defineClass(it.Identifier(), defClass, it.pos());
     }
@@ -50,12 +50,16 @@ public class TypeFilter implements ASTVisitor {
             func = currentScope.getMethod(it.Identifier(), it.pos());
             func.setRetType(gScope.generateType(it.retValueType()));
         }
+        currentScope = new functionScope(currentScope);
+        it.parameters().forEach(param -> param.accept(this));   //cannot be null
+        func.setScope((functionScope)currentScope);
+        currentScope = currentScope.parentScope();
     }
 
     @Override public void visit(varDef it) {
-//        currentScope.defineMember(it.name(),
-//                                  new varEntity(it.name(), gScope.generateType(it.type())),
-//                                  it.pos());
+        if (currentScope instanceof functionScope)
+            ((functionScope)currentScope).addParam(new varEntity(it.name(), gScope.generateType(it.type())), it.pos());
+        else throw new internalError("type filter visit vardef not a param", it.pos());
     }
 
     @Override public void visit(varDefList it){}

@@ -10,9 +10,6 @@ import Util.symbol.Type;
 
 public class Scope {
 
-    /*
-     * todo: add support of cross-scope reference!!!!!!!!!!
-     */
     private HashMap<String, funcDecl> methods;
     private HashMap<String, varEntity> members;
     private funcDecl constructor;
@@ -46,27 +43,30 @@ public class Scope {
         constructor = func;
     }
 
-    /*
-     * todo: rewrite the containsMember and getMemberType in order to realize cross-scope reference
-     */
     public boolean containsMember(String name) {
-        return members.containsKey(name);
+        if (members.containsKey(name)) return true;
+        else if (parentScope != null) return parentScope.containsMember(name);
+        else return false;
     }
-    public boolean containsMethod(String name) { return methods.containsKey(name); }
+    public boolean containsMethod(String name) {
+        if (methods.containsKey(name)) return true;
+        else if (parentScope != null) return parentScope.containsMethod(name);
+        else return false;
+    }
+
     public funcDecl constructor() {
         return constructor;
     }
 
-
     public Type getMemberType(String name, position pos) {
-        if (members.containsKey(name))
-            return members.get(name).type();
-        throw new semanticError("undefined variable", pos);
+        if (members.containsKey(name)) return members.get(name).type();
+        else if (parentScope != null)  return parentScope.getMemberType(name, pos);
+        else throw new semanticError("undefined variable", pos);
     }
 
     public funcDecl getMethod(String name, position pos) {
-        if (methods.containsKey(name))
-            return methods.get(name);
-        throw new semanticError("undefined method", pos);
+        if (methods.containsKey(name)) return methods.get(name);
+        else if (parentScope != null)  return parentScope.getMethod(name, pos);
+        else throw new semanticError("undefined method", pos);
     }
 }
