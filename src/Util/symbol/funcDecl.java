@@ -27,6 +27,10 @@ public class funcDecl extends BaseType {
         return localScope;
     }
 
+    public void addParam(varEntity param, position pos) {
+        localScope.addParam(param, pos);
+    }
+
     public void setRetType(Type t) {
         this.type = t;
     }

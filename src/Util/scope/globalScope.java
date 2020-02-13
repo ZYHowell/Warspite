@@ -26,12 +26,77 @@ public class globalScope extends Scope {
         typeMap.put("null", nullInstance);
         //insert string into the map;
         classType stringType = new classType("string", null);
+        position pos = new position(0,0);
+        funcDecl tmpFunc;
 
+        tmpFunc = new funcDecl("length", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.setRetType(intInstance);
+        stringType.defineMethod("length", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("substring", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("left", intInstance), pos);
+        tmpFunc.addParam(new varEntity("right", intInstance), pos);
+        tmpFunc.setRetType(stringType);
+        stringType.defineMethod("substring", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("parseInt", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.setRetType(intInstance);
+        stringType.defineMethod("parseInt", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("ord", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("pos", intInstance), pos);
+        tmpFunc.setRetType(intInstance);
+        stringType.defineMethod("ord", tmpFunc, pos);
         typeMap.put("string", stringType);
-
         //insert print etc. into the map;
+        tmpFunc = new funcDecl("print", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("str", stringType), pos);
+        tmpFunc.setRetType(voidInstance);
+        defineMethod("print", tmpFunc, pos);
 
-        //
+        tmpFunc = new funcDecl("println", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("str", stringType), pos);
+        tmpFunc.setRetType(voidInstance);
+        defineMethod("println", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("printInt", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.setRetType(voidInstance);
+        defineMethod("printInt", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("printlnInt", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.setRetType(voidInstance);
+        defineMethod("printlnInt", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("getString", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.setRetType(stringType);
+        defineMethod("getString", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("getInt", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.setRetType(intInstance);
+        defineMethod("getInt", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("toString", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.setRetType(stringType);
+        defineMethod("toString", tmpFunc, pos);
+
+        tmpFunc = new funcDecl("size", null);
+        tmpFunc.setScope(new functionScope(this));
+        tmpFunc.setRetType(intInstance);
+        defineMethod("size", tmpFunc, pos);
     }
 
     public void defineClass(String className, Type classType, position pos) {

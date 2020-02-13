@@ -71,9 +71,9 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(varDef it) {
-        currentScope.defineMember(it.name(),
-                                  new varEntity(it.name(), gScope.generateType(it.type())),
-                                  it.pos());
+        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()));
+        if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
+        currentScope.defineMember(it.name(), theVar, it.pos());
     }
 
     @Override   //not used
@@ -257,7 +257,10 @@ public class SemanticChecker implements ASTVisitor {
     //the type of the constructor function funcCall should be the type of the class(help newExpr get type)
     @Override
     public void visit(funCallExpr it) {
-        it.callee().accept(this);
+        if (it.callee() instanceof stringLiteral) {
+            it.callee().setType(gScope.getMethod(((stringLiteral) it.callee()).value(), it.pos()));
+        }
+        else it.callee().accept(this);
         if (it.callee().type() instanceof funcDecl) {
             funcDecl func = (funcDecl)it.callee().type();
             ArrayList<varEntity> args = func.scope().params();
@@ -277,6 +280,10 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(memberExpr it) {
         it.caller().accept(this);
+        if (it.caller().type().isArray()) {
+            if (it.member().equals("size"))
+                it.setType(gScope.getMethod("size", it.pos()));
+        }
         if (!it.caller().type().isClass())
             throw new semanticError("not a class", it.caller().pos());
         classType callerClass = (classType)it.caller().type();

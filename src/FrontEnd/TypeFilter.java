@@ -4,7 +4,7 @@ import AST.*;
 import Util.scope.*;
 import Util.symbol.*;
 import Util.error.internalError;
-import Util.position;
+import Util.error.semanticError;
 
 //mention that in this language, forwarding reference of class member is also not allowed!!!
 public class TypeFilter implements ASTVisitor {
@@ -57,8 +57,11 @@ public class TypeFilter implements ASTVisitor {
     }
 
     @Override public void visit(varDef it) {
+        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()));
+        if (param.type().isVoid())
+            throw new semanticError("type of a parameter is void", it.pos());
         if (currentScope instanceof functionScope)
-            ((functionScope)currentScope).addParam(new varEntity(it.name(), gScope.generateType(it.type())), it.pos());
+            ((functionScope)currentScope).addParam(param, it.pos());
         else throw new internalError("type filter visit vardef not a param", it.pos());
     }
 

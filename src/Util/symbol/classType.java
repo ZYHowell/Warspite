@@ -10,8 +10,6 @@ import java.util.HashMap;
 public class classType extends BaseType {
 
     private classDef define;
-    private HashMap<String, varEntity> members;
-    private HashMap<String, funcDecl> methods;
 
     private Scope localScope;
 
@@ -20,24 +18,20 @@ public class classType extends BaseType {
         this.define = define;
     }
 
-    public void defineVar(String name, varEntity var, position pos) {
-        if (members.containsKey(name))
-            throw new semanticError("member redefined", pos);
-        members.put(name, var);
-    }
-
-    public varEntity var(String name, position pos) {
-        if (!members.containsKey(name))
-            throw new semanticError("undefined", pos);
-        return members.get(name);
-    }
-
     public Scope scope() {
         return localScope;
     }
 
     public void addScope(Scope localScope) {
         this.localScope = localScope;
+    }
+
+    public void defineMethod(String name, funcDecl func, position pos) {
+        localScope.defineMethod(name, func, pos);
+    }
+
+    public void defineMember(String name, varEntity var, position pos) {
+        localScope.defineMember(name, var, pos);
     }
 
     @Override

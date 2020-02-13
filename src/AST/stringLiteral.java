@@ -10,6 +10,10 @@ public class stringLiteral extends exprNode {
         this.value = value;
     }
 
+    public String value() {
+        return value;
+    }
+
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

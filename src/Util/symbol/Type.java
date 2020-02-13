@@ -25,4 +25,5 @@ abstract public class Type extends Symbol {
     public boolean isInt() { return typeCategory() == TypeCategory.INT; }
     public boolean isClass() {return typeCategory() == TypeCategory.CLASS;}
     public boolean isFunc() { return typeCategory() == TypeCategory.FUNC;}
+    public boolean isArray() {return dim() != 0;}
 }
