@@ -13,6 +13,8 @@ public class suffixExpr extends exprNode {
         this.opCode = opCode;
     }
 
+    public int opCode() {return opCode;}
+
     public exprNode src() {
         return src;
     }

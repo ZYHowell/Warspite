@@ -21,6 +21,7 @@ public class binaryExpr extends exprNode{
 
     public binaryExpr(exprNode src1, exprNode src2, opCategory opCode, position pos) {
         super(pos, false);
+        //the isAssignable of a=b is set manually later.
         this.src1 = src1;
         this.src2 = src2;
         this.opCode = opCode;

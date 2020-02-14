@@ -10,6 +10,10 @@ public class boolLiteral extends exprNode{
         this.value = value;
     }
 
+    public boolean value() {
+        return value;
+    }
+
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

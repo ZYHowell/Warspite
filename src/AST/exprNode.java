@@ -12,6 +12,10 @@ abstract public class exprNode extends ASTNode {
         this.isAssignable = isAssignable;
     }
 
+    public void setAssignable(boolean dest) {
+        isAssignable = dest;
+    }
+
     public Type type() {
         return type;
     }

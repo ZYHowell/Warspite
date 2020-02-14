@@ -32,9 +32,11 @@ public interface ASTVisitor {
 
     void visit(thisExpr it);
     void visit(funCallExpr it);
+    void visit(methodExpr it);
     void visit(memberExpr it);
     void visit(newExpr it);
 
+    void visit(funcNode it);
     void visit(varNode it);
     void visit(intLiteral it);
     void visit(boolLiteral it);

@@ -10,7 +10,7 @@ import Util.position;
 
 //principle: set new scope before visit its body;
 //(so check condition: {...;{};...})
-//principle: always visit a node before get its type;
+//principle: always visit a node before getting its type;
 //check type and variable principle
 public class SemanticChecker implements ASTVisitor {
 
@@ -26,6 +26,7 @@ public class SemanticChecker implements ASTVisitor {
     classType currentClass;
     Type currentRetType;
     Stack<Integer> loopStack;
+    boolean haveReturn;
 
     public SemanticChecker(globalScope gScope) {
         this.gScope = gScope;
@@ -33,6 +34,7 @@ public class SemanticChecker implements ASTVisitor {
         currentClass = null;
         currentRetType = null;
         loopStack = new Stack<>();
+        haveReturn = false;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class SemanticChecker implements ASTVisitor {
         classType defClass = (classType)gScope.getType(it.Identifier(), it.pos());
         currentScope = defClass.scope();
         currentClass = defClass;
-        it.members().forEach(method -> method.accept(this));
+        it.members().forEach(member -> member.accept(this));
         it.methods().forEach(method -> method.accept(this));
         it.constructors().forEach(constructor->constructor.accept(this));
         currentClass = null;
@@ -60,12 +62,12 @@ public class SemanticChecker implements ASTVisitor {
         if(it.isConstructor()) {
             currentRetType = gScope.getVoidType();
         } else currentRetType = currentScope.getMethod(it.Identifier(), it.pos()).returnType();
-
+        haveReturn = false;
         //parameters are already in the scope(in TypeFilter)
         currentScope = currentScope.getMethod(it.Identifier(), it.pos()).scope();
         it.body().accept(this);
         currentScope = currentScope.parentScope();
-
+        if (!haveReturn && !currentRetType.isVoid()) throw new semanticError("no return", it.pos());
         currentRetType = null;
     }
 
@@ -152,6 +154,7 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(returnStmt it) {
+        haveReturn = true;
         if (it.retValue() != null) {
             it.retValue().accept(this);
             if (currentRetType.sameType(it.retValue().type()))
@@ -226,6 +229,9 @@ public class SemanticChecker implements ASTVisitor {
             if (!typeO.sameType(typeT))
                 throw binaryCalError(typeO, typeT, opCode, it.pos());
             it.setType(typeO);
+            if (it.src1().isAssignable())
+                it.setAssignable(it.src2().isAssignable());
+            else throw new semanticError("not a left value", it.src1().pos());
         }
     }
 
@@ -254,13 +260,9 @@ public class SemanticChecker implements ASTVisitor {
         it.setType(currentClass);
     }
 
-    //the type of the constructor function funcCall should be the type of the class(help newExpr get type)
     @Override
     public void visit(funCallExpr it) {
-        if (it.callee() instanceof stringLiteral) {
-            it.callee().setType(gScope.getMethod(((stringLiteral) it.callee()).value(), it.pos()));
-        }
-        else it.callee().accept(this);
+        it.callee().accept(this);
         if (it.callee().type() instanceof funcDecl) {
             funcDecl func = (funcDecl)it.callee().type();
             ArrayList<varEntity> args = func.scope().params();
@@ -278,20 +280,42 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     @Override
+    public void visit(methodExpr it) {
+        it.caller().accept(this);
+        if (it.caller().type().isArray()) {
+            if (it.method().equals("size")) {
+                it.setType(gScope.getMethod("size", it.pos()));
+                return;
+            } else throw new semanticError("array with a method not size, instead it is: " +
+                    it.method(), it.pos());
+        }
+        if (!it.caller().type().isClass())
+            throw new semanticError("not a class, instead it is: " +
+                    it.caller().type().toString(), it.caller().pos());
+        classType callerClass = (classType)it.caller().type();
+        if (callerClass.scope().containsMethod(it.method())){
+            it.setType(callerClass.scope().getMethod(it.method(), it.pos()));
+        } else throw new semanticError("no such symbol in class'"
+                + callerClass.name() + "'", it.pos());
+    }
+    @Override
     public void visit(memberExpr it) {
         it.caller().accept(this);
         if (it.caller().type().isArray()) {
-            if (it.member().equals("size"))
+            if (it.member().equals("size")) {
                 it.setType(gScope.getMethod("size", it.pos()));
+                return;
+            } else throw new semanticError("array with a method not size, instead it is: " +
+                                            it.member(), it.pos());
         }
         if (!it.caller().type().isClass())
-            throw new semanticError("not a class", it.caller().pos());
+            throw new semanticError("not a class, instead it is: " +
+                                    it.caller().type().toString(), it.caller().pos());
         classType callerClass = (classType)it.caller().type();
-        if (callerClass.scope().containsMember(it.member())) {
+        if (it.isAssignable()) {
             it.setType(callerClass.scope().getMemberType(it.member(), it.pos()));
-        } else if (callerClass.scope().containsMethod(it.member())){
-            it.setType(callerClass.scope().getMethod(it.member(), it.pos()));
-        }
+        } else throw new semanticError("no such symbol in class'"
+                                        + callerClass.name() + "'", it.pos());
     }
 
     @Override
@@ -304,7 +328,10 @@ public class SemanticChecker implements ASTVisitor {
         it.setType(gScope.generateType(it.typeN()));
     }
 
-
+    @Override
+    public void visit(funcNode it){
+        it.setType(currentScope.getMethod(it.name(), it.pos()));
+    }
     @Override
     public void visit(varNode it){
         it.setType(currentScope.getMemberType(it.name(), it.pos()));

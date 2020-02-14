@@ -284,7 +284,16 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override
     //should return an exprNode(funCallExpr)
     public ASTNode visitFuncCall(MxParser.FuncCallContext ctx) {
-        return new funCallExpr((exprNode)visit(ctx.expression()),
+        exprNode originCaller = (exprNode)visit(ctx.expression());
+        exprNode caller;
+        if (originCaller instanceof varNode)
+            caller = new funcNode(((varNode) originCaller).name(),
+                                  originCaller.pos());
+        else if (originCaller instanceof memberExpr)
+            caller = new methodExpr(((memberExpr)originCaller).caller(),
+                                    ((memberExpr)originCaller).member(), originCaller.pos());
+        else throw new semanticError("cannot be a function", originCaller.pos());
+        return new funCallExpr(caller,
                                ctx.expressionList() == null ? null : (exprList)visit(ctx.expressionList()),
                                new position(ctx));
     }

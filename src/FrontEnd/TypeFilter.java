@@ -83,8 +83,10 @@ public class TypeFilter implements ASTVisitor {
     @Override public void visit(suffixExpr it){}
     @Override public void visit(thisExpr it){}
     @Override public void visit(funCallExpr it){}
+    @Override public void visit(methodExpr it){}
     @Override public void visit(memberExpr it){}
     @Override public void visit(newExpr it){}
+    @Override public void visit(funcNode it){}
     @Override public void visit(varNode it){}
     @Override public void visit(intLiteral it){}
     @Override public void visit(boolLiteral it){}
