@@ -27,6 +27,7 @@ public interface ASTVisitor {
 
     void visit(arrayExpr it);
     void visit(binaryExpr it);
+    void visit(assignExpr it);
     void visit(prefixExpr it);
     void visit(suffixExpr it);
 

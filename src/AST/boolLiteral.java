@@ -1,6 +1,7 @@
 package AST;
 
 import Util.position;
+
 public class boolLiteral extends exprNode{
 
     private boolean value;

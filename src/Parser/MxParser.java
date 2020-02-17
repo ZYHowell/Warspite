@@ -1558,7 +1558,6 @@ public class MxParser extends Parser {
 		public TerminalNode Or() { return getToken(MxParser.Or, 0); }
 		public TerminalNode AndAnd() { return getToken(MxParser.AndAnd, 0); }
 		public TerminalNode OrOr() { return getToken(MxParser.OrOr, 0); }
-		public TerminalNode Assign() { return getToken(MxParser.Assign, 0); }
 		public BinaryExprContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
@@ -1595,6 +1594,29 @@ public class MxParser extends Parser {
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof MxVisitor ) return ((MxVisitor<? extends T>)visitor).visitFuncCall(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class AssignExprContext extends ExpressionContext {
+		public List<ExpressionContext> expression() {
+			return getRuleContexts(ExpressionContext.class);
+		}
+		public ExpressionContext expression(int i) {
+			return getRuleContext(ExpressionContext.class,i);
+		}
+		public TerminalNode Assign() { return getToken(MxParser.Assign, 0); }
+		public AssignExprContext(ExpressionContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof MxListener ) ((MxListener)listener).enterAssignExpr(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof MxListener ) ((MxListener)listener).exitAssignExpr(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MxVisitor ) return ((MxVisitor<? extends T>)visitor).visitAssignExpr(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1872,7 +1894,7 @@ public class MxParser extends Parser {
 						break;
 					case 11:
 						{
-						_localctx = new BinaryExprContext(new ExpressionContext(_parentctx, _parentState));
+						_localctx = new AssignExprContext(new ExpressionContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expression);
 						setState(218);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");

@@ -335,11 +335,16 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         else if (ctx.OrOr() != null)         opCode = OrOr;
         else if (ctx.Equal() != null)        opCode = Equal;
         else if (ctx.NotEqual() != null)     opCode = NotEqual;
-        else if (ctx.Assign() != null)       opCode = Assign;
         else throw new internalError("no correct opCode", new position(ctx));
         return new binaryExpr((exprNode)visit(ctx.expression(0)),
                               (exprNode)visit(ctx.expression(1)),
                               opCode, new position(ctx));
+    }
+    @Override
+    public ASTNode visitAssignExpr(MxParser.AssignExprContext ctx) {
+        exprNode rhs = (exprNode)visit(ctx.expression(1));
+        return new assignExpr((exprNode)visit(ctx.expression(0)),
+                              rhs, rhs.isAssignable(), new position(ctx));
     }
 
     @Override

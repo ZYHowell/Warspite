@@ -2,6 +2,7 @@ package AST;
 
 import Util.position;
 import Util.symbol.classType;
+import Util.symbol.varEntity;
 
 public class thisExpr extends exprNode {
 
@@ -19,6 +20,10 @@ public class thisExpr extends exprNode {
         return pointClass;
     }
 
+    @Override
+    public varEntity entity() {
+        return pointClass.formalEntity();
+    }
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

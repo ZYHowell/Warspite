@@ -11,7 +11,7 @@ public class arrayType extends Type {
     }
     public arrayType(Type lowerType) {
         this.baseType = lowerType.baseType();
-        this.dim = lowerType.dim() + 1;
+        this.dim = lowerType.dim() - 1;
     }
 
     //methods

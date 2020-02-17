@@ -217,6 +217,19 @@ public class ASTPrinter implements ASTVisitor{
     }
 
     @Override
+    public void visit(assignExpr it){
+        outputLine("assignExpr");
+        outputLine("  src1 is: ");
+        ++indentNum;
+        it.src1().accept(this);
+        --indentNum;
+        outputLine("  src2 is: ");
+        ++indentNum;
+        it.src2().accept(this);
+        --indentNum;
+    }
+
+    @Override
     public void visit(prefixExpr it) {
         outputLine("prefixExpr, opCode is: " + it.opCode().toString());
         it.src().accept(this);

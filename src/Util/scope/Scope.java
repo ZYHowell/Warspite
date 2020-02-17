@@ -43,14 +43,14 @@ public class Scope {
         constructor = func;
     }
 
-    public boolean containsMember(String name) {
+    public boolean containsMember(String name, boolean lookUpon) {
         if (members.containsKey(name)) return true;
-        else if (parentScope != null) return parentScope.containsMember(name);
+        else if (parentScope != null && lookUpon) return parentScope.containsMember(name, true);
         else return false;
     }
-    public boolean containsMethod(String name) {
+    public boolean containsMethod(String name, boolean lookUpon) {
         if (methods.containsKey(name)) return true;
-        else if (parentScope != null) return parentScope.containsMethod(name);
+        else if (parentScope != null && lookUpon) return parentScope.containsMethod(name, true);
         else return false;
     }
 
@@ -58,15 +58,20 @@ public class Scope {
         return constructor;
     }
 
-    public Type getMemberType(String name, position pos) {
+    public Type getMemberType(String name, position pos, boolean lookUpon) {
         if (members.containsKey(name)) return members.get(name).type();
-        else if (parentScope != null)  return parentScope.getMemberType(name, pos);
+        else if (parentScope != null && lookUpon) return parentScope.getMemberType(name, pos, true);
+        else throw new semanticError("undefined variable", pos);
+    }
+    public varEntity getMember(String name, position pos, boolean lookUpon) {
+        if (members.containsKey(name)) return members.get(name);
+        else if (parentScope != null && lookUpon) return parentScope.getMember(name, pos, true);
         else throw new semanticError("undefined variable", pos);
     }
 
-    public funcDecl getMethod(String name, position pos) {
+    public funcDecl getMethod(String name, position pos, boolean lookUpon) {
         if (methods.containsKey(name)) return methods.get(name);
-        else if (parentScope != null)  return parentScope.getMethod(name, pos);
+        else if (parentScope != null && lookUpon) return parentScope.getMethod(name, pos, true);
         else throw new semanticError("undefined method", pos);
     }
 }

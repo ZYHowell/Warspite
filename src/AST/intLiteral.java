@@ -1,6 +1,7 @@
 package AST;
 
 import Util.position;
+
 public class intLiteral extends exprNode {
 
     private int value;

@@ -14,7 +14,6 @@ public class funcNode extends exprNode {
     public String name() {
         return funcName;
     }
-
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

@@ -1,6 +1,7 @@
 package AST;
 
 import Util.position;
+
 public class stringLiteral extends exprNode {
 
     private String value;

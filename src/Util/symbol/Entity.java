@@ -2,7 +2,7 @@ package Util.symbol;
 
 import Util.symbol.Type;
 
-abstract public class Entity {
+abstract public class Entity extends Symbol{
 
     private String name;
 

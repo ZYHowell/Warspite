@@ -1,0 +1,15 @@
+class cl{
+    int a;
+    cl() {a = 1;}
+};
+
+cl t;
+
+cl retT() {
+    return t;
+}
+
+int main() {
+    retT().a = 2;
+    printInt(t.a);
+}

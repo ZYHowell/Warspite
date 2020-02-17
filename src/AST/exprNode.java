@@ -1,7 +1,9 @@
 package AST;
 
+import Util.error.internalError;
 import Util.position;
 import Util.symbol.Type;
+import Util.symbol.varEntity;
 
 abstract public class exprNode extends ASTNode {
     private Type type;
@@ -10,10 +12,6 @@ abstract public class exprNode extends ASTNode {
     public exprNode(position pos, boolean isAssignable) {
         super(pos);
         this.isAssignable = isAssignable;
-    }
-
-    public void setAssignable(boolean dest) {
-        isAssignable = dest;
     }
 
     public Type type() {
@@ -26,5 +24,9 @@ abstract public class exprNode extends ASTNode {
 
     public boolean isAssignable() {
         return isAssignable;
+    }
+
+    public varEntity entity() {
+        throw new internalError("call an entity() not overridden", pos());
     }
 }

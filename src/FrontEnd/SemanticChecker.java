@@ -20,6 +20,9 @@ public class SemanticChecker implements ASTVisitor {
                                  typeO.toString() + "' and '" + typeT.toString() +
                                  "', opCode is " + opCode.toString(), pos);
     }
+    private boolean isOuter() {
+        return (currentScope == gScope) || (currentScope instanceof classScope);
+    }
 
     globalScope gScope;
     Scope currentScope;
@@ -61,10 +64,10 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(funDef it) {
         if(it.isConstructor()) {
             currentRetType = gScope.getVoidType();
-        } else currentRetType = currentScope.getMethod(it.Identifier(), it.pos()).returnType();
+        } else currentRetType = currentScope.getMethod(it.Identifier(), it.pos(), false).returnType();
         haveReturn = false;
         //parameters are already in the scope(in TypeFilter)
-        currentScope = currentScope.getMethod(it.Identifier(), it.pos()).scope();
+        currentScope = currentScope.getMethod(it.Identifier(), it.pos(), false).scope();
         it.body().accept(this);
         currentScope = currentScope.parentScope();
         if (!haveReturn && !currentRetType.isVoid()) throw new semanticError("no return", it.pos());
@@ -73,9 +76,17 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(varDef it) {
-        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()));
+        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter());
+        it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
         currentScope.defineMember(it.name(), theVar, it.pos());
+        if (it.init() != null) {
+            it.init().accept(this);
+            if (!it.init().type().sameType(theVar.type()))
+                throw new semanticError("not same type. should be: " +
+                                        theVar.type().toString() + ", actually is: " +
+                                        it.init().type().toString(), it.pos());
+        }
     }
 
     @Override   //not used
@@ -87,6 +98,7 @@ public class SemanticChecker implements ASTVisitor {
         it.getStmtList().forEach(stmt -> {
             if (stmt instanceof blockNode) {
                 currentScope = new Scope(currentScope);
+                stmt.setScope(currentScope);
                 stmt.accept(this);
                 currentScope = currentScope.parentScope();
             } else stmt.accept(this);
@@ -106,11 +118,13 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("not a bool", it.condition().pos());
 
         currentScope = new Scope(currentScope);
+        it.trueStmt().setScope(currentScope);
         it.trueStmt().accept(this);
         currentScope = currentScope.parentScope();
 
         if (it.falseStmt() != null) {
             currentScope = new Scope(currentScope);
+            it.falseStmt().setScope(currentScope);
             it.falseStmt().accept(this);
             currentScope = currentScope.parentScope();
         }
@@ -132,6 +146,7 @@ public class SemanticChecker implements ASTVisitor {
 
         currentScope = new Scope(currentScope);
         loopStack.push(0);
+        it.body().setScope(currentScope);
         it.body().accept(this);
         loopStack.pop();
         currentScope = currentScope.parentScope();
@@ -147,6 +162,7 @@ public class SemanticChecker implements ASTVisitor {
 
         currentScope = new Scope(currentScope);
         loopStack.push(0);
+        it.body().setScope(currentScope);
         it.body().accept(this);
         loopStack.pop();
         currentScope = currentScope.parentScope();
@@ -225,20 +241,36 @@ public class SemanticChecker implements ASTVisitor {
             if (!typeO.sameType(typeT))
                 throw binaryCalError(typeO, typeT, opCode, it.pos());
             it.setType(gScope.getBoolType());
-        } else {
-            if (!typeO.sameType(typeT))
-                throw binaryCalError(typeO, typeT, opCode, it.pos());
-            it.setType(typeO);
-            if (it.src1().isAssignable())
-                it.setAssignable(it.src2().isAssignable());
-            else throw new semanticError("not a left value", it.src1().pos());
         }
+    }
+
+    @Override
+    public void visit(assignExpr it) {
+        it.src1().accept(this);
+        it.src2().accept(this);
+        Type typeO, typeT;
+        typeO = it.src1().type();
+        typeT = it.src2().type();
+        if (!typeO.sameType(typeT))
+            throw new semanticError("cannot assign different type: '" + typeO.toString() +
+                                    "' with '" + typeT.toString() + "'", it.pos());
+        it.setType(typeO);
+        if (!it.src1().isAssignable())
+            throw new semanticError("not a left value", it.src1().pos());
     }
 
     @Override
     public void visit(prefixExpr it) {
         it.src().accept(this);
-        if (!it.src().type().isInt())
+        prefixExpr.prefixCode opCode = it.opCode();
+        if (opCode.ordinal() < 5){
+            if (!it.src().type().isInt())
+                throw new semanticError("operator not match. Type: " +
+                                        it.src().type().toString(), it.pos());
+            if (opCode.ordinal() > 2)   //++ or --
+                if (!it.src().isAssignable())
+                    throw new semanticError("not a left value. ", it.src().pos());
+        } else if (!it.src().type().isBool())
             throw new semanticError("operator not match. Type: " +
                                     it.src().type().toString(), it.pos());
     }
@@ -249,6 +281,8 @@ public class SemanticChecker implements ASTVisitor {
         if (!it.src().type().isInt())
             throw new semanticError("operator not match. Type: " +
                     it.src().type().toString(), it.pos());
+        if (!it.src().isAssignable())
+            throw new semanticError("not a left value. ", it.pos());
     }
 
 
@@ -284,7 +318,7 @@ public class SemanticChecker implements ASTVisitor {
         it.caller().accept(this);
         if (it.caller().type().isArray()) {
             if (it.method().equals("size")) {
-                it.setType(gScope.getMethod("size", it.pos()));
+                it.setType(gScope.getMethod("size", it.pos(), false));
                 return;
             } else throw new semanticError("array with a method not size, instead it is: " +
                     it.method(), it.pos());
@@ -293,27 +327,21 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("not a class, instead it is: " +
                     it.caller().type().toString(), it.caller().pos());
         classType callerClass = (classType)it.caller().type();
-        if (callerClass.scope().containsMethod(it.method())){
-            it.setType(callerClass.scope().getMethod(it.method(), it.pos()));
+        if (callerClass.scope().containsMethod(it.method(), false)){
+            it.setType(callerClass.scope().getMethod(it.method(), it.pos(), false));
         } else throw new semanticError("no such symbol in class'"
                 + callerClass.name() + "'", it.pos());
     }
     @Override
     public void visit(memberExpr it) {
         it.caller().accept(this);
-        if (it.caller().type().isArray()) {
-            if (it.member().equals("size")) {
-                it.setType(gScope.getMethod("size", it.pos()));
-                return;
-            } else throw new semanticError("array with a method not size, instead it is: " +
-                                            it.member(), it.pos());
-        }
         if (!it.caller().type().isClass())
             throw new semanticError("not a class, instead it is: " +
                                     it.caller().type().toString(), it.caller().pos());
         classType callerClass = (classType)it.caller().type();
-        if (it.isAssignable()) {
-            it.setType(callerClass.scope().getMemberType(it.member(), it.pos()));
+        if (callerClass.scope().containsMember(it.member(), false)) {
+            it.setType(callerClass.scope().getMemberType(it.member(), it.pos(), false));
+            it.setVarEntity(callerClass.scope().getMember(it.member(), it.pos(), false));
         } else throw new semanticError("no such symbol in class'"
                                         + callerClass.name() + "'", it.pos());
     }
@@ -330,11 +358,12 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(funcNode it){
-        it.setType(currentScope.getMethod(it.name(), it.pos()));
+        it.setType(currentScope.getMethod(it.name(), it.pos(), true));
     }
     @Override
     public void visit(varNode it){
-        it.setType(currentScope.getMemberType(it.name(), it.pos()));
+        it.setType(currentScope.getMemberType(it.name(), it.pos(), true));
+        it.setVarEntity(currentScope.getMember(it.name(), it.pos(), true));
     }
 
     @Override

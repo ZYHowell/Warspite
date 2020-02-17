@@ -45,8 +45,8 @@ public class printOptimizer implements ASTVisitor{
 
     public printOptimizer(globalScope gScope) {
         this.gScope = gScope;
-        printFunction = gScope.getMethod("print", new position(0,0));
-        printlnFunction = gScope.getMethod("println", new position(0,0));
+        printFunction = gScope.getMethod("print", new position(0,0), false);
+        printlnFunction = gScope.getMethod("println", new position(0,0), false);
     }
 
     @Override
@@ -108,6 +108,7 @@ public class printOptimizer implements ASTVisitor{
     @Override public void visit(exprList it) {}
     @Override public void visit(typeNode it) {}
     @Override public void visit(arrayExpr it) {}
+    @Override public void visit(assignExpr it) {}
     @Override public void visit(binaryExpr it) {}
     @Override public void visit(prefixExpr it) {}
     @Override public void visit(suffixExpr it) {}

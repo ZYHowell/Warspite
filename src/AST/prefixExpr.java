@@ -5,13 +5,13 @@ import Util.position;
 public class prefixExpr extends exprNode{
 
     public enum prefixCode {
-        Positive, Negative, Increment, Decrement, Tilde, Not
+        Positive, Negative, Tilde, Increment, Decrement, Not
     }
     private exprNode src;
     private prefixCode opCode;
     /*
-     * +, -, ++, --, ~, !
-     * 0, 1,  2,  3, 4, 5
+     * +, -, ~, ++, --, !
+     * 0, 1, 2,  3,  4, 5
      * 0~4: int
      * 5: boolean
      */

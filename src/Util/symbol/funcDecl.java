@@ -1,6 +1,5 @@
 package Util.symbol;
 
-import java.util.ArrayList;
 import AST.ASTNode;
 import Util.error.*;
 import Util.position;
@@ -12,11 +11,13 @@ public class funcDecl extends BaseType {
     private Type type;
     private ASTNode block;
     private functionScope localScope;
+    private boolean hasSideEffect;
 
     public funcDecl(String name, ASTNode block) {
         super("funcDecl" + name);
         this.FuncName = name;
         this.block = block;
+        this.hasSideEffect = false;
     }
 
     public void setScope(functionScope localScope) {
@@ -37,6 +38,13 @@ public class funcDecl extends BaseType {
 
     public Type returnType() {
         return type;
+    }
+
+    public void setSideEffect(boolean hSE) {
+        hasSideEffect = hSE;
+    }
+    public boolean hasSideEffect() {
+        return hasSideEffect;
     }
 
     @Override

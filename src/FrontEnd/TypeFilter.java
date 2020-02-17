@@ -17,10 +17,6 @@ public class TypeFilter implements ASTVisitor {
         this.gScope = gScope;
     }
 
-    public globalScope gScope() {
-        return gScope;
-    }
-
     @Override
     public void visit(rootNode it) {
         if (!it.allDef().isEmpty()) {
@@ -47,7 +43,7 @@ public class TypeFilter implements ASTVisitor {
             func = currentScope.constructor();
             func.setRetType(new constructorType());
         } else {
-            func = currentScope.getMethod(it.Identifier(), it.pos());
+            func = currentScope.getMethod(it.Identifier(), it.pos(), false);
             func.setRetType(gScope.generateType(it.retValueType()));
         }
         currentScope = new functionScope(currentScope);
@@ -57,7 +53,7 @@ public class TypeFilter implements ASTVisitor {
     }
 
     @Override public void visit(varDef it) {
-        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()));
+        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), true);
         if (param.type().isVoid())
             throw new semanticError("type of a parameter is void", it.pos());
         if (currentScope instanceof functionScope)
@@ -78,6 +74,7 @@ public class TypeFilter implements ASTVisitor {
     @Override public void visit(exprList it){}
     @Override public void visit(typeNode it){}
     @Override public void visit(arrayExpr it){}
+    @Override public void visit(assignExpr it){}
     @Override public void visit(binaryExpr it){}
     @Override public void visit(prefixExpr it){}
     @Override public void visit(suffixExpr it){}

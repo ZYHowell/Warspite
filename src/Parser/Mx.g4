@@ -59,7 +59,7 @@ expression
     | expression op='|' expression                          #binaryExpr
     | expression '&&' expression                            #binaryExpr
     | expression '||' expression                            #binaryExpr
-    | <assoc=right> expression '=' expression               #binaryExpr
+    | <assoc=right> expression '=' expression               #assignExpr
     ;
 
 primary

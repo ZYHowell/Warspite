@@ -31,7 +31,7 @@ public class SymbolCollector implements ASTVisitor {
         if (!(currentScope instanceof globalScope))
             throw new internalError("class not defined in global scope", it.pos());
         classType defClass = new classType(it.Identifier(), it);
-        Scope localScope = new Scope(currentScope);
+        Scope localScope = new classScope(currentScope);
         currentScope = localScope;
         it.members().forEach(member -> member.accept(this));
         it.methods().forEach(method -> method.accept(this));
@@ -65,6 +65,7 @@ public class SymbolCollector implements ASTVisitor {
     @Override public void visit(exprList it){}
     @Override public void visit(typeNode it){}
     @Override public void visit(arrayExpr it){}
+    @Override public void visit(assignExpr it){}
     @Override public void visit(binaryExpr it){}
     @Override public void visit(prefixExpr it){}
     @Override public void visit(suffixExpr it){}
