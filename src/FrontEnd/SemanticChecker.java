@@ -64,10 +64,10 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(funDef it) {
         if(it.isConstructor()) {
             currentRetType = gScope.getVoidType();
-        } else currentRetType = currentScope.getMethod(it.Identifier(), it.pos(), false).returnType();
+        } else currentRetType = it.decl().returnType();
         haveReturn = false;
         //parameters are already in the scope(in TypeFilter)
-        currentScope = currentScope.getMethod(it.Identifier(), it.pos(), false).scope();
+        currentScope = it.decl().scope();
         it.body().accept(this);
         currentScope = currentScope.parentScope();
         if (!haveReturn && !currentRetType.isVoid()) throw new semanticError("no return", it.pos());
@@ -76,7 +76,8 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(varDef it) {
-        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter());
+        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter(),
+                currentScope == gScope);
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
         currentScope.defineMember(it.name(), theVar, it.pos());

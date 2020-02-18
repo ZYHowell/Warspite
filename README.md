@@ -12,3 +12,7 @@ There are three kinds of type: primitive, class and function. They represent abs
 A naïve optimization is made in HIR level, that to split print(string + string) to two print commands. 
 
 Suggested by senior students' reports, a DCE is made in HIR level. 
+
+### MIR
+
+It is simply a LLVM IR. (and that's why this homework is not interesting: simply follow the LLVM is easy and sufficient)

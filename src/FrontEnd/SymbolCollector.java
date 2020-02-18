@@ -43,7 +43,8 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(funDef it) {
-        funcDecl func = new funcDecl(it.Identifier(), it.body());
+        funcDecl func = new funcDecl(it.Identifier(), it);
+        it.setDecl(func);
         if (it.isConstructor())
             currentScope.defineConstructor(func, it.pos());
         else currentScope.defineMethod(it.Identifier(), func, it.pos());

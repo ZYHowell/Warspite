@@ -1,11 +1,9 @@
 package FrontEnd;
 
 import AST.*;
-import Util.error.internalError;
 import Util.scope.globalScope;
 import Util.symbol.classType;
 import Util.symbol.funcDecl;
-import Util.symbol.varEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +47,7 @@ public class SideEffectBuilder implements ASTVisitor{
 
     @Override
     public void visit(funDef it) {
-        currentFunction = gScope.getMethod(it.Identifier(), it.pos(), false);
+        currentFunction = it.decl();
         caller.put(currentFunction, new ArrayList<>());
         if (!it.isConstructor()) it.body().accept(this);
         else currentFunction.setSideEffect(true);   //roughly set all constructor to be true; can be hacked

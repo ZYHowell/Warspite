@@ -40,10 +40,10 @@ public class TypeFilter implements ASTVisitor {
     public void visit(funDef it) {
         funcDecl func;
         if (it.isConstructor()) {
-            func = currentScope.constructor();
+            func = it.decl();
             func.setRetType(new constructorType());
         } else {
-            func = currentScope.getMethod(it.Identifier(), it.pos(), false);
+            func = it.decl();
             func.setRetType(gScope.generateType(it.retValueType()));
         }
         currentScope = new functionScope(currentScope);
@@ -53,7 +53,7 @@ public class TypeFilter implements ASTVisitor {
     }
 
     @Override public void visit(varDef it) {
-        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), true);
+        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), true, false);
         if (param.type().isVoid())
             throw new semanticError("type of a parameter is void", it.pos());
         if (currentScope instanceof functionScope)

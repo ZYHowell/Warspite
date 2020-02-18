@@ -36,8 +36,8 @@ public class globalScope extends Scope {
 
         tmpFunc = new funcDecl("substring", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("left", intInstance), pos);
-        tmpFunc.addParam(new varEntity("right", intInstance), pos);
+        tmpFunc.addParam(new varEntity("left", intInstance, true, false), pos);
+        tmpFunc.addParam(new varEntity("right", intInstance, true, false), pos);
         tmpFunc.setRetType(stringType);
         stringType.defineMethod("substring", tmpFunc, pos);
 
@@ -48,32 +48,32 @@ public class globalScope extends Scope {
 
         tmpFunc = new funcDecl("ord", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("pos", intInstance), pos);
+        tmpFunc.addParam(new varEntity("pos", intInstance, true, false), pos);
         tmpFunc.setRetType(intInstance);
         stringType.defineMethod("ord", tmpFunc, pos);
         typeMap.put("string", stringType);
         //insert print etc. into the map;
         tmpFunc = new funcDecl("print", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("str", stringType), pos);
+        tmpFunc.addParam(new varEntity("str", stringType, true, false), pos);
         tmpFunc.setRetType(voidInstance);
         defineMethod("print", tmpFunc, pos);
 
         tmpFunc = new funcDecl("println", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("str", stringType), pos);
+        tmpFunc.addParam(new varEntity("str", stringType, true, false), pos);
         tmpFunc.setRetType(voidInstance);
         defineMethod("println", tmpFunc, pos);
 
         tmpFunc = new funcDecl("printInt", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.addParam(new varEntity("n", intInstance, true, false), pos);
         tmpFunc.setRetType(voidInstance);
         defineMethod("printInt", tmpFunc, pos);
 
         tmpFunc = new funcDecl("printlnInt", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.addParam(new varEntity("n", intInstance, true, false), pos);
         tmpFunc.setRetType(voidInstance);
         defineMethod("printlnInt", tmpFunc, pos);
 
@@ -89,7 +89,7 @@ public class globalScope extends Scope {
 
         tmpFunc = new funcDecl("toString", null);
         tmpFunc.setScope(new functionScope(this));
-        tmpFunc.addParam(new varEntity("n", intInstance), pos);
+        tmpFunc.addParam(new varEntity("n", intInstance, true, false), pos);
         tmpFunc.setRetType(stringType);
         defineMethod("toString", tmpFunc, pos);
 
@@ -102,7 +102,7 @@ public class globalScope extends Scope {
     public void defineClass(String className, Type classType, position pos) {
         if (typeMap.containsKey(className))
             throw new semanticError("class redefine", pos);
-        if (containsMember(className))
+        if (containsMember(className, false))
             throw new semanticError("class name same to a var", pos);
         typeMap.put(className, classType);
     }

@@ -2,9 +2,6 @@ package FrontEnd;
 
 import java.util.ArrayList;
 import AST.*;
-import Util.error.semanticError;
-import Util.scope.Scope;
-import Util.scope.globalScope;
 import Util.symbol.*;
 
 import java.io.FileNotFoundException;
@@ -13,7 +10,7 @@ import java.io.PrintStream;
 //I'm afraid that I might be wrong, so I make such ASTPrinter to keep track of my AST.
 //is for DEBUG USE
 public class ASTPrinter implements ASTVisitor{
-    private globalScope gScope;
+
     private PrintStream output;
     private int indentNum;
 
@@ -25,8 +22,7 @@ public class ASTPrinter implements ASTVisitor{
         output.println(msg);
     }
 
-    public ASTPrinter(globalScope gScope, String outFile) throws FileNotFoundException {
-        this.gScope = gScope;
+    public ASTPrinter(String outFile) throws FileNotFoundException {
         this.output = new PrintStream(outFile);
         this.indentNum = 0;
     }

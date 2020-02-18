@@ -32,7 +32,7 @@ public class HIRDCE implements ASTVisitor{
     private globalScope gScope;
     stage currentStage = stage.init;
     private HashSet<varEntity> relevantVars = new HashSet<>();
-    private varEntity formalRelevantEntity = new varEntity("", null, true);
+    private varEntity formalRelevantEntity = new varEntity("", null, true, true);
 
     public HIRDCE(globalScope gScope) {
         this.gScope = gScope;
@@ -42,7 +42,6 @@ public class HIRDCE implements ASTVisitor{
 
     private boolean isInit() {return currentStage == stage.init;}
     private boolean isCheck() {return currentStage == stage.check;}
-    private boolean isClean() {return currentStage == stage.clean;}
 
     private void derive(ASTNode parent, ASTNode child) {
         parent.dirty().addAll(child.dirty());

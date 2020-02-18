@@ -2,6 +2,8 @@ package AST;
 
 import java.util.ArrayList;
 import Util.position;
+import Util.symbol.funcDecl;
+
 
 public class funDef extends ASTNode {
     private String name;
@@ -9,6 +11,7 @@ public class funDef extends ASTNode {
     private blockNode body;
     private boolean isConstructor;
     private ArrayList<varDef> parameters;   //should have no expr node(not visited in semantic checker)
+    private funcDecl decl;
 
     public funDef(String name, position pos, boolean isConstructor,
                   typeNode type, blockNode body, ArrayList<varDef> parameters) {
@@ -23,21 +26,23 @@ public class funDef extends ASTNode {
     public boolean isConstructor() {
         return isConstructor;
     }
-
     public typeNode retValueType() {
         return type;
     }
-
     public String Identifier() {
         return name;
     }
-
     public blockNode body() {
         return body;
     }
-
     public ArrayList<varDef> parameters() {
         return parameters;
+    }
+    public void setDecl(funcDecl decl) {
+        this.decl = decl;
+    }
+    public funcDecl decl(){
+        return decl;
     }
 
     @Override
