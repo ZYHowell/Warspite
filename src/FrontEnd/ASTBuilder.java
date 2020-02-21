@@ -54,8 +54,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         }
         if (!ctx.funcDef().isEmpty()) {
             for (ParserRuleContext funcDef : ctx.funcDef()) {
-                ASTNode tmp = visit(funcDef);
-                if (((funDef)tmp).isConstructor()) {
+                funDef tmp = (funDef)visit(funcDef);
+                tmp.setIsMethod();
+                if (tmp.isConstructor()) {
                     hasConstructor = true;
                     constructors.add(((funDef)tmp));
                 }
@@ -156,6 +157,11 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         if (!ctx.statement().isEmpty()) {
             for (ParserRuleContext statement : ctx.statement()) {
                 stmtNode tmp = (stmtNode)visit(statement);
+                if (tmp instanceof emptyStmt) continue;
+                if (tmp instanceof returnStmt || tmp instanceof continueStmt || tmp instanceof breakStmt) {
+                    block.addStmt(tmp);
+                    break;
+                }
                 block.addStmt(tmp);
             }
         }

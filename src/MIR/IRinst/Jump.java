@@ -1,4 +1,17 @@
 package MIR.IRinst;
 
-public class Jump extends Inst{
+import MIR.IRBlock;
+
+public class Jump extends Inst {
+
+    private IRBlock dest;
+
+    public Jump(IRBlock dest) {
+        super();
+        this.dest = dest;
+    }
+
+    public IRBlock dest() {
+        return dest;
+    }
 }

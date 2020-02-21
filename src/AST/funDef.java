@@ -9,7 +9,7 @@ public class funDef extends ASTNode {
     private String name;
     private typeNode type;
     private blockNode body;
-    private boolean isConstructor;
+    private boolean isConstructor, isMethod;
     private ArrayList<varDef> parameters;   //should have no expr node(not visited in semantic checker)
     private funcDecl decl;
 
@@ -21,8 +21,15 @@ public class funDef extends ASTNode {
         this.type = type;
         this.body = body;
         this.parameters = parameters;
+        this.isMethod = false;
     }
 
+    public void setIsMethod() {
+        isMethod = true;
+    }
+    public boolean isMethod() {
+        return isMethod;
+    }
     public boolean isConstructor() {
         return isConstructor;
     }

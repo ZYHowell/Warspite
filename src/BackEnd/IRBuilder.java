@@ -4,28 +4,81 @@ import AST.*;
 import MIR.*;
 import MIR.IRoperand.*;
 import MIR.IRinst.*;
+import MIR.IRtype.*;
 import Util.position;
 import Util.scope.globalScope;
-import Util.symbol.classType;
+import Util.symbol.*;
 import Util.symbol.funcDecl;
 import Util.symbol.varEntity;
+
+import java.util.ArrayList;
 
 import static MIR.IRinst.Binary.BinaryOpCategory.*;
 import static MIR.IRinst.Cmp.CmpOpCategory.*;
 
 public class IRBuilder implements ASTVisitor {
 
+    private boolean isParam;
     private globalScope gScope;
     private Root irRoot = new Root();
     private position beginning = new position(0, 0);
-    private classType currentClass;
-    private Function currentFunction;
+    private classType currentClass = null;
+    private Function currentFunction = null;
+    private IRBlock currentBlock = null;
+    ArrayList<Return> returnList = new ArrayList<>();
+
+    private IRBaseType getIRType(Type type) {
+        if (type instanceof arrayType) {
+            IRBaseType tmp = getIRType(type.baseType());
+            for (int i = 0; i < type.dim();++i)
+                tmp = new Pointer(tmp);
+        }
+        else if (type.isInt()) return new IntType(32);
+        else if (type.isBool()) return new BoolType();
+        else if (type.isVoid()) return new VoidType();
+        else if (type.isClass()) {
+            String name = ((classType)type).name();
+            if (name.equals("string")) return new Pointer(new IntType(8));
+            else return irRoot.getType(name);
+        }
+        else if (type.isNull()) return new VoidType();
+        return new VoidType(); //really do so? or just throw error? type is function/constructor
+    }
+    private IRBaseType getIRReferenceType(Type type) {
+        IRBaseType tmp = getIRType(type);
+        if (tmp instanceof Pointer) return tmp;
+        else return new Pointer(tmp);
+    }
 
     private void setBuiltinMethod(String name) {
         gScope.getMethod(name, beginning, false)
                 .setFunction(irRoot.getFunction("global_" + name));
     }
+    private Operand resolvePointer(IRBlock currentBlock, Operand it) {
+        if (it.type() instanceof Pointer) {
+            Register dest = new Register(((Pointer)it.type()).pointTo(), null);
+            currentBlock.addInst(new Load(dest, it));
+            return dest;
+        } else return it;
+    }
+    private void assign(Operand reg, exprNode expr) {
+        if (expr.type().isBool()) {
+            //todo: consider the bool expression etc.
+        }
+        else {
+            expr.accept(this);
+            currentBlock.addInst(new Store(reg, expr.operand()));
+        }
+    }
+    private void branchAdd(exprNode it) {
+        if (it.thenBlock() != null){
+            Operand tmp = resolvePointer(currentBlock, it.operand());
+            currentBlock.addTerminator(new Branch(tmp, it.thenBlock(), it.elseBlock()));
+        }
+    }
+
     public IRBuilder(globalScope gScope) {
+        isParam = false;
         this.gScope = gScope;
         setBuiltinMethod("print");
         setBuiltinMethod("println");
@@ -36,6 +89,8 @@ public class IRBuilder implements ASTVisitor {
         setBuiltinMethod("toString");
         setBuiltinMethod("size");
         //todo: set builtin of string
+        //todo: add more: stringPlus, stringCmp
+        //todo: set all types into the
     }
 
     @Override
@@ -60,21 +115,73 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(classDef it) {
+        currentClass = (classType)gScope.getType(it.Identifier(), it.pos());
         it.members().forEach(member -> member.accept(this));
         it.methods().forEach(method -> method.accept(this));
+        if (it.hasConstructor())
+            it.constructors().forEach(constructor-> constructor.accept(this));
+        else {
+            //todo: add default constructor, should I?
+        }
     }
 
     @Override
     public void visit(funDef it) {
         funcDecl func = it.decl();
+        returnList.clear();
         currentFunction = func.function();
+        currentBlock = currentFunction.entryBlock();
+        if (it.isMethod())
+            currentFunction.setClassPtr(new Register(
+                    new Pointer(getIRReferenceType(currentClass)), "this"));
+
+        isParam = true;
+        it.parameters().forEach(param -> param.accept(this));
+        isParam = false;
+
         it.body().accept(this);
+
+        if (returnList.size() == 0) {
+            if (currentFunction.name().equals("main"))
+                currentBlock.addTerminator(new Return(currentBlock, new ConstInt(0)));
+            else currentBlock.addTerminator(new Return(currentBlock, null));
+        } else if (returnList.size() > 1) {
+            IRBlock rootReturn = new IRBlock("rootReturn");
+            Operand returnValue = new Register(returnList.get(0).value().type(), "rootRet");
+            returnList.forEach(ret -> {
+                ret.currentBlock().removeTerminal();
+                ret.currentBlock().addInst(new Binary(ret.value(), null, returnValue, assign));
+                ret.currentBlock().addTerminator(new Jump(rootReturn));
+            });
+            rootReturn.addTerminator(new Return(rootReturn, returnValue));
+        }
+
+        returnList.clear();
+        currentFunction = null;
+        currentBlock = null;
     }
 
     @Override
     public void visit(varDef it) {
-        if (it.init() != null) {
-            it.init().accept(this);
+        varEntity entity = it.entity();
+        Operand reg;
+        IRBaseType type = getIRReferenceType(entity.type());
+
+        if (entity.isGlobal()) {
+            reg = new GlobalReg(type, it.name());
+            it.entity().setOperand(reg);
+            irRoot.addGlobalVar((GlobalReg)reg);
+        }
+        else {
+            if (isParam) { //is parameter
+                reg = new Param(type, it.name());
+                currentFunction.addParam(it.name() + "_addr", (Param)reg);
+            } else {
+                reg = new Register(new Pointer(type), it.name() + "_addr");
+                if (it.init() != null) assign(reg, it.init());
+                it.entity().setOperand(reg);
+                currentFunction.addVar(it.name(), getIRType(entity.type()));
+            }
         }
     }
 
@@ -82,130 +189,348 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(blockNode it) {
-        it.getStmtList().forEach(stmt -> stmt.accept(this));
+        for (stmtNode stmt : it.getStmtList()) {
+            stmt.accept(this);
+            if (currentBlock.terminated()) break;
+        }
     }
 
     @Override
     public void visit(exprStmt it) {
-
+        it.expr().accept(this);
     }
 
     @Override
     public void visit(ifStmt it) {
+        IRBlock thenBlock = new IRBlock("if_then"),
+                elseBlock = new IRBlock("if_else"),
+                destBlock = new IRBlock("if_terminal");
 
+        it.condition().accept(this);
+        currentBlock = thenBlock;
+        it.trueStmt().accept(this);
+        if (it.falseStmt() != null) {
+            currentBlock = elseBlock;
+            it.falseStmt().accept(this);
+        }
+        if (!thenBlock.terminated()) thenBlock.addTerminator(new Jump(destBlock));
+        if (!elseBlock.terminated()) elseBlock.addTerminator(new Jump(destBlock));
+        currentBlock = destBlock;
     }
 
     @Override
     public void visit(forStmt it) {
+        IRBlock bodyBlock = new IRBlock("for_body"),
+                destBlock = new IRBlock("for_dest"),
+                condBlock = new IRBlock("for_cond");
 
+        it.setDestBlock(destBlock);
+        if (it.init() != null) it.init().accept(this);
+
+        currentBlock = condBlock;
+        if (it.incr() != null) it.incr().accept(this);
+        if (it.condition() != null){
+            it.condition().setThenBlock(bodyBlock);
+            it.condition().setElseBlock(destBlock);
+            it.condition().accept(this);
+        }
+        else condBlock.addTerminator(new Jump(bodyBlock));
+        it.setCondBlock(condBlock);
+        currentBlock = bodyBlock;
+        it.body().accept(this);
+        if (!currentBlock.terminated()) {
+            currentBlock.addTerminator(new Jump(condBlock));
+        }
+        currentBlock = destBlock;
     }
 
     @Override
     public void visit(whileStmt it) {
+        IRBlock bodyBlock = new IRBlock("while_body"),
+                destBlock = new IRBlock("while_dest"),
+                condBlock = new IRBlock("while_cond");
 
+        it.setDestBlock(destBlock);
+        currentBlock.addTerminator(new Jump(condBlock));
+
+        currentBlock = condBlock;
+        if (it.condition() != null){
+            it.condition().setThenBlock(bodyBlock);
+            it.condition().setElseBlock(destBlock);
+            it.condition().accept(this);
+        }
+        else condBlock.addTerminator(new Jump(bodyBlock));
+        it.setCondBlock(condBlock);
+        currentBlock = bodyBlock;
+        it.body().accept(this);
+        if (!currentBlock.terminated()) currentBlock.addTerminator(new Jump(condBlock));
+
+        currentBlock = destBlock;
     }
 
     @Override
     public void visit(returnStmt it) {
-
+        it.retValue().accept(this);
+        Return ret = new Return(currentBlock, it.retValue().operand());
+        currentBlock.addTerminator(ret);
+        returnList.add(ret);
     }
 
     @Override
     public void visit(breakStmt it) {
-
+        IRBlock dest;
+        if (it.dest() instanceof whileStmt) dest = ((whileStmt)it.dest()).destBlock();
+        else dest = ((forStmt)it.dest()).destBlock();
+        Jump ret = new Jump(dest);
+        currentBlock.addTerminator(ret);
     }
 
     @Override
     public void visit(continueStmt it) {
-
+        IRBlock dest;
+        if (it.dest() instanceof whileStmt) dest = ((whileStmt)it.dest()).condBlock();
+        else dest = ((forStmt)it.dest()).condBlock();
+        Jump ret = new Jump(dest);
+        currentBlock.addTerminator(ret);
     }
 
-    @Override
-    public void visit(emptyStmt it) {
-
-    }
+    @Override public void visit(emptyStmt it) {}
 
     @Override
     public void visit(exprList it) {
-
+        //todo
     }
 
-    @Override
-    public void visit(typeNode it) {
-
-    }
+    @Override public void visit(typeNode it) {}
 
     @Override
     public void visit(arrayExpr it) {
-
+        //todo: get the pointer of the expr(need to get the size of each kind of element)
     }
 
     @Override
     public void visit(binaryExpr it) {
-        it.src1().accept(this);
-        it.src2().accept(this);
-        Binary.BinaryOpCategory biOp = null;
+        Operand src1, src2;
+        Inst inst;
+        Binary.BinaryOpCategory binaryOp = null;
         Cmp.CmpOpCategory cmpOp = null;
+        Function stringCall = null;
+
         switch (it.opCode()) {
-            case Star: biOp = Star;break;
-            case Div : biOp = Div;break;
-            case Mod : biOp = Mod;break;
-            case LeftShift : biOp = LeftShift;break;
-            case RightShift: biOp = RightShift;break;
-            case And : biOp = And;break;
-            case Or : biOp = Or;break;
-            case Caret : biOp = Caret;break;
-            case Minus : biOp = Minus;break;
-            case Plus : biOp = Plus;break;
-            case Less : cmpOp = Less;break;
-            case Greater: cmpOp = Greater;break;
-            case LessEqual: cmpOp = LessEqual;break;
-            case GreaterEqual: cmpOp = GreaterEqual;break;
-            case AndAnd : cmpOp = AndAnd;break;
-            case OrOr: cmpOp = OrOr;break;
-            case Equal: cmpOp = Equal;break;
-            case NotEqual: cmpOp = NotEqual;break;
+            case Star: binaryOp = mul;break;
+            case Div : binaryOp = div;break;
+            case Mod : binaryOp = mod;break;
+            case LeftShift : binaryOp = shiftLeft;break;
+            case RightShift: binaryOp = shiftRight;break;
+            case And : binaryOp = bitwiseAnd;break;
+            case Or : binaryOp = bitwiseOr;break;
+            case Caret : binaryOp = bitwiseXor;break;
+            case Minus : binaryOp = sub;break;
+            case Plus : {
+                if (it.type().isInt()) binaryOp = add;
+                else stringCall = irRoot.getBuiltinFunction("stringAdd");
+                break;
+            }
+            case Less : {
+                if (it.type().isInt()) cmpOp = lessThan;
+                else stringCall = irRoot.getBuiltinFunction("stringLess");
+                break;
+            }
+            case Greater: {
+                if (it.type().isInt()) cmpOp = greaterThan;
+                else stringCall = irRoot.getBuiltinFunction("stringGreater");
+                break;
+            }
+            case LessEqual: {
+                if (it.type().isInt()) cmpOp = lessEqual;
+                else stringCall = irRoot.getBuiltinFunction("stringLessEqual");
+                break;
+            }
+            case GreaterEqual: {
+                if (it.type().isInt()) cmpOp = greaterEqual;
+                else stringCall = irRoot.getBuiltinFunction("stringGreaterEqual");
+                break;
+            }
+            case AndAnd : cmpOp = logicalAnd;break;
+            case OrOr: cmpOp = logicalOr;break;
+            case Equal: {
+                if (it.src1().type().sameType(gScope.getStringType()))
+                    stringCall = irRoot.getBuiltinFunction("stringEqual");
+                else cmpOp = equal;
+                break;
+            }
+            case NotEqual: {
+                if (it.src1().type().sameType(gScope.getStringType()))
+                    stringCall = irRoot.getBuiltinFunction("stringNotEqual");
+                else cmpOp = notEqual;
+                break;
+            }
+        }
+
+        switch (it.opCode()) {
+            case Star:
+            case Div :
+            case Mod :
+            case LeftShift :
+            case RightShift:
+            case And :
+            case Or :
+            case Caret :
+            case Minus :
+            case Plus : {
+                it.src1().accept(this);
+                it.src2().accept(this);
+                if (binaryOp != null) {
+                    src1 = resolvePointer(currentBlock, it.src1().operand());
+                    src2 = resolvePointer(currentBlock, it.src2().operand());
+                    it.setOperand(new Register(new IntType(32), "binary_" + binaryOp.toString()));
+                    inst = new Binary(src1, src2, it.operand(), binaryOp);
+                } else {
+                    it.setOperand(new Register(new Pointer(new IntType(8)), "binary_string_plus"));
+                    inst = new Call(stringCall, it.operand());
+                }
+                currentBlock.addInst(inst);
+                break;
+            }
+            case Less :
+            case Greater:
+            case LessEqual:
+            case GreaterEqual: {
+                it.src1().accept(this);
+                it.src2().accept(this);
+                if (cmpOp != null) {
+                    src1 = resolvePointer(currentBlock, it.src1().operand());
+                    src2 = resolvePointer(currentBlock, it.src2().operand());
+
+                    it.setOperand(new Register(new BoolType(), "cmp_" + cmpOp.toString()));
+                    inst = new Cmp(src1, src2, it.operand(), cmpOp);
+                } else {
+                    it.setOperand(new Register(new BoolType(), "cmp_string_" + it.opCode().toString()));
+                    inst = new Call(stringCall, it.operand());
+                }
+                currentBlock.addInst(inst);
+                branchAdd(it);
+                break;
+            }
+            case AndAnd : {
+                if (it.thenBlock() != null) {
+                    IRBlock condBlock = new IRBlock("logicalAnd_tmp");
+                    it.src1().setThenBlock(condBlock);
+                    it.src1().setElseBlock(it.elseBlock());
+                    it.src1().accept(this);
+
+                    currentBlock = condBlock;
+                    it.src2().setThenBlock(it.thenBlock());
+                    it.src2().setElseBlock(it.elseBlock());
+                    it.src2().accept(this);
+                } else {
+                    it.src1().accept(this);
+                    it.src2().accept(this);
+                    src1 = resolvePointer(currentBlock, it.src1().operand());
+                    src2 = resolvePointer(currentBlock, it.src2().operand());
+                    it.setOperand(new Register(new BoolType(), "logicalAnd"));
+                    currentBlock.addInst(new Cmp(src1, src2, it.operand(), cmpOp));
+                }
+            }
+            case OrOr: {
+                if (it.thenBlock() != null) {
+                    IRBlock condBlock = new IRBlock("logicalOr_tmp");
+                    it.src1().setThenBlock(it.thenBlock());
+                    it.src1().setElseBlock(condBlock);
+                    it.src1().accept(this);
+
+                    currentBlock = condBlock;
+                    it.src2().setThenBlock(it.thenBlock());
+                    it.src2().setElseBlock(it.elseBlock());
+                    it.src2().accept(this);
+                } else {
+                    it.src1().accept(this);
+                    it.src2().accept(this);
+                    src1 = resolvePointer(currentBlock, it.src1().operand());
+                    src2 = resolvePointer(currentBlock, it.src2().operand());
+                    it.setOperand(new Register(new BoolType(), "logicalOr"));
+                    currentBlock.addInst(new Cmp(src1, src2, it.operand(), cmpOp));
+                }
+            }
+            case Equal:
+            case NotEqual: {
+                //todo
+                if (cmpOp != null) {}
+                else {}
+            }
         }
     }
 
     @Override
     public void visit(assignExpr it) {
-
+        it.src1().accept(this);
+        assign(it.src1().operand(), it.src2());
     }
 
     @Override
     public void visit(prefixExpr it) {
-
+        //todo
+        it.src().accept(this);
+        switch (it.opCode()) {
+            case Positive: {}
+            case Negative: {}
+            case Tilde: {}
+            case Increment: {}
+            case Decrement: {}
+            case Not: {}
+        }
     }
 
     @Override
     public void visit(suffixExpr it) {
-
+        it.src().accept(this);
+        ConstInt one = new ConstInt(1);
+        Binary inst = null;
+        Register dest = new Register(new IntType(32), "suffix");
+        if (it.opCode() == 0) inst = new Binary(it.operand(), one, dest, add);
+        else inst = new Binary(it.operand(), one, dest, sub);
+        it.setOperand(dest);
+        currentBlock.addInst(inst);
     }
 
     @Override
     public void visit(thisExpr it) {
-
+        it.setOperand(currentFunction.getClassPtr());
     }
 
     @Override
     public void visit(funCallExpr it) {
+        if (((funcDecl)it.type()).name().equals("size")) {
+
+        }
+        it.params().forEach(param -> param.accept(this));
 
     }
 
     @Override
     public void visit(methodExpr it) {
+        it.caller().accept(this);
+        if (it.caller().type().isArray()) {
+            //todo: call for size
+            Register reg = new Register(new IntType(32), null);
+        } else {
 
+        }
     }
 
     @Override
     public void visit(memberExpr it) {
+        it.caller().accept(this);
 
     }
 
     @Override
     public void visit(newExpr it) {
+        Operand pointer; //= new Register(new Pointer(), null);
+        if (it.type() instanceof arrayType) {
 
+        } else {
+        }
     }
 
     @Override
@@ -216,7 +541,16 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(varNode it) {
         varEntity entity = it.entity();
-        it.setOperand(entity.asOperand());
+        if (it.entity().isMember()) {
+            Operand classPtr = currentFunction.getClassPtr();
+            Operand dest = new Register(getIRReferenceType(it.type()), "this." + it.name());
+            currentBlock.addInst(new Binary(classPtr, /*offest here*/, dest));
+            it.setOperand(dest);
+            //get the operand of the member
+        } else {
+            it.setOperand(entity.asOperand());
+        }
+        branchAdd(it);
     }
 
     @Override
@@ -227,6 +561,7 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(boolLiteral it) {
         it.setOperand(new ConstBool(it.value()));
+        branchAdd(it);
     }
 
     @Override
@@ -236,6 +571,6 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(stringLiteral it) {
-
+        it.setOperand(new ConstString(it.value()));
     }
 }

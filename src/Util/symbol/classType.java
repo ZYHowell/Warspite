@@ -16,7 +16,7 @@ public class classType extends BaseType {
     public classType(String name, classDef define) {
         super(name);
         this.define = define;
-        formalEntity = new varEntity("formal entity", this, true);
+        formalEntity = new varEntity("formal entity", this, true, false);
     }
 
     public varEntity formalEntity() {

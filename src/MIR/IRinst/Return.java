@@ -1,4 +1,23 @@
 package MIR.IRinst;
 
-public class Return extends Inst{
+import MIR.IRBlock;
+import MIR.IRoperand.Operand;
+
+public class Return extends Inst {
+
+    private Operand value;
+    private IRBlock currentBlock;
+
+    public Return(IRBlock currentBlock, Operand value) {
+        super();
+        this.currentBlock = currentBlock;
+        this.value = value;
+    }
+
+    public IRBlock currentBlock() {
+        return currentBlock;
+    }
+    public Operand value() {
+        return value;
+    }
 }

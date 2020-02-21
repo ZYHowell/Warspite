@@ -31,6 +31,9 @@ public class classDef extends ASTNode {
 
     public ArrayList<funDef> constructors(){ return constructors; }
 
+    public boolean hasConstructor() {
+        return hasConstructor;
+    }
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

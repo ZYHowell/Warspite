@@ -24,12 +24,13 @@ public class SemanticChecker implements ASTVisitor {
         return (currentScope == gScope) || (currentScope instanceof classScope);
     }
 
-    globalScope gScope;
-    Scope currentScope;
-    classType currentClass;
-    Type currentRetType;
-    Stack<Integer> loopStack;
-    boolean haveReturn;
+    private globalScope gScope;
+    private Scope currentScope;
+    private classType currentClass;
+    private Type currentRetType;
+    private funDef currentFunction;
+    private Stack<ASTNode> loopStack;
+    private boolean haveReturn;
 
     public SemanticChecker(globalScope gScope) {
         this.gScope = gScope;
@@ -65,12 +66,14 @@ public class SemanticChecker implements ASTVisitor {
         if(it.isConstructor()) {
             currentRetType = gScope.getVoidType();
         } else currentRetType = it.decl().returnType();
+        currentFunction = it;
         haveReturn = false;
         //parameters are already in the scope(in TypeFilter)
         currentScope = it.decl().scope();
         it.body().accept(this);
         currentScope = currentScope.parentScope();
         if (!haveReturn && !currentRetType.isVoid()) throw new semanticError("no return", it.pos());
+        currentFunction = null;
         currentRetType = null;
     }
 
@@ -78,6 +81,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(varDef it) {
         varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter(),
                 currentScope == gScope);
+        if (currentScope instanceof classScope) theVar.setIsMember();   //for IR use
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
         currentScope.defineMember(it.name(), theVar, it.pos());
@@ -146,7 +150,7 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("not a bool", it.condition().pos());
 
         currentScope = new Scope(currentScope);
-        loopStack.push(0);
+        loopStack.push(it);
         it.body().setScope(currentScope);
         it.body().accept(this);
         loopStack.pop();
@@ -162,7 +166,7 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("not a bool", it.condition().pos());
 
         currentScope = new Scope(currentScope);
-        loopStack.push(0);
+        loopStack.push(it);
         it.body().setScope(currentScope);
         it.body().accept(this);
         loopStack.pop();
@@ -182,22 +186,24 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("not the correct return type: is Void, should be: " +
                                     currentRetType.toString(), it.pos());
         }
+        it.setDest(currentFunction);
     }
 
     @Override
     public void visit(breakStmt it) {
         if (loopStack.isEmpty())
             throw new semanticError("break not in loop", it.pos());
+        it.setDest(loopStack.peek());
     }
 
     @Override
     public void visit(continueStmt it) {
         if (loopStack.isEmpty())
             throw new semanticError("continue not in loop", it.pos());
+        it.setDest(loopStack.peek());
     }
 
-    @Override
-    public void visit(emptyStmt it) {}
+    @Override public void visit(emptyStmt it) {}
 
 
     @Override   //more check in funcCall
@@ -225,7 +231,7 @@ public class SemanticChecker implements ASTVisitor {
         typeO = it.src1().type();
         typeT = it.src2().type();
         AST.binaryExpr.opCategory opCode = it.opCode();
-        if (opCode.ordinal() < 10) {
+        if (opCode.ordinal() < 9) {
             if (!(typeO.isInt() && typeT.isInt()))
                 throw binaryCalError(typeO, typeT, opCode, it.pos());
             it.setType(gScope.getIntType());

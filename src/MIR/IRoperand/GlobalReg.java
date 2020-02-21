@@ -4,7 +4,10 @@ import MIR.IRtype.IRBaseType;
 
 public class GlobalReg extends Operand {
 
-    public GlobalReg(IRBaseType type) {
+    private String name;
+
+    public GlobalReg(IRBaseType type, String name) {
         super(type);
+        this.name = name;
     }
 }
