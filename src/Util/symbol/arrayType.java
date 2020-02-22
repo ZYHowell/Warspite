@@ -16,6 +16,10 @@ public class arrayType extends Type {
 
     //methods
     @Override
+    public int size() {
+        return 32;
+    }
+    @Override
     public int dim(){
         return dim;
     }

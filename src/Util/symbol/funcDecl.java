@@ -14,7 +14,7 @@ public class funcDecl extends BaseType {
     private Type type;
     private funDef defNode;
     private functionScope localScope;
-    private boolean hasSideEffect;
+    private boolean hasSideEffect, isMethod;
     private Function function;
 
     public funcDecl(String name, funDef defNode) {
@@ -22,6 +22,7 @@ public class funcDecl extends BaseType {
         this.FuncName = name;
         this.defNode = defNode;
         this.hasSideEffect = false;
+        this.isMethod = false;
     }
 
     public void setScope(functionScope localScope) {
@@ -56,21 +57,29 @@ public class funcDecl extends BaseType {
         return function;
     }
 
+    public void setIsMethod() {
+        isMethod = true;
+    }
+    public boolean isMethod() {
+        return isMethod;
+    }
+
+    @Override
+    public int size() {
+        throw new internalError("call for size of function " + FuncName, new position(0, 0));
+    }
     @Override
     public int dim() {
         throw new internalError("call dim of funcType", defNode.pos());
     }
-
     @Override
     public TypeCategory typeCategory() {
         return TypeCategory.FUNC;
     }
-
     @Override
     public BaseType baseType() {
         throw new internalError("call baseType of funcType", defNode.pos());
     }
-
     @Override
     public boolean sameType(Type it) {
         throw new internalError("call sameType of funcType", defNode.pos());

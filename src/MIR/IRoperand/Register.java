@@ -12,4 +12,8 @@ public class Register extends Operand {
         super(type);
         this.name = name;
     }
+
+    public String name() {
+        return name;
+    }
 }

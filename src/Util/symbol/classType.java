@@ -10,6 +10,7 @@ public class classType extends BaseType {
 
     private classDef define;
 
+    private int offset = 0;
     private Scope localScope;
     private varEntity formalEntity; //this is used for this expr(provide it a entity)
 
@@ -31,10 +32,20 @@ public class classType extends BaseType {
     public void defineMethod(String name, funcDecl func, position pos) {
         localScope.defineMethod(name, func, pos);
     }
-    public void defineMember(String name, varEntity var, position pos) {
-        localScope.defineMember(name, var, pos);
+    public int getOffset(Type type) {
+        int ret = offset;
+        offset += type.size();
+        return ret;
     }
 
+    @Override
+    public int allocSize() {
+        return offset;
+    }
+    @Override
+    public int size() {
+        return 32;  //a pointer.
+    }
     @Override
     public TypeCategory typeCategory(){
         return TypeCategory.CLASS;

@@ -13,6 +13,7 @@ abstract public class Type extends Symbol {
     public abstract BaseType baseType();
     public abstract boolean sameType(Type it);
     public abstract String toString();
+    public abstract int size();
 
     public boolean isConstructor() { return typeCategory() == TypeCategory.CONSTRUCTOR; }
     public boolean isVoid() { return typeCategory() == TypeCategory.VOID; }

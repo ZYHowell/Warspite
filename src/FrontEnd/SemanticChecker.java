@@ -81,10 +81,13 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(varDef it) {
         varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter(),
                 currentScope == gScope);
-        if (currentScope instanceof classScope) theVar.setIsMember();   //for IR use
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
         currentScope.defineMember(it.name(), theVar, it.pos());
+        if (currentScope instanceof classScope) {
+            theVar.setIsMember();
+            theVar.setOffset(currentClass.getOffset(theVar.type()));
+        }   //for IR use
         if (it.init() != null) {
             it.init().accept(this);
             if (!it.init().type().sameType(theVar.type()))
@@ -205,15 +208,9 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override public void visit(emptyStmt it) {}
 
-
-    @Override   //more check in funcCall
-    public void visit(exprList it) {
-        it.params().forEach(param -> param.accept(this));   //cannot be null
-    }
-
-    //no need to visit it, only use it to form type;
-    @Override
-    public void visit(typeNode it) {}
+    //never visited
+    @Override public void visit(exprList it) {}
+    @Override public void visit(typeNode it) {}
 
 
     @Override

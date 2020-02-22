@@ -4,7 +4,8 @@ import MIR.IRoperand.Operand;
 
 public class Binary extends Inst {
     public enum BinaryOpCategory {
-        mul, div, mod, shiftLeft, shiftRight, bitwiseAnd, bitwiseOr, bitwiseXor, sub, add, assign
+        mul, sdiv, srem, shl, ashr, and, or, xor, sub, add
+        //* / % << >> & | ^ - + =
     }
     private BinaryOpCategory opCode;
     private Operand src1, src2, dest;
@@ -16,5 +17,5 @@ public class Binary extends Inst {
         this.opCode = opCode;
         this.dest = dest;
     }
-    //the type is always i32
+    //the type is always the same as its src
 }

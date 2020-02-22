@@ -20,9 +20,7 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(rootNode it) {
-        if (!it.allDef().isEmpty()) {
-            it.allDef().forEach(node -> node.accept(this));
-        }
+        it.allDef().forEach(node -> node.accept(this));
     }
 
 
@@ -44,6 +42,7 @@ public class SymbolCollector implements ASTVisitor {
     @Override
     public void visit(funDef it) {
         funcDecl func = new funcDecl(it.Identifier(), it);
+        if (currentScope != gScope) func.setIsMethod();
         it.setDecl(func);
         if (it.isConstructor())
             currentScope.defineConstructor(func, it.pos());

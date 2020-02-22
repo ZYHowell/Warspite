@@ -11,6 +11,11 @@ public class constructorType extends BaseType {
 
     //this name should never be used.
     @Override
+    public int size() {
+        throw new internalError("call the size of a constructor return value",
+                new position(0, 0));
+    }
+    @Override
     public String name(){
         throw new internalError("try to get name of the classDefType", new position(0,0));
     }

@@ -4,8 +4,8 @@ import MIR.IRoperand.Operand;
 
 public class Cmp extends Inst{
     public enum CmpOpCategory {
-        lessThan, greaterThan, lessEqual, greaterEqual, logicalAnd, logicalOr,
-        equal, notEqual
+        slt, sgt, sle, sge, logicalAnd, logicalOr,
+        eq, ne
     }
     private CmpOpCategory opCode;
     private Operand src1, src2, dest;

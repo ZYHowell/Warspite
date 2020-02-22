@@ -13,6 +13,10 @@ abstract public class BaseType extends Type {
         return name;
     }
 
+    public int allocSize() {
+        return size();
+    }
+
     @Override
     public BaseType baseType() {
         return this;
