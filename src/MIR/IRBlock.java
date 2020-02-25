@@ -17,6 +17,9 @@ public class IRBlock {
         this.name = name;
     }
 
+    public String name() {
+        return name;
+    }
     public void addPrecursor(IRBlock precursor) {
         precursors.add(precursor);
     }

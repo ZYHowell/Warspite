@@ -7,6 +7,10 @@ public class BoolType extends IRBaseType{
     }
 
     @Override
+    public int size() {
+        return 8;
+    }
+    @Override
     public String toString() {
         return "i1";
     }

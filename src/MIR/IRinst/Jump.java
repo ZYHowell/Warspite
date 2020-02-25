@@ -14,4 +14,9 @@ public class Jump extends Inst {
     public IRBlock dest() {
         return dest;
     }
+
+    @Override
+    public String toString() {
+        return "br label " + dest.name();
+    }
 }

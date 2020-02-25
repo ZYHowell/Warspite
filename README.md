@@ -1,7 +1,7 @@
 # Mx-Compiler
 This is my solution for MS208 homework in ACM class, a compiler of Mx* language which is alike simplified C++ and Java. The front end of the compiler uses ANTLR4. 
 
-*a huge but not hard work, thanks to seniors.*
+*how can a language like java be popular!!!*
 
 ### Front End Design & HIR
 

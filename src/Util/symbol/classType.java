@@ -4,15 +4,18 @@ import AST.classDef;
 import Util.position;
 import Util.scope.*;
 
+import java.util.ArrayList;
+
 //this is for a class
 //a classType can also be an entity(just like what varEntity can be)
 public class classType extends BaseType {
 
     private classDef define;
 
-    private int offset = 0;
+    private int allocSize = 0;
     private Scope localScope;
     private varEntity formalEntity; //this is used for this expr(provide it a entity)
+    private ArrayList<Type> elementTypeList = new ArrayList<>();
 
     public classType(String name, classDef define) {
         super(name);
@@ -32,15 +35,19 @@ public class classType extends BaseType {
     public void defineMethod(String name, funcDecl func, position pos) {
         localScope.defineMethod(name, func, pos);
     }
-    public int getOffset(Type type) {
-        int ret = offset;
-        offset += type.size();
+    public int setElement(Type type) {
+        int ret = elementTypeList.size() - 1;
+        elementTypeList.add(type);
+        allocSize += type.size();
         return ret;
+    }
+    public ArrayList<Type> elementTypeList() {
+        return elementTypeList;
     }
 
     @Override
     public int allocSize() {
-        return offset;
+        return allocSize;
     }
     @Override
     public int size() {

@@ -4,5 +4,10 @@ abstract public class IRBaseType {
 
     public IRBaseType(){}
 
-    abstract public String toString();
+    public int dim() {
+        return 0;
+    }
+
+    public abstract int size();
+    public abstract String toString();
 }

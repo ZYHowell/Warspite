@@ -1,6 +1,7 @@
 package MIR.IRinst;
 
 import MIR.IRoperand.Operand;
+import MIR.IRoperand.Register;
 
 public class Cmp extends Inst{
     public enum CmpOpCategory {
@@ -8,9 +9,10 @@ public class Cmp extends Inst{
         eq, ne
     }
     private CmpOpCategory opCode;
-    private Operand src1, src2, dest;
+    private Operand src1, src2;
+    private Register dest;
 
-    public Cmp(Operand src1, Operand src2, Operand dest, CmpOpCategory opCode) {
+    public Cmp(Operand src1, Operand src2, Register dest, CmpOpCategory opCode) {
         super();
         this.src1 = src1;
         this.src2 = src2;
@@ -18,4 +20,9 @@ public class Cmp extends Inst{
         this.opCode = opCode;
     }
     //the type is always i1
+
+    @Override
+    public String toString() {
+
+    }
 }

@@ -86,7 +86,7 @@ public class SemanticChecker implements ASTVisitor {
         currentScope.defineMember(it.name(), theVar, it.pos());
         if (currentScope instanceof classScope) {
             theVar.setIsMember();
-            theVar.setOffset(currentClass.getOffset(theVar.type()));
+            theVar.setElementIndex(currentClass.setElement(theVar.type()));
         }   //for IR use
         if (it.init() != null) {
             it.init().accept(this);

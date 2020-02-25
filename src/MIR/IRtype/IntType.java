@@ -9,6 +9,7 @@ public class IntType extends IRBaseType {
         this.size = size;
     }
 
+    @Override
     public int size() {
         return size;
     }

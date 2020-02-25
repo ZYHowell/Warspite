@@ -6,8 +6,8 @@ public class ConstInt extends Operand {
 
     private int value;
 
-    public ConstInt(int value) {
-        super(new IntType());
+    public ConstInt(int value, int size) {
+        super(new IntType(size));
         this.value = value;
     }
 

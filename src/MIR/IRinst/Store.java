@@ -12,4 +12,11 @@ public class Store extends Inst{
         this.value = value;
         this.address = address;
     }
+
+    @Override
+    public String toString() {
+        return "store " + value.type().toString() + ", " + value.toString() +
+                address.type().toString() + " " + address.toString() + ", align " +
+                value.type().size() / 8;
+    }
 }

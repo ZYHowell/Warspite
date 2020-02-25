@@ -24,4 +24,9 @@ public class Branch extends Inst {
     public IRBlock falseDest() {
         return falseDest;
     }
+
+    @Override
+    public String toString() {
+
+    }
 }

@@ -135,5 +135,4 @@ public class globalScope extends Scope {
     public Type getStringType() {
         return typeMap.get("string");
     }
-
 }

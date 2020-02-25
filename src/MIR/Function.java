@@ -1,8 +1,10 @@
 package MIR;
 
-import MIR.IRoperand.Operand;
 import MIR.IRoperand.Param;
+import MIR.IRoperand.Register;
+import MIR.IRtype.ClassType;
 import MIR.IRtype.IRBaseType;
+import MIR.IRtype.Pointer;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -10,7 +12,8 @@ import java.util.ArrayList;
 public class Function {
 
     private String name;
-    private Operand classPtr;
+    private Register classPtr;
+    private IRBaseType retType;
     private HashMap<String, Param> parameters;
     private IRBlock entryBlock = new IRBlock("entry"),
                     exitBlock = new IRBlock("exit");
@@ -23,10 +26,17 @@ public class Function {
         return name;
     }
 
-    public void setClassPtr(Operand classPtr) {
+    public void setRetType(IRBaseType retType) {
+        this.retType = retType;
+    }
+    public IRBaseType retType() {
+        return retType;
+    }
+
+    public void setClassPtr(Register classPtr) {
         this.classPtr = classPtr;
     }
-    public Operand getClassPtr() {
+    public Register getClassPtr() {
         return classPtr;
     }
     public void addParam(String name, Param parameter){
