@@ -22,7 +22,7 @@ public class varEntity extends Entity {
         return index;
     }
     public void setElementIndex(int index) {
-        this.index = new ConstInt(index);
+        this.index = new ConstInt(index, 32);
     }
     public Type type() { return type; }
     public boolean isOuter() {

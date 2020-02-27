@@ -1,41 +1,61 @@
 package MIR;
 
+import MIR.IRoperand.ConstString;
 import MIR.IRoperand.GlobalReg;
 import MIR.IRtype.*;
 import Util.error.internalError;
 import Util.position;
+import Util.symbol.Type;
+import Util.symbol.arrayType;
+import Util.symbol.classType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Root {
 
-    private Function printFunc = new Function("print");
-    private Function printlnFunc = new Function("println");
-    private Function printIntFunc = new Function("printInt");
-    private Function printlnIntFunc = new Function("printlnInt");
-    private Function getStringFunc = new Function("getString");
-    private Function getIntFunc = new Function("getInt");
-    private Function toStringFunc = new Function("toString");
-    private Function sizeFunc = new Function("size");
+    private Function printFunc = new Function("print"),
+                     printlnFunc = new Function("println"),
+                     printIntFunc = new Function("printInt"),
+                     printlnIntFunc = new Function("printlnInt"),
+                     getStringFunc = new Function("getString"),
+                     getIntFunc = new Function("getInt"),
+                     toStringFunc = new Function("toString"),
+                     stringAdd = new Function("stringAdd"),
+                     stringLT = new Function("stringLT"),
+                     stringGT = new Function("stringGT"),
+                     stringLE = new Function("stringLE"),
+                     stringGE = new Function("stringGE"),
+                     stringEQ = new Function("stringEQ"),
+                     stringNE = new Function("stringNE");
+
     private HashMap<String, Function> builtinFunctions = new HashMap<>();
     private HashMap<String, Function> functions = new HashMap<>();
+    private HashMap<String, String> ConstStrings = new HashMap<>();
     private ArrayList<GlobalReg> globalVar = new ArrayList<>();
     private HashMap<String, ClassType> types = new HashMap<>();
 
     public Root() {
-        builtinFunctions.put("print", printFunc);
-        builtinFunctions.put("println", printlnFunc);
-        builtinFunctions.put("printInt", printIntFunc);
-        builtinFunctions.put("printlnInt", printlnIntFunc);
-        builtinFunctions.put("getString", getStringFunc);
-        builtinFunctions.put("getInt", getIntFunc);
-        builtinFunctions.put("toString", toStringFunc);
-        builtinFunctions.put("size", sizeFunc);
-        //todo: set stringAdd and stringCmp(stringLess, stringGreater, stringLessEqual, stringGreaterEqual)
+        builtinFunctions.put("g_print", printFunc);
+        builtinFunctions.put("g_println", printlnFunc);
+        builtinFunctions.put("g_printInt", printIntFunc);
+        builtinFunctions.put("g_printlnInt", printlnIntFunc);
+        builtinFunctions.put("g_getString", getStringFunc);
+        builtinFunctions.put("g_getInt", getIntFunc);
+        builtinFunctions.put("g_toString", toStringFunc);
+        builtinFunctions.put("g_stringAdd", stringAdd);
+        builtinFunctions.put("g_stringLT", stringLT);
+        builtinFunctions.put("g_stringGT", stringGT);
+        builtinFunctions.put("g_stringLE", stringLE);
+        builtinFunctions.put("g_stringGE", stringGE);
+        builtinFunctions.put("g_stringEQ", stringEQ);
+        builtinFunctions.put("g_stringNE", stringNE);
         //todo: init the types(maybe need to use the globalScope)
     }
 
+    public void addType(String name, ClassType type) {
+        types.put(name, type);
+    }
     public ClassType getType(String name) {
         return types.get(name);
     }
@@ -50,7 +70,39 @@ public class Root {
             return functions.get(name);
         else return builtinFunctions.get(name);
     }
+    public HashMap<String, Function> functions() {
+        return functions;
+    }
     public void addGlobalVar(GlobalReg var) {
         globalVar.add(var);
+    }
+    public void addConstString(String name, String value) {
+        ConstStrings.put(name, value);
+    }
+    public String getConstString(String name) {
+        return ConstStrings.get(name);
+    }
+
+    public IRBaseType getIRType(Type type, boolean isMemSet) {
+        if (type instanceof arrayType) {
+            IRBaseType tmp = getIRType(type.baseType(), isMemSet);
+            for (int i = 0; i < type.dim();++i)
+                tmp = new Pointer(tmp, false);
+            //consider int[][] t; t(int***) is resolvable, but of course the value(int**) of t is not.
+            //consider int[][] f(); it returns int**, so not resolvable.
+        }
+        else if (type.isInt()) return new IntType(32);
+        else if (type.isBool()) {
+            if (isMemSet) return new IntType(8);
+            return new BoolType();
+        }
+        else if (type.isVoid()) return new VoidType();
+        else if (type.isClass()) {
+            String name = ((classType)type).name();
+            if (name.equals("string")) return new Pointer(new IntType(8), false);
+            else return getType(name);
+        }
+        else if (type.isNull()) return new VoidType();
+        return new VoidType(); //really do so? or just throw error? type is function/constructor
     }
 }

@@ -17,6 +17,6 @@ public class Jump extends Inst {
 
     @Override
     public String toString() {
-        return "br label " + dest.name();
+        return "br label %" + dest.name();
     }
 }

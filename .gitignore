@@ -1,7 +1,7 @@
 .vscode/
 .pseudocodes/
 .idea/
-.mytest/
+mytest/
 .backup/
 *.iml
 out/

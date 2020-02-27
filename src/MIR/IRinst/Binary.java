@@ -23,6 +23,7 @@ public class Binary extends Inst {
 
     @Override
     public String toString() {
-
+        return dest.name() + " = " + opCode.toString() + " " +
+                src1.type().toString() + " " + src1.toString() + ", " + src2.toString();
     }
 }

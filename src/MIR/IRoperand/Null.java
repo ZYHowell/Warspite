@@ -5,6 +5,11 @@ import MIR.IRtype.*;
 public class Null extends Operand {
 
     public Null() {
-        super(new Pointer(new VoidType()));
+        super(new Pointer(new VoidType(), false));
+    }
+
+    @Override
+    public String toString() {
+        return "null";
     }
 }

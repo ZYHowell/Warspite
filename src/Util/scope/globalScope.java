@@ -120,6 +120,10 @@ public class globalScope extends Scope {
         return getType(it.typeName(), it.pos());
     }
 
+    public HashMap<String, Type> typeMap() {
+        return typeMap;
+    }
+
     public Type getIntType() {
         return intInstance;
     }

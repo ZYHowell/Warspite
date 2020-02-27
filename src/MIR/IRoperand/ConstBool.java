@@ -14,4 +14,9 @@ public class ConstBool extends Operand{
     public boolean value() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return value ? "1" : "0";
+    }
 }

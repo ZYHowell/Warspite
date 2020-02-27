@@ -1,6 +1,8 @@
 package FrontEnd;
 
 import AST.*;
+import MIR.IRtype.ClassType;
+import MIR.Root;
 import Util.error.*;
 import Util.scope.*;
 import Util.symbol.*;
@@ -13,9 +15,12 @@ public class SymbolCollector implements ASTVisitor {
 
     globalScope gScope;
     Scope currentScope;
+    Root irRoot;
+    ClassType currentClassType;
 
-    public SymbolCollector(globalScope gScope) {
+    public SymbolCollector(globalScope gScope, Root irRoot) {
         this.gScope = gScope;
+        this.irRoot = irRoot;
     }
 
     @Override
@@ -31,6 +36,7 @@ public class SymbolCollector implements ASTVisitor {
         classType defClass = new classType(it.Identifier(), it);
         Scope localScope = new classScope(currentScope);
         currentScope = localScope;
+        irRoot.addType(it.Identifier(), new ClassType(it.Identifier()));
         it.members().forEach(member -> member.accept(this));
         it.methods().forEach(method -> method.accept(this));
         it.constructors().forEach(constructor->constructor.accept(this));

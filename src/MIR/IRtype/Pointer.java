@@ -4,21 +4,22 @@ public class Pointer extends IRBaseType {
 
     private IRBaseType pointTo;
     private int dim;
-    private boolean isReference;
+    private boolean isResolvable;
 
-    public Pointer(IRBaseType pointTo, boolean isReference) {
+    public Pointer(IRBaseType pointTo, boolean isResolvable) {
         super();
         this.pointTo = pointTo;
         this.dim = pointTo.dim() + 1;
-        this.isReference = isReference;
+        this.isResolvable = isResolvable;
     }
 
     public IRBaseType pointTo() {
         return pointTo;
     }
 
-    public boolean isReference() {
-        return isReference;
+    @Override
+    public boolean isResolvable() {
+        return isResolvable;
     }
     @Override
     public int dim() {

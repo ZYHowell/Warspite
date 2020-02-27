@@ -26,7 +26,7 @@ public class GetElementPtr extends Inst{
         String arrayOffToStr = arrayOffset.type().toString() + " " + arrayOffset.toString();
         String elementOffToStr = elementOffset == null ? "" :
                 elementOffset.type().toString() + " " + elementOffset.toString();
-        return dest.toString() + " = getelementptr inbounds " + type.name() + ", " +
+        return dest.toString() + " = getelementptr inbounds " + type.toString() + ", " +
                 ptr.type().toString() + ", " + arrayOffToStr + elementOffToStr;
     }
 }

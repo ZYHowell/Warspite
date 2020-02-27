@@ -16,4 +16,7 @@ public class Register extends Operand {
     public String name() {
         return name;
     }
+    public String toString() {
+        return "%" + name;
+    }
 }

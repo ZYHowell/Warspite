@@ -1,12 +1,13 @@
 package MIR.IRinst;
 
+import MIR.IRoperand.Null;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import MIR.IRtype.IRBaseType;
 
 public class Cmp extends Inst{
     public enum CmpOpCategory {
-        slt, sgt, sle, sge, logicalAnd, logicalOr,
-        eq, ne
+        slt, sgt, sle, sge, eq, ne
     }
     private CmpOpCategory opCode;
     private Operand src1, src2;
@@ -19,10 +20,15 @@ public class Cmp extends Inst{
         this.dest = dest;
         this.opCode = opCode;
     }
-    //the type is always i1
 
     @Override
     public String toString() {
-
+        String typeString;
+        if (src1 instanceof Null) {
+            if (src2 instanceof Null) typeString = "int*";
+            else typeString = src2.type().toString();
+        } else typeString = src1.type().toString();
+        return dest.toString() + " = " + "icmp " + opCode.toString() + " " + typeString +
+                src1.toString()  + ", " + src2.toString();
     }
 }

@@ -13,4 +13,6 @@ abstract public class Operand {
     public IRBaseType type() {
         return type;
     }
+
+    public abstract String toString();
 }

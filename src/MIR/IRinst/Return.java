@@ -20,4 +20,9 @@ public class Return extends Inst {
     public Operand value() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "ret " + value.type().toString() + " " + value.toString();
+    }
 }

@@ -24,6 +24,7 @@ public class BitCast extends Inst {
 
     @Override
     public String toString() {
-
+        return dest.toString() + " = " + it.type().toString() + " " + it.toString() +
+                " to " + dest.type().toString();
     }
 }

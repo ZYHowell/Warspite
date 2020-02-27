@@ -27,6 +27,7 @@ public class Branch extends Inst {
 
     @Override
     public String toString() {
-
+        return "br " + condition.type().toString() + " " + condition.toString() + ", %" +
+                trueDest.name() + ", %" + falseDest.name();
     }
 }

@@ -16,7 +16,7 @@ public class Store extends Inst{
     @Override
     public String toString() {
         return "store " + value.type().toString() + ", " + value.toString() +
-                address.type().toString() + " " + address.toString() + ", align " +
-                value.type().size() / 8;
+                address.type().toString() + " " + address.toString() +
+                ", align " + value.type().size() / 8;
     }
 }

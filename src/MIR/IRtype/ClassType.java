@@ -1,14 +1,21 @@
 package MIR.IRtype;
 
+import java.util.ArrayList;
+
 public class ClassType extends IRBaseType{
     //each class type is treated as a pointer(an i32 address)
     private String name;
-    private int size;
+    private int size = 0;
+    private ArrayList<IRBaseType> members = new ArrayList<>();
 
-    public ClassType(String name, int size) {
+    public ClassType(String name) {
         super();
         this.name = name;
-        this.size = size;
+    }
+
+    public void addMember(IRBaseType member) {
+        members.add(member);
+        size += member.size();
     }
 
     @Override

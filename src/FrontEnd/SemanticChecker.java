@@ -3,6 +3,10 @@ package FrontEnd;
 import java.util.ArrayList;
 import java.util.Stack;
 import AST.*;
+import MIR.IRtype.ClassType;
+import MIR.IRtype.IRBaseType;
+import MIR.IRtype.Pointer;
+import MIR.Root;
 import Util.scope.*;
 import Util.symbol.*;
 import Util.error.*;
@@ -26,19 +30,18 @@ public class SemanticChecker implements ASTVisitor {
 
     private globalScope gScope;
     private Scope currentScope;
-    private classType currentClass;
-    private Type currentRetType;
+    private classType currentClass = null;
+    private Type currentRetType = null;
     private funDef currentFunction;
-    private Stack<ASTNode> loopStack;
-    private boolean haveReturn;
+    private Stack<ASTNode> loopStack = new Stack<>();
+    private boolean haveReturn = false;
+    private Root irRoot;
+    private ClassType currentIRClass = null;
 
-    public SemanticChecker(globalScope gScope) {
+    public SemanticChecker(globalScope gScope, Root irRoot) {
         this.gScope = gScope;
+        this.irRoot = irRoot;
         currentScope = gScope;
-        currentClass = null;
-        currentRetType = null;
-        loopStack = new Stack<>();
-        haveReturn = false;
     }
 
     @Override
@@ -54,7 +57,9 @@ public class SemanticChecker implements ASTVisitor {
         classType defClass = (classType)gScope.getType(it.Identifier(), it.pos());
         currentScope = defClass.scope();
         currentClass = defClass;
+        currentIRClass = irRoot.getType(it.Identifier());
         it.members().forEach(member -> member.accept(this));
+        currentIRClass = null;
         it.methods().forEach(method -> method.accept(this));
         it.constructors().forEach(constructor->constructor.accept(this));
         currentClass = null;
@@ -84,10 +89,17 @@ public class SemanticChecker implements ASTVisitor {
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
         currentScope.defineMember(it.name(), theVar, it.pos());
+
         if (currentScope instanceof classScope) {
             theVar.setIsMember();
             theVar.setElementIndex(currentClass.setElement(theVar.type()));
         }   //for IR use
+        if (currentIRClass != null) {
+            IRBaseType type = irRoot.getIRType(it.entity().type(), true);
+            if (type instanceof ClassType) type = new Pointer(type, false);
+            currentIRClass.addMember(type);
+        }
+
         if (it.init() != null) {
             it.init().accept(this);
             if (!it.init().type().sameType(theVar.type()))

@@ -13,6 +13,13 @@ public class IRBlock {
     private String name;
     private boolean terminated = false;
 
+
+    private int dfsOrder = 0;
+    private IRBlock DFSFather = null, sDom = null, unionRoot = this, minVer = this,
+                    iDom = null;
+
+
+
     public IRBlock(String name) {
         this.name = name;
     }
@@ -43,8 +50,7 @@ public class IRBlock {
         instructions.add(inst);
         terminated = true;
         IRBlock dest;
-        if (inst instanceof Return) {
-        } else if (inst instanceof Jump) {
+        if (inst instanceof Jump) {
             dest = ((Jump)inst).dest();
             addSuccessor(dest);
             dest.addPrecursor(this);
@@ -63,11 +69,10 @@ public class IRBlock {
     public void removeTerminal() {
         terminated = false;
         Inst currentTerm = instructions.get(instructions.size() - 1);
-        if (currentTerm instanceof Return) {}
-        else if (currentTerm instanceof Jump) {
+        if (currentTerm instanceof Jump) {
             removeSuccessor(((Jump)currentTerm).dest());
         }
-        else {
+        else if (currentTerm instanceof Branch){
             removeSuccessor(((Branch)currentTerm).trueDest());
             removeSuccessor(((Branch)currentTerm).falseDest());
         }
@@ -76,5 +81,42 @@ public class IRBlock {
     private void removeSuccessor(IRBlock successor) {
         successor.precursors().remove(this);
         successors.remove(successor);
+    }
+
+    public void setDFSOrder(int order) {
+        dfsOrder = order;
+    }
+    public int DFSOrder() {
+        return dfsOrder;
+    }
+    public void setDFSFather(IRBlock father) {
+        DFSFather = father;
+    }
+    public IRBlock DFSFather() {
+        return DFSFather;
+    }
+    public void setSDom(IRBlock sDom) {
+        this.sDom = sDom;
+    }
+    public IRBlock sDom() {
+        return sDom;
+    }
+    public void setIDom(IRBlock iDom) {
+        this.iDom = iDom;
+    }
+    public IRBlock iDom() {
+        return iDom;
+    }
+    public void setUnionRoot(IRBlock uRoot) {
+        unionRoot = uRoot;
+    }
+    public IRBlock unionRoot() {
+        return unionRoot;
+    }
+    public void setMinVer(IRBlock minVer) {
+        this.minVer = minVer;
+    }
+    public IRBlock minVer() {
+        return minVer;
     }
 }

@@ -1,7 +1,0 @@
-int main(){
-    while() {
-        while() {}
-        break;  //should not CE here; but once I CE because I set inloop false out of the first while;
-    }
-    return 0;
-}
