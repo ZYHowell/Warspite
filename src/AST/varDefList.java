@@ -3,9 +3,9 @@ package AST;
 import Util.position;
 import java.util.ArrayList;
 
-public class varDefList extends ASTNode {
+public class varDefList extends stmtNode {
 
-    private ArrayList<varDef> varDefs;
+    private ArrayList<varDef> varDefs = new ArrayList<>();
 
     public varDefList(position pos) {
         super(pos);

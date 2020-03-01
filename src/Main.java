@@ -1,12 +1,12 @@
 import AST.rootNode;
 import BackEnd.*;
 import FrontEnd.*;
+import Optim.*;
 import MIR.Root;
 import Parser.MxLexer;
 import Parser.MxParser;
 import Util.error.error;
 import Util.scope.globalScope;
-import org.antlr.runtime.debug.*;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -39,15 +39,5 @@ public class Main {
             System.err.println(er.toString());
             throw new RuntimeException();
         }
-        /*
-         * step1: parse;
-         * step2: ASTBuilder;
-         * step3: globalScope init;
-         * step4: symbolCollect;
-            (function, class and methods in class, in order to support forwarding reference)
-         * step5: functionType generate
-         * step6: semantic Analysis
-         * step7: print opt
-         */
     }
 }

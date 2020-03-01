@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import static MIR.IRinst.Binary.BinaryOpCategory.*;
 import static MIR.IRinst.Cmp.CmpOpCategory.*;
 
+/*
+ * this is an MIR Builder(LLVM IR generator) and also:
+    * generate def-use chain
+ */
 public class IRBuilder implements ASTVisitor {
 
     private boolean isParam;
@@ -37,10 +41,10 @@ public class IRBuilder implements ASTVisitor {
         if (it.type().isResolvable()) {
             Register dest = new Register(((Pointer)it.type()).pointTo(),
                     "resolved_" + ((Register)it).name());
-            currentBlock.addInst(new Load(dest, it));
+            currentBlock.addInst(new Load(dest, it, currentBlock));
             if (dest.type() instanceof IntType && dest.type().size() == 8) {
                 Register zextDest = new Register(new BoolType(), "zext_" + dest.name());
-                currentBlock.addInst(new Zext(dest, zextDest));
+                currentBlock.addInst(new Zext(dest, zextDest, currentBlock));
                 return zextDest;
             } else return dest;
         } else return it;
@@ -51,7 +55,7 @@ public class IRBuilder implements ASTVisitor {
             if (((Pointer)it.type()).pointTo() instanceof Pointer) {
                 Register dest = new Register(((Pointer)it.type()).pointTo(),
                         "resolved_" + ((Register)it).name());
-                currentBlock.addInst(new Load(dest, it));
+                currentBlock.addInst(new Load(dest, it, currentBlock));
                 return dest;
             }
             else return it;
@@ -61,7 +65,7 @@ public class IRBuilder implements ASTVisitor {
     private Operand intTrans(Operand it) {
         if (it.type() instanceof BoolType) {
             Register ext = new Register(new IntType(32), "ext_" + it.toString());
-            currentBlock.addInst(new Zext(it, ext));
+            currentBlock.addInst(new Zext(it, ext, currentBlock));
             return ext;
         } else {
             assert (it.type() instanceof IntType) && (it.type().size() == 32);
@@ -78,16 +82,16 @@ public class IRBuilder implements ASTVisitor {
                 tmp = new ConstInt(((ConstBool)expr.operand()).value() ? 1 : 0, 8);
             } else {
                 tmp = new Register(new IntType(8), "extTo");
-                currentBlock.addInst(new Zext(expr.operand(), (Register)tmp));
+                currentBlock.addInst(new Zext(expr.operand(), (Register)tmp, currentBlock));
             }
         } else tmp = expr.operand();
-        currentBlock.addInst(new Store(reg, tmp));
+        currentBlock.addInst(new Store(reg, tmp, currentBlock));
     }
     private void branchAdd(exprNode it) {
         if (it.thenBlock() != null){
             Operand tmp = resolvePointer(currentBlock, it.operand());
             assert tmp.type() instanceof BoolType;
-            currentBlock.addTerminator(new Branch(tmp, it.thenBlock(), it.elseBlock()));
+            currentBlock.addTerminator(new Branch(tmp, it.thenBlock(), it.elseBlock(), currentBlock));
         }
     }
 
@@ -160,6 +164,7 @@ public class IRBuilder implements ASTVisitor {
             if (currentFunction.name().equals("main"))
                 currentBlock.addTerminator(new Return(currentBlock, new ConstInt(0, 32)));
             else currentBlock.addTerminator(new Return(currentBlock, null));
+            currentFunction.setExitBlock(currentBlock);
         } else if (returnList.size() > 1) {
             IRBlock rootReturn = new IRBlock("rootReturn");
             Register returnValue = new Register(returnList.get(0).value().type(), "rootRet");
@@ -169,10 +174,13 @@ public class IRBuilder implements ASTVisitor {
                 ret.currentBlock().removeTerminal();
                 values.add(ret.value());
                 blocks.add(ret.currentBlock());
-                ret.currentBlock().addTerminator(new Jump(rootReturn));
+                ret.currentBlock().addTerminator(new Jump(rootReturn, ret.currentBlock()));
             });
-            rootReturn.addInst(new Phi(returnValue, blocks, values));
+            rootReturn.addPhi(new Phi(returnValue, blocks, values, rootReturn));
             rootReturn.addTerminator(new Return(rootReturn, returnValue));
+            currentFunction.setExitBlock(rootReturn);
+        } else {
+            currentFunction.setExitBlock(returnList.get(0).currentBlock());
         }
 
         returnList.clear();
@@ -185,20 +193,21 @@ public class IRBuilder implements ASTVisitor {
         varEntity entity = it.entity();
         Operand reg;
         IRBaseType type = irRoot.getIRType(entity.type(), true);
-        boolean isResolvable = !(type instanceof ClassType);
-        //except for string, all classes are not resolvable(only a pointer to the head)
         if (entity.isGlobal()) {
-            reg = new GlobalReg(new Pointer(type, isResolvable), it.name());
+            reg = new GlobalReg(new Pointer(type, true), it.name());
             it.entity().setOperand(reg);
             irRoot.addGlobalVar((GlobalReg)reg);
         }
         else {
             if (isParam) {
-                reg = new Param(type, it.name() + "_param");
-                currentFunction.addParam((Param)reg);
+                Param par = new Param(type, it.name() + "_param");
+                currentFunction.addParam(par);
+                it.entity().setOperand(new Register(new Pointer(type, true), it.name() + "_addr"));
+                currentFunction.addVar((Register)it.entity().asOperand());
+                currentBlock.addInst(new Store(it.entity().asOperand(), par, currentBlock));
             } else {
                 if (currentFunction != null) {
-                    reg = new Register(new Pointer(type, isResolvable), it.name() + "_addr");
+                    reg = new Register(new Pointer(type, true), it.name() + "_addr");
                     if (it.init() != null) assign(reg, it.init());
                     currentFunction.addVar((Register)reg);
                 }
@@ -243,8 +252,8 @@ public class IRBuilder implements ASTVisitor {
             currentBlock = elseBlock;
             it.falseStmt().accept(this);
         }
-        if (!thenBlock.terminated()) thenBlock.addTerminator(new Jump(destBlock));
-        if (!elseBlock.terminated()) elseBlock.addTerminator(new Jump(destBlock));
+        if (!thenBlock.terminated()) thenBlock.addTerminator(new Jump(destBlock, thenBlock));
+        if (!elseBlock.terminated()) elseBlock.addTerminator(new Jump(destBlock, elseBlock));
         currentBlock = destBlock;
     }
 
@@ -258,7 +267,7 @@ public class IRBuilder implements ASTVisitor {
         if (it.init() != null) it.init().accept(this);
 
         if (it.condition() != null){
-            currentBlock.addTerminator(new Jump(condBlock));
+            currentBlock.addTerminator(new Jump(condBlock, currentBlock));
             currentBlock = condBlock;
             it.condition().setThenBlock(bodyBlock);
             it.condition().setElseBlock(destBlock);
@@ -266,7 +275,7 @@ public class IRBuilder implements ASTVisitor {
             it.setCondBlock(condBlock);
         }
         else {
-            currentBlock.addTerminator(new Jump(bodyBlock));
+            currentBlock.addTerminator(new Jump(bodyBlock, currentBlock));
             condBlock = bodyBlock;
             it.setCondBlock(bodyBlock);
         }
@@ -275,7 +284,7 @@ public class IRBuilder implements ASTVisitor {
         it.body().accept(this);
         if (it.incr() != null) it.incr().accept(this);
         if (!currentBlock.terminated())
-            currentBlock.addTerminator(new Jump(condBlock));
+            currentBlock.addTerminator(new Jump(condBlock, currentBlock));
         currentBlock = destBlock;
     }
 
@@ -286,10 +295,10 @@ public class IRBuilder implements ASTVisitor {
                 condBlock = new IRBlock("while_cond");
 
         it.setDestBlock(destBlock);
-        currentBlock.addTerminator(new Jump(condBlock));
+        currentBlock.addTerminator(new Jump(condBlock, currentBlock));
 
         if (it.condition() != null){
-            currentBlock.addTerminator(new Jump(condBlock));
+            currentBlock.addTerminator(new Jump(condBlock, currentBlock));
             currentBlock = condBlock;
             it.condition().setThenBlock(bodyBlock);
             it.condition().setElseBlock(destBlock);
@@ -297,7 +306,7 @@ public class IRBuilder implements ASTVisitor {
             it.setCondBlock(condBlock);
         }
         else {
-            currentBlock.addTerminator(new Jump(bodyBlock));
+            currentBlock.addTerminator(new Jump(bodyBlock, currentBlock));
             condBlock = bodyBlock;
             it.setCondBlock(bodyBlock);
         }
@@ -305,7 +314,7 @@ public class IRBuilder implements ASTVisitor {
         currentBlock = bodyBlock;
         it.body().accept(this);
         if (!currentBlock.terminated())
-            currentBlock.addTerminator(new Jump(condBlock));
+            currentBlock.addTerminator(new Jump(condBlock, currentBlock));
         currentBlock = destBlock;
     }
 
@@ -332,7 +341,7 @@ public class IRBuilder implements ASTVisitor {
         IRBlock dest;
         if (it.dest() instanceof whileStmt) dest = ((whileStmt)it.dest()).destBlock();
         else dest = ((forStmt)it.dest()).destBlock();
-        currentBlock.addTerminator(new Jump(dest));
+        currentBlock.addTerminator(new Jump(dest, currentBlock));
     }
 
     @Override
@@ -340,7 +349,7 @@ public class IRBuilder implements ASTVisitor {
         IRBlock dest;
         if (it.dest() instanceof whileStmt) dest = ((whileStmt)it.dest()).condBlock();
         else dest = ((forStmt)it.dest()).condBlock();
-        currentBlock.addTerminator(new Jump(dest));
+        currentBlock.addTerminator(new Jump(dest, currentBlock));
     }
 
     @Override public void visit(emptyStmt it) {}
@@ -358,7 +367,7 @@ public class IRBuilder implements ASTVisitor {
                 "arrayElePointer"));
 
         currentBlock.addInst(new GetElementPtr(((Pointer)pointer.type()).pointTo(),
-                            pointer, width, null, (Register)it.operand()));
+                            pointer, width, null, (Register)it.operand(), currentBlock));
         branchAdd(it);
     }
 
@@ -438,7 +447,7 @@ public class IRBuilder implements ASTVisitor {
                     src1 = resolvePointer(currentBlock, it.src1().operand());
                     src2 = resolvePointer(currentBlock, it.src2().operand());
                     it.setOperand(new Register(new IntType(32), "binary_" + binaryOp.toString()));
-                    inst = new Binary(src1, src2, (Register)it.operand(), binaryOp);
+                    inst = new Binary(src1, src2, (Register)it.operand(), binaryOp, currentBlock);
                 } else {
                     it.setOperand(new Register(new Pointer(new IntType(8), false), "binary_string_plus"));
                     ArrayList<Operand> params = new ArrayList<>();
@@ -448,7 +457,7 @@ public class IRBuilder implements ASTVisitor {
 
                     params.add(src1);
                     params.add(src2);
-                    inst = new Call(stringCall, params, (Register)it.operand());
+                    inst = new Call(stringCall, params, (Register)it.operand(), currentBlock);
                 }
                 currentBlock.addInst(inst);
                 break;
@@ -464,7 +473,7 @@ public class IRBuilder implements ASTVisitor {
                     src2 = resolvePointer(currentBlock, it.src2().operand());
 
                     it.setOperand(new Register(new BoolType(), "cmp_" + cmpOp.toString()));
-                    inst = new Cmp(src1, src2, (Register)it.operand(), cmpOp);
+                    inst = new Cmp(src1, src2, (Register)it.operand(), cmpOp, currentBlock);
                 } else {
                     it.setOperand(new Register(new BoolType(), "cmp_string_" + it.opCode().toString()));
 
@@ -476,7 +485,7 @@ public class IRBuilder implements ASTVisitor {
                     params.add(src1);
                     params.add(src2);
 
-                    inst = new Call(stringCall, params, (Register)it.operand());
+                    inst = new Call(stringCall, params, (Register)it.operand(), currentBlock);
                 }
                 currentBlock.addInst(inst);
                 branchAdd(it);
@@ -512,12 +521,12 @@ public class IRBuilder implements ASTVisitor {
                     currentBlock = condBlock;
                     it.src2().accept(this);
                     opr = resolvePointer(currentBlock, it.src2().operand());
-                    currentBlock.addTerminator(new Jump(destBlock));
+                    currentBlock.addTerminator(new Jump(destBlock, currentBlock));
                     values.add(opr);
                     blocks.add(currentBlock);
 
                     currentBlock = destBlock;
-                    destBlock.addInst(new Phi((Register)it.operand(), blocks, values));
+                    destBlock.addPhi(new Phi((Register)it.operand(), blocks, values, destBlock));
                 }
                 break;
             }
@@ -551,12 +560,12 @@ public class IRBuilder implements ASTVisitor {
                     currentBlock = condBlock;
                     it.src2().accept(this);
                     opr = resolvePointer(currentBlock, it.src2().operand());
-                    currentBlock.addTerminator(new Jump(destBlock));
+                    currentBlock.addTerminator(new Jump(destBlock, currentBlock));
                     values.add(opr);
                     blocks.add(currentBlock);
 
                     currentBlock = destBlock;
-                    destBlock.addInst(new Phi((Register)it.operand(), blocks, values));
+                    destBlock.addPhi(new Phi((Register)it.operand(), blocks, values, destBlock));
                 }
                 break;
             }
@@ -568,7 +577,7 @@ public class IRBuilder implements ASTVisitor {
                 if (cmpOp != null) {
                     src1 = intTrans(resolvePointer(currentBlock, it.src1().operand()));
                     src2 = intTrans(resolvePointer(currentBlock, it.src2().operand()));
-                    currentBlock.addInst(new Cmp(src1, src2, (Register)it.operand(), cmpOp));
+                    currentBlock.addInst(new Cmp(src1, src2, (Register)it.operand(), cmpOp, currentBlock));
                 }
                 else {
                     ArrayList<Operand> params = new ArrayList<>();
@@ -578,7 +587,7 @@ public class IRBuilder implements ASTVisitor {
 
                     params.add(src1);
                     params.add(src2);
-                    currentBlock.addInst(new Call(stringCall, params, (Register)it.operand()));
+                    currentBlock.addInst(new Call(stringCall, params, (Register)it.operand(), currentBlock));
                 }
                 branchAdd(it);
                 break;
@@ -604,31 +613,37 @@ public class IRBuilder implements ASTVisitor {
         Operand src = resolvePointer(currentBlock, it.src().operand());
         switch (it.opCode()) {
             case Positive: {
-                currentBlock.addInst(new Binary(src, new ConstInt(0, 32), (Register)it.operand(), add));
+                currentBlock.addInst(new Binary(src, new ConstInt(0, 32),
+                                                (Register)it.operand(), add, currentBlock));
                 break;
             }
             case Negative: {
-                currentBlock.addInst(new Binary(new ConstInt(0, 32), src, (Register)it.operand(), sub));
+                currentBlock.addInst(new Binary(new ConstInt(0, 32), src,
+                                                (Register)it.operand(), sub, currentBlock));
                 break;
             }
             case Tilde: {
-                currentBlock.addInst(new Binary(src, new ConstInt(-1, 32), (Register)it.operand(), xor));
+                currentBlock.addInst(new Binary(src, new ConstInt(-1, 32),
+                                                (Register)it.operand(), xor, currentBlock));
                 break;
             }
             case Increment: {
-                currentBlock.addInst(new Binary(src, new ConstInt(1, 32), (Register)it.operand(), add));
+                currentBlock.addInst(new Binary(src, new ConstInt(1, 32),
+                                                (Register)it.operand(), add, currentBlock));
                 if (it.src().isAssignable())
-                    currentBlock.addInst(new Store(it.src().operand(), it.operand()));
+                    currentBlock.addInst(new Store(it.src().operand(), it.operand(), currentBlock));
                 break;
             }
             case Decrement: {
-                currentBlock.addInst(new Binary(src, new ConstInt(1, 32), (Register)it.operand(), sub));
+                currentBlock.addInst(new Binary(src, new ConstInt(1, 32),
+                                                (Register)it.operand(), sub, currentBlock));
                 if (it.src().isAssignable())
-                    currentBlock.addInst(new Store(it.src().operand(), it.operand()));
+                    currentBlock.addInst(new Store(it.src().operand(), it.operand(), currentBlock));
                 break;
             }
             case Not: {
-                currentBlock.addInst(new Binary(src, new ConstBool(true), (Register)it.operand(), xor));
+                currentBlock.addInst(new Binary(src, new ConstBool(true),
+                                                (Register)it.operand(), xor, currentBlock));
                 break;
             }
         }
@@ -642,10 +657,10 @@ public class IRBuilder implements ASTVisitor {
         Register tmp = new Register(new IntType(32), "suffix_tmp");
         it.setOperand(resolvePointer(currentBlock, it.src().operand()));
 
-        if (it.opCode() == 0) inst = new Binary(it.operand(), one, tmp, add);
-        else inst = new Binary(it.operand(), one, tmp, sub);
+        if (it.opCode() == 0) inst = new Binary(it.operand(), one, tmp, add, currentBlock);
+        else inst = new Binary(it.operand(), one, tmp, sub, currentBlock);
         currentBlock.addInst(inst);
-        currentBlock.addInst(new Store(it.src().operand(), tmp));
+        currentBlock.addInst(new Store(it.src().operand(), tmp, currentBlock));
 
     }
 
@@ -663,9 +678,9 @@ public class IRBuilder implements ASTVisitor {
             assert it.callee().operand().type() instanceof Pointer;
             Register metaPtr = new Register(new IntType(32), "metadataPtr"),
                      BCPtr = new Register(new IntType(32), "bitCastPtr");
-            currentBlock.addInst(new BitCast(it.callee().operand(), BCPtr));
-            currentBlock.addInst(new Binary(BCPtr, new ConstInt(4, 32), metaPtr, sub));
-            currentBlock.addInst(new Load((Register)it.operand(), metaPtr));
+            currentBlock.addInst(new BitCast(it.callee().operand(), BCPtr, currentBlock));
+            currentBlock.addInst(new Binary(BCPtr, new ConstInt(4, 32), metaPtr, sub, currentBlock));
+            currentBlock.addInst(new Load((Register)it.operand(), metaPtr, currentBlock));
         } else {
             if (!it.type().isVoid())
                 it.setOperand(new Register(irRoot.getIRType(calleeFunc.returnType(), false),
@@ -673,12 +688,12 @@ public class IRBuilder implements ASTVisitor {
             else it.setOperand(null);
             ArrayList<Operand> params = new ArrayList<>();
             if (calleeFunc.isMethod())
-                params.add(it.callee().operand());                        //let "this" be the first
+                params.add(resolvePointer(currentBlock, it.callee().operand()));                        //let "this" be the first
             it.params().forEach(param -> {
                 param.accept(this);
-                params.add(param.operand());
+                params.add(resolvePointer(currentBlock, param.operand()));
             });
-            currentBlock.addInst(new Call(calleeFunc.function(), params, (Register) it.operand()));
+            currentBlock.addInst(new Call(calleeFunc.function(), params, (Register) it.operand(), currentBlock));
         }
         if (it.operand() != null)
             branchAdd(it);
@@ -694,13 +709,13 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(memberExpr it) {
         it.caller().accept(this);
-        Register classPtr = (Register)it.caller().operand();
+        Operand classPtr = resolvePointer(currentBlock, it.caller().operand());
         it.setOperand(new Register(it.entity().asOperand().type(), "this." + it.member()));
         //the entity.operand() is always a resolvable pointer, pointing to this+offset
         //entity.reg is an abstract one, so only use its type to create a new reg
         currentBlock.addInst(new GetElementPtr(((Pointer)classPtr.type()).pointTo(), classPtr,
                             new ConstInt(0, 32), it.entity().elementIndex(),
-                            (Register)it.operand()));
+                            (Register)it.operand(), currentBlock));
         branchAdd(it);
     }
 
@@ -714,15 +729,15 @@ public class IRBuilder implements ASTVisitor {
             it.setOperand(new Register(new Pointer(irRoot.getIRType(it.type(), true), false),
                                         "new_class_ptr"));
             currentBlock.addInst(new Malloc(
-                    new ConstInt(((classType)it.type()).allocSize() / 8, 32), mallocTmp
-            ));
-            currentBlock.addInst(new BitCast(mallocTmp, (Register)it.operand()));
+                    new ConstInt(((classType)it.type()).allocSize() / 8, 32),
+                    mallocTmp, currentBlock));
+            currentBlock.addInst(new BitCast(mallocTmp, (Register)it.operand(), currentBlock));
             if (((classType)it.type()).scope().constructor() != null) {
                 ArrayList<Operand> params = new ArrayList<>();
                 params.add(it.operand());
                 currentBlock.addInst(new Call(
-                        ((classType)it.type()).scope().constructor().function(), params, null
-                ));
+                        ((classType)it.type()).scope().constructor().function(),
+                        params, null, currentBlock));
             }
         }
     }
@@ -739,11 +754,12 @@ public class IRBuilder implements ASTVisitor {
     public void visit(varNode it) {
         varEntity entity = it.entity();
         if (it.entity().isMember()) {
-            Register classPtr = currentFunction.getClassPtr();
-            it.setOperand(new Register(it.entity().asOperand().type(), "this." + it.name()));
+            Register classPtr = currentFunction.getClassPtr();  //this one does not need to load
+            it.setOperand(new Register(it.entity().asOperand().type(),
+                        "this." + it.name() + "_addr"));
             currentBlock.addInst(new GetElementPtr(((Pointer)classPtr.type()).pointTo(), classPtr,
                                     new ConstInt(0, 32), it.entity().elementIndex(),
-                                    (Register)it.operand()));
+                                    (Register)it.operand(), currentBlock));
         } else {
             it.setOperand(entity.asOperand());
         }
@@ -786,16 +802,16 @@ public class IRBuilder implements ASTVisitor {
                  allocBitCast = new Register(new Pointer(new IntType(32), false), "allocBitCast"),
                  allocOffset = new Register(new Pointer(new IntType(32), false), "offsetHead");
 
-        currentBlock.addInst(new Binary(currentNum, typeWidth, PureWidth, mul));
-        currentBlock.addInst(new Binary(PureWidth, new ConstInt(32, 32), metaWidth, add));
-        currentBlock.addInst(new Malloc(metaWidth, allocPtr));
-        currentBlock.addInst(new BitCast(allocPtr, allocBitCast));
-        currentBlock.addInst(new Store(allocBitCast, currentNum));
+        currentBlock.addInst(new Binary(currentNum, typeWidth, PureWidth, mul, currentBlock));
+        currentBlock.addInst(new Binary(PureWidth, new ConstInt(32, 32), metaWidth, add, currentBlock));
+        currentBlock.addInst(new Malloc(metaWidth, allocPtr, currentBlock));
+        currentBlock.addInst(new BitCast(allocPtr, allocBitCast, currentBlock));
+        currentBlock.addInst(new Store(allocBitCast, currentNum, currentBlock));
         if (pointTo instanceof IntType && pointTo.size() == 32) {
-            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), result, add));
+            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), result, add, currentBlock));
         } else {
-            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), allocOffset, add));
-            currentBlock.addInst(new BitCast(allocOffset, result));
+            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), allocOffset, add, currentBlock));
+            currentBlock.addInst(new BitCast(allocOffset, result, currentBlock));
         }
         if (nowDim < it.exprs().size() - 1){
             IRBlock incrBlock = new IRBlock("ArrayIncrBlock"),
@@ -812,20 +828,22 @@ public class IRBuilder implements ASTVisitor {
             //this is especially efficient since I can use 1-base counter to get 0-base ptr
             values.add(new ConstInt(0, 32));
             blocks.add(currentBlock);
-            currentBlock.addTerminator(new Jump(incrBlock));
+            currentBlock.addTerminator(new Jump(incrBlock, currentBlock));
 
             currentBlock = bodyBlock;
-            currentBlock.addInst(new GetElementPtr(new IntType(32), allocBitCast, counter, null, ptr));
+            currentBlock.addInst(new GetElementPtr(new IntType(32), allocBitCast,
+                                                    counter, null, ptr, currentBlock));
             arrayMalloc(nowDim + 1, it, ptr);
-            currentBlock.addInst(new Binary(counter, new ConstInt(1, 32), counterTmp, add));//counter++
-            currentBlock.addTerminator(new Jump(incrBlock));
+            currentBlock.addInst(new Binary(counter, new ConstInt(1, 32),
+                                            counterTmp, add, currentBlock));//counter++
+            currentBlock.addTerminator(new Jump(incrBlock, currentBlock));
             values.add(counterTmp);
             blocks.add(currentBlock);
 
             currentBlock = incrBlock;
-            currentBlock.addInst(new Phi(counter, blocks, values));
-            currentBlock.addInst(new Cmp(counter, currentNum, branchJudge, sle));
-            currentBlock.addTerminator(new Branch(branchJudge, bodyBlock, destBlock));
+            currentBlock.addPhi(new Phi(counter, blocks, values, currentBlock));
+            currentBlock.addInst(new Cmp(counter, currentNum, branchJudge, sle, currentBlock));
+            currentBlock.addTerminator(new Branch(branchJudge, bodyBlock, destBlock, currentBlock));
 
             currentBlock = destBlock;
         }

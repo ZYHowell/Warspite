@@ -1,5 +1,6 @@
 package MIR.IRoperand;
 
+import MIR.IRinst.Inst;
 import MIR.IRtype.IRBaseType;
 
 abstract public class Operand {
@@ -10,6 +11,11 @@ abstract public class Operand {
         this.type = type;
     }
 
+
+    public void addUse(Inst inst) {}
+    public Inst defInst() {
+        return null;
+    }
     public IRBaseType type() {
         return type;
     }

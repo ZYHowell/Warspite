@@ -16,8 +16,9 @@ public class Function {
     private IRBaseType retType;
     private ArrayList<Param> parameters;
     private IRBlock entryBlock = new IRBlock("entry"),
-                    exitBlock = new IRBlock("exit");
+                    exitBlock;
     private HashSet<Function> callFunction = new HashSet<>();
+    private HashSet<Register> allocaVar = new HashSet<>();
 
     public Function(String name) {
         this.name = name;
@@ -48,11 +49,17 @@ public class Function {
     public IRBlock entryBlock() {
         return entryBlock;
     }
+    public void setExitBlock(IRBlock exitBlock) {
+        this.exitBlock = exitBlock;
+    }
     public IRBlock exitBlock() {
         return exitBlock;
     }
 
     public void addVar(Register var) {
-        //todo. mention that this is not the reference type, instead it is used for alloc
+        allocaVar.add(var);
+    }
+    public HashSet<Register> allocVars() {
+        return allocaVar;
     }
 }

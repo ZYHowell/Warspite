@@ -1,15 +1,19 @@
 package MIR;
 
 import MIR.IRinst.*;
-import Util.error.internalError;
+import MIR.IRoperand.Operand;
+import MIR.IRoperand.Register;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class IRBlock {
 
     private ArrayList<IRBlock> precursors = new ArrayList<>();
     private ArrayList<IRBlock> successors = new ArrayList<>();
     private ArrayList<Inst>    instructions = new ArrayList<>();
+    private HashMap<Register, Phi>  PhiInst = new HashMap<>();
     private String name;
     private boolean terminated = false;
 
@@ -17,12 +21,13 @@ public class IRBlock {
     private int dfsOrder = 0;
     private IRBlock DFSFather = null, sDom = null, unionRoot = this, minVer = this,
                     iDom = null;
-
+    private HashSet<IRBlock> domFrontiers = new HashSet<>();
 
 
     public IRBlock(String name) {
         this.name = name;
     }
+
 
     public String name() {
         return name;
@@ -51,7 +56,7 @@ public class IRBlock {
         terminated = true;
         IRBlock dest;
         if (inst instanceof Jump) {
-            dest = ((Jump)inst).dest();
+            dest = ((Jump)inst).destBlock();
             addSuccessor(dest);
             dest.addPrecursor(this);
         } else if (inst instanceof Branch) {
@@ -70,12 +75,31 @@ public class IRBlock {
         terminated = false;
         Inst currentTerm = instructions.get(instructions.size() - 1);
         if (currentTerm instanceof Jump) {
-            removeSuccessor(((Jump)currentTerm).dest());
+            removeSuccessor(((Jump)currentTerm).destBlock());
         }
         else if (currentTerm instanceof Branch){
             removeSuccessor(((Branch)currentTerm).trueDest());
             removeSuccessor(((Branch)currentTerm).falseDest());
         }
+    }
+    public void addPhi(Phi inst) {
+        PhiInst.put(inst.dest(), inst);
+    }
+    public void PhiInsertion(Register dest, Operand value, IRBlock origin) {
+        if (PhiInst.containsKey(dest)) {
+            Phi phi = PhiInst.get(dest);
+            phi.addOrigin(value, origin);
+        } else {
+            ArrayList<IRBlock> blocks = new ArrayList<>();
+            blocks.add(origin);
+            ArrayList<Operand> values = new ArrayList<>();
+            values.add(value);
+            Phi phi = new Phi(dest, blocks, values, this);
+            PhiInst.put(dest, phi);
+        }
+    }
+    public HashMap<Register, Phi> phiInst() {
+        return PhiInst;
     }
 
     private void removeSuccessor(IRBlock successor) {
@@ -118,5 +142,18 @@ public class IRBlock {
     }
     public IRBlock minVer() {
         return minVer;
+    }
+    public void addDomFrontier(IRBlock domF) {
+        domFrontiers.add(domF);
+    }
+    public HashSet<IRBlock> domFrontiers() {
+        return domFrontiers;
+    }
+
+    public void remove(Inst inst) {
+        if (inst instanceof Phi) PhiInst.remove(inst.dest());
+        else if (inst instanceof Branch || inst instanceof Return || inst instanceof Jump)
+            removeTerminal();
+        else instructions.remove(inst);
     }
 }

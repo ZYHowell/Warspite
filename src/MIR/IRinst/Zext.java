@@ -1,5 +1,6 @@
 package MIR.IRinst;
 
+import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
@@ -7,24 +8,32 @@ import MIR.IRtype.IRBaseType;
 public class Zext extends Inst{
 
     private Operand origin;
-    private Register dest;
 
-    public Zext(Operand origin, Register dest) {
-        super();
+    public Zext(Operand origin, Register dest, IRBlock block) {
+        super(dest, block);
         this.origin = origin;
-        this.dest = dest;
+        origin.addUse(this);
+        dest.setDef(this);
     }
 
     public IRBaseType originType() {
         return origin.type();
     }
     public IRBaseType destType() {
-        return dest.type();
+        return dest().type();
     }
 
     @Override
     public String toString() {
-        return dest.toString()  + " = zext " + originType().toString() + origin.toString() +
+        return dest().toString()  + " = zext " + originType().toString() + origin.toString() +
                 "to " + destType().toString();
+    }
+    @Override
+    public void ReplaceUseWith(Register replaced, Operand replaceTo) {
+        if (origin == replaced) origin = replaceTo;
+    }
+    @Override
+    public void removeSelf() {
+        block().remove(this);
     }
 }

@@ -26,6 +26,7 @@ public class globalScope extends Scope {
         typeMap.put("null", nullInstance);
         //insert string into the map;
         classType stringType = new classType("string", null);
+        stringType.addScope(new classScope(this));
         position pos = new position(0,0);
         funcDecl tmpFunc;
 

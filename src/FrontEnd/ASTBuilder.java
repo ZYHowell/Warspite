@@ -58,9 +58,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
                 tmp.setIsMethod();
                 if (tmp.isConstructor()) {
                     hasConstructor = true;
-                    constructors.add(((funDef)tmp));
+                    constructors.add(tmp);
                 }
-                else functions.add(((funDef)tmp));
+                else functions.add(tmp);
             }
         }
         return new classDef(ctx.Identifier().toString(), new position(ctx),
@@ -75,10 +75,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         blockNode body = (blockNode)visit(ctx.suite());
         ArrayList<varDef> parameters;
         if (ctx.type() != null) {
-            isConstructor = true;
+            isConstructor = false;
             type = (typeNode)visit(ctx.type());
         } else {
-            isConstructor = false;
+            isConstructor = true;
             type = null;
         }
         if (ctx.paramList() == null) parameters = new ArrayList<>();
@@ -131,9 +131,11 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         return param;
     }
 
-    //not called
     @Override
     public ASTNode visitBasicType(MxParser.BasicTypeContext ctx) {
+        if (ctx.Bool() != null) return new BasicTypeToolNode("bool", new position(ctx));
+        else if (ctx.Int() != null) return new BasicTypeToolNode("int", new position(ctx));
+        else if (ctx.String() != null) return new BasicTypeToolNode("string", new position(ctx));
         return visitChildren(ctx);
     }
 
@@ -146,7 +148,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         if (ctx.LeftBracket() != null) dim = ctx.LeftBracket().size();
         else dim = 0;
         if (ctx.Identifier() != null) typeName = ctx.Identifier().toString();
-        else typeName = ctx.basicType().toString();
+        else typeName = ((BasicTypeToolNode)visit(ctx.basicType())).value();
         return new typeNode(typeName, dim, new position(ctx));
     }
 
@@ -386,7 +388,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         position typePos;
         if (ctx.basicType() != null) {
             typePos = new position(ctx.basicType());
-            baseTypeName = ctx.basicType().toString();
+            baseTypeName = ((BasicTypeToolNode)visit(ctx.basicType())).value();
         }
         else {
             typePos = new position(ctx.Identifier());
@@ -407,7 +409,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         position typePos;
         if (ctx.basicType() != null) {
             typePos = new position(ctx.basicType());
-            baseTypeName = ctx.basicType().toString();
+            baseTypeName = ((BasicTypeToolNode)visit(ctx.basicType())).value();
         }
         else {
             typePos = new position(ctx.Identifier());
@@ -424,7 +426,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         position typePos;
         if (ctx.basicType() != null) {
             typePos = new position(ctx.basicType());
-            baseTypeName = ctx.basicType().toString();
+            baseTypeName = ((BasicTypeToolNode)visit(ctx.basicType())).value();
         }
         else {
             typePos = new position(ctx.Identifier());

@@ -50,7 +50,6 @@ public class Root {
         builtinFunctions.put("g_stringGE", stringGE);
         builtinFunctions.put("g_stringEQ", stringEQ);
         builtinFunctions.put("g_stringNE", stringNE);
-        //todo: init the types(maybe need to use the globalScope)
     }
 
     public void addType(String name, ClassType type) {
@@ -100,7 +99,7 @@ public class Root {
         else if (type.isClass()) {
             String name = ((classType)type).name();
             if (name.equals("string")) return new Pointer(new IntType(8), false);
-            else return getType(name);
+            else return new Pointer(getType(name), false);
         }
         else if (type.isNull()) return new VoidType();
         return new VoidType(); //really do so? or just throw error? type is function/constructor

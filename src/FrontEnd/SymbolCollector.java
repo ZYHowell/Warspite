@@ -14,9 +14,8 @@ import Util.symbol.funcDecl;
 public class SymbolCollector implements ASTVisitor {
 
     globalScope gScope;
-    Scope currentScope;
+    Scope currentScope = null;
     Root irRoot;
-    ClassType currentClassType;
 
     public SymbolCollector(globalScope gScope, Root irRoot) {
         this.gScope = gScope;
@@ -25,6 +24,7 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(rootNode it) {
+        currentScope = gScope;
         it.allDef().forEach(node -> node.accept(this));
     }
 
