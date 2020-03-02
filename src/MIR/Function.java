@@ -19,9 +19,12 @@ public class Function {
                     exitBlock;
     private HashSet<Function> callFunction = new HashSet<>();
     private HashSet<Register> allocaVar = new HashSet<>();
+    private HashSet<IRBlock> blocks = new HashSet<>();
+
 
     public Function(String name) {
         this.name = name;
+        blocks.add(entryBlock);
     }
 
 
@@ -30,6 +33,18 @@ public class Function {
     }
     public void addCalleeFunction(Function callee) {
         callFunction.add(callee);
+    }
+    public boolean isCallee(Function fn) {
+        return callFunction.contains(fn);
+    }
+    public void addBlock(IRBlock block) {
+        blocks.add(block);
+    }
+    public HashSet<IRBlock> blocks() {
+        return blocks;
+    }
+    public HashSet<Function> callFunction() {
+        return callFunction;
     }
     public void setRetType(IRBaseType retType) {
         this.retType = retType;

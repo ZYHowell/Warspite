@@ -20,6 +20,10 @@ public class Call extends Inst{
         if (dest != null) dest.setDef(this);
     }
 
+    public Function callee() {
+        return callee;
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder(dest().toString());

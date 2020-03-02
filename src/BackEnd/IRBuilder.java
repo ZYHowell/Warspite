@@ -20,6 +20,7 @@ import static MIR.IRinst.Cmp.CmpOpCategory.*;
 /*
  * this is an MIR Builder(LLVM IR generator) and also:
     * generate def-use chain
+    * not collect blocks in function(is done in mem2reg since less condition needs to be judged)
  */
 public class IRBuilder implements ASTVisitor {
 

@@ -100,6 +100,7 @@ public class Mem2Reg extends Pass{
         //in any order is ok, but since I have DFSIndex to collect all blocks...
         for (int i = 1; i <= tot;++i) {
             IRBlock block = DFSIndex.get(i);
+            fn.addBlock(block);
             allocLoads.put(block, new HashSet<>());
             allocStores.put(block, new HashMap<>());
             allocPhiMap.put(block, new HashMap<>());
