@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 import java.util.ArrayList;
 
@@ -37,6 +38,15 @@ public class Phi extends Inst {
             ret.append(" ]");
         }
         return ret.toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        ArrayList<IRBlock> mirrorBlocks = new ArrayList<>();
+        ArrayList<Operand> mirrorValues = new ArrayList<>();
+        blocks.forEach(block -> mirrorBlocks.add(mirror.blockMir(block)));
+        values.forEach(value -> mirrorValues.add(mirror.opMir(value)));
+        destBlock.addPhi(new Phi((Register)mirror.opMir(dest()), mirrorBlocks, mirrorValues, destBlock));
     }
 
     @Override

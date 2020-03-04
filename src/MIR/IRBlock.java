@@ -156,4 +156,18 @@ public class IRBlock {
             removeTerminal();
         else instructions.remove(inst);
     }
+
+    public void mergeBlock(IRBlock merged) {
+        assert !terminated;
+        assert merged.precursors().size() == 0;
+        successors.addAll(merged.successors());
+        merged.successors().forEach(successor -> {
+            successor.precursors().remove(merged);
+            successor.addPrecursor(this);
+        });
+
+        merged.instructions().forEach(inst -> inst.setCurrentBlock(this));
+        instructions.addAll(merged.instructions());
+        terminated = merged.terminated();
+    }
 }

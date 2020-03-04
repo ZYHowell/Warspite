@@ -11,6 +11,13 @@ public class GlobalReg extends Operand {
         this.name = name;
     }
 
+
+    @Override
+    public Operand copy() {
+        assert false;
+        return null;
+    }
+
     @Override
     public String toString() {
         return "%" + name;

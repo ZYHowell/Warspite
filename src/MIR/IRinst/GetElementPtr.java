@@ -4,6 +4,7 @@ import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
+import Util.MIRMirror;
 
 public class GetElementPtr extends Inst{
 
@@ -31,6 +32,12 @@ public class GetElementPtr extends Inst{
                 elementOffset.type().toString() + " " + elementOffset.toString();
         return dest().toString() + " = getelementptr inbounds " + type.toString() + ", " +
                 ptr.type().toString() + ", " + arrayOffToStr + elementOffToStr;
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new GetElementPtr(type, mirror.opMir(ptr), mirror.opMir(arrayOffset),
+                mirror.opMir(elementOffset), (Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override

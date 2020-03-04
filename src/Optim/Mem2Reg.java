@@ -117,7 +117,8 @@ public class Mem2Reg extends Pass{
         //collect load/store info.
         for (int i = 1; i <= tot;++i) {
             IRBlock block = DFSIndex.get(i);
-            for (Inst inst : block.instructions()) {
+            for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
+                Inst inst = iter.next();
                 if (inst instanceof Load) {
                     Operand address = ((Load) inst).address();
                     if (address instanceof Register && (allocVars.contains(address))) {
@@ -129,7 +130,7 @@ public class Mem2Reg extends Pass{
                         HashMap<Register, Operand> blockLiveOut = allocStores.get(inst.block());
                         if (blockLiveOut.containsKey(address)){
                             inst.dest().replaceAllUseWith(blockLiveOut.get(address));
-                            inst.removeSelf();
+                            iter.remove();
                         } //in the same block, no need to insert phi
                         else {
                             allocLoads.get(inst.block()).add((Load) inst);
@@ -141,7 +142,7 @@ public class Mem2Reg extends Pass{
                         //add live-out info
                         defBlocks.add(inst.block());
                         allocStores.get(inst.block()).put((Register) address, ((Store) inst).value());
-                        inst.removeSelf();
+                        iter.remove();
                     }
                 }
             }
@@ -198,6 +199,7 @@ public class Mem2Reg extends Pass{
                         } else currentBlock = currentBlock.iDom();
                         //the replaced one can only from an ancestor of the currentBlock or itself
                     load.removeSelf();
+                    //this one is safe since it is not in iterating all instructions in the block
                 });
             }
         }

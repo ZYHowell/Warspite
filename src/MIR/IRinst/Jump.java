@@ -3,23 +3,29 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 public class Jump extends Inst {
 
-    private IRBlock destBlock;
+    private IRBlock jumpDest;
 
-    public Jump(IRBlock destBlock, IRBlock block) {
+    public Jump(IRBlock jumpDest, IRBlock block) {
         super(null, block);
-        this.destBlock = destBlock;
+        this.jumpDest = jumpDest;
     }
 
     public IRBlock destBlock() {
-        return destBlock;
+        return jumpDest;
     }
 
     @Override
     public String toString() {
-        return "br label %" + destBlock.name();
+        return "br label %" + jumpDest.name();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addTerminator(new Jump(mirror.blockMir(jumpDest), destBlock));
     }
 
     @Override

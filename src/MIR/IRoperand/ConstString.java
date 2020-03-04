@@ -14,6 +14,11 @@ public class ConstString extends Operand {
     }
 
     @Override
+    public Operand copy() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "@" + name;
     }

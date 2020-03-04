@@ -23,7 +23,7 @@ It is simply a LLVM IR. (and that's why this homework is not interesting: simply
 
 ### References
 
-1. SSA book, Lots of authous, http://ssabook.gforge.inria.fr/latest/book.pdf ;
+1. SSA book, Lots of authors, http://ssabook.gforge.inria.fr/latest/book.pdf ;
 
 2. Engineering a Compiler ed.2, Keith.D.Cooper & Linda Torczon;
 

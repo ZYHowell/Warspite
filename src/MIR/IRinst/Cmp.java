@@ -5,6 +5,7 @@ import MIR.IRoperand.Null;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
+import Util.MIRMirror;
 
 public class Cmp extends Inst{
     public enum CmpOpCategory {
@@ -32,6 +33,12 @@ public class Cmp extends Inst{
         } else typeString = src1.type().toString();
         return dest().toString() + " = " + "icmp " + opCode.toString() + " " + typeString +
                 src1.toString()  + ", " + src2.toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Cmp(mirror.opMir(src1), mirror.opMir(src2),
+                (Register)mirror.opMir(dest()), opCode, destBlock));
     }
 
     @Override

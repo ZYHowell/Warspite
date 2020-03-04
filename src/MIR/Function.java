@@ -20,6 +20,7 @@ public class Function {
     private HashSet<Function> callFunction = new HashSet<>();
     private HashSet<Register> allocaVar = new HashSet<>();
     private HashSet<IRBlock> blocks = new HashSet<>();
+    private boolean hasSideEffect = true;
 
 
     public Function(String name) {
@@ -27,10 +28,10 @@ public class Function {
         blocks.add(entryBlock);
     }
 
-
     public String name() {
         return name;
     }
+
     public void addCalleeFunction(Function callee) {
         callFunction.add(callee);
     }
@@ -61,6 +62,9 @@ public class Function {
     public void addParam(Param parameter){
         parameters.add(parameter);
     }
+    public ArrayList<Param> params() {
+        return parameters;
+    }
     public IRBlock entryBlock() {
         return entryBlock;
     }
@@ -76,5 +80,12 @@ public class Function {
     }
     public HashSet<Register> allocVars() {
         return allocaVar;
+    }
+
+    public void setSideEffect(boolean has) {
+        hasSideEffect = has;
+    }
+    public boolean hasSideEffect() {
+        return hasSideEffect;
     }
 }

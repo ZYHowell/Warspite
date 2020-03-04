@@ -14,21 +14,6 @@ import java.util.HashMap;
 
 public class Root {
 
-    private Function printFunc = new Function("print"),
-                     printlnFunc = new Function("println"),
-                     printIntFunc = new Function("printInt"),
-                     printlnIntFunc = new Function("printlnInt"),
-                     getStringFunc = new Function("getString"),
-                     getIntFunc = new Function("getInt"),
-                     toStringFunc = new Function("toString"),
-                     stringAdd = new Function("stringAdd"),
-                     stringLT = new Function("stringLT"),
-                     stringGT = new Function("stringGT"),
-                     stringLE = new Function("stringLE"),
-                     stringGE = new Function("stringGE"),
-                     stringEQ = new Function("stringEQ"),
-                     stringNE = new Function("stringNE");
-
     private HashMap<String, Function> builtinFunctions = new HashMap<>();
     private HashMap<String, Function> functions = new HashMap<>();
     private HashMap<String, String> ConstStrings = new HashMap<>();
@@ -36,19 +21,33 @@ public class Root {
     private HashMap<String, ClassType> types = new HashMap<>();
 
     public Root() {
+        Function printFunc = new Function("print");
         builtinFunctions.put("g_print", printFunc);
+        Function printlnFunc = new Function("println");
         builtinFunctions.put("g_println", printlnFunc);
+        Function printIntFunc = new Function("printInt");
         builtinFunctions.put("g_printInt", printIntFunc);
+        Function printlnIntFunc = new Function("printlnInt");
         builtinFunctions.put("g_printlnInt", printlnIntFunc);
+        Function getStringFunc = new Function("getString");
         builtinFunctions.put("g_getString", getStringFunc);
+        Function getIntFunc = new Function("getInt");
         builtinFunctions.put("g_getInt", getIntFunc);
+        Function toStringFunc = new Function("toString");
         builtinFunctions.put("g_toString", toStringFunc);
+        Function stringAdd = new Function("stringAdd");
         builtinFunctions.put("g_stringAdd", stringAdd);
+        Function stringLT = new Function("stringLT");
         builtinFunctions.put("g_stringLT", stringLT);
+        Function stringGT = new Function("stringGT");
         builtinFunctions.put("g_stringGT", stringGT);
+        Function stringLE = new Function("stringLE");
         builtinFunctions.put("g_stringLE", stringLE);
+        Function stringGE = new Function("stringGE");
         builtinFunctions.put("g_stringGE", stringGE);
+        Function stringEQ = new Function("stringEQ");
         builtinFunctions.put("g_stringEQ", stringEQ);
+        Function stringNE = new Function("stringNE");
         builtinFunctions.put("g_stringNE", stringNE);
     }
 
@@ -60,6 +59,9 @@ public class Root {
     }
     public Function getBuiltinFunction(String name) {
         return builtinFunctions.get(name);
+    }
+    public HashMap<String, Function> builtinFunctions() {
+        return builtinFunctions;
     }
     public void addFunction(String name, Function func) {
         functions.put(name, func);

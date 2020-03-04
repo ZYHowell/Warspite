@@ -16,6 +16,11 @@ public class ConstInt extends Operand {
     }
 
     @Override
+    public Operand copy() {
+        return new ConstInt(value, type().size());
+    }
+
+    @Override
     public String toString() {
         return "" + value;
     }

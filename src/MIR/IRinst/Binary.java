@@ -3,6 +3,9 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
+
+import java.util.HashMap;
 
 public class Binary extends Inst {
     public enum BinaryOpCategory {
@@ -26,6 +29,12 @@ public class Binary extends Inst {
     public String toString() {
         return dest().name() + " = " + opCode.toString() + " " +
                 src1.type().toString() + " " + src1.toString() + ", " + src2.toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Binary(mirror.opMir(src1), mirror.opMir(src2),
+                (Register)mirror.opMir(dest()), opCode, destBlock));
     }
 
     @Override

@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 public class Store extends Inst{
 
@@ -31,6 +32,11 @@ public class Store extends Inst{
         return "store " + value.type().toString() + ", " + value.toString() +
                 address.type().toString() + " " + address.toString() +
                 ", align " + value.type().size() / 8;
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Store(mirror.opMir(address), mirror.opMir(value), destBlock));
     }
 
     @Override

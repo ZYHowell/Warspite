@@ -20,5 +20,6 @@ abstract public class Operand {
         return type;
     }
 
+    public abstract Operand copy();
     public abstract String toString();
 }

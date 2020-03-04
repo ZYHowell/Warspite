@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 public class Load extends Inst{
 
@@ -24,6 +25,11 @@ public class Load extends Inst{
         return dest().name() + " = load " + dest().type().toString() + ", " +
                 address.type().toString() + " " + address.toString() + ", align" +
                 dest().type().size() / 8;
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Load((Register)mirror.opMir(dest()), mirror.opMir(address), destBlock));
     }
 
     @Override

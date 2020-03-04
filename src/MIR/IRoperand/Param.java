@@ -22,6 +22,11 @@ public class Param extends Operand {
     }
 
     @Override
+    public Operand copy() {
+        return new Param(type(), name);
+    }
+
+    @Override
     public String toString() {
         return "%" + name;
     }

@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 public class Branch extends Inst {
 
@@ -31,6 +32,12 @@ public class Branch extends Inst {
     public String toString() {
         return "br " + condition.type().toString() + " " + condition.toString() + ", %" +
                 trueDest.name() + ", %" + falseDest.name();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addTerminator(new Branch(mirror.opMir(condition),
+                mirror.blockMir(trueDest), mirror.blockMir(falseDest), destBlock));
     }
 
     @Override

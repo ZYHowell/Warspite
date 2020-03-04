@@ -29,6 +29,11 @@ public class Register extends Operand {
         return def;
     }
 
+    @Override
+    public Operand copy() {
+        return new Register(type(), name);
+    }
+
     public void replaceAllUseWith(Operand opr) {
         uses.forEach(inst -> {
             inst.ReplaceUseWith(this, opr);

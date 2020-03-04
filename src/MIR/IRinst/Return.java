@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 import org.jetbrains.annotations.Nullable;
 
 public class Return extends Inst {
@@ -25,6 +26,11 @@ public class Return extends Inst {
     @Override
     public String toString() {
         return "ret " + value.type().toString() + " " + value.toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Return(destBlock, mirror.opMir(value)));
     }
 
     @Override

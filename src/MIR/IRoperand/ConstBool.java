@@ -16,6 +16,11 @@ public class ConstBool extends Operand{
     }
 
     @Override
+    public Operand copy() {
+        return new ConstBool(value);
+    }
+
+    @Override
     public String toString() {
         return value ? "1" : "0";
     }

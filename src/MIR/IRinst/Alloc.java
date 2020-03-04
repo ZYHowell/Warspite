@@ -3,9 +3,10 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
-import MIR.IRtype.ClassType;
-import MIR.IRtype.IRBaseType;
 import MIR.IRtype.Pointer;
+import Util.MIRMirror;
+
+import java.util.HashMap;
 
 public class Alloc extends Inst {
 
@@ -20,6 +21,11 @@ public class Alloc extends Inst {
         return dest().toString() + " = " + "alloca " +
                 ((Pointer)dest().type()).pointTo().toString() + ", align " +
                 ((Pointer)dest().type()).pointTo().size() / 8;
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Alloc((Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override

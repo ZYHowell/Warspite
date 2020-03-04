@@ -9,6 +9,11 @@ public class Null extends Operand {
     }
 
     @Override
+    public Operand copy() {
+        return new Null();
+    }
+
+    @Override
     public String toString() {
         return "null";
     }

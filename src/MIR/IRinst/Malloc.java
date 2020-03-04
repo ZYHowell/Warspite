@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 public class Malloc extends Inst {
 
@@ -19,6 +20,11 @@ public class Malloc extends Inst {
     public String toString() {
         return dest().toString() + " = call noalias i8* @malloc(" +
                 length.type().toString() + " " + length.toString() + ")";
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new Malloc(mirror.opMir(length), (Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override

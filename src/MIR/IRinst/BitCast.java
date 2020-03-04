@@ -4,6 +4,9 @@ import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
+import Util.MIRMirror;
+
+import java.util.HashMap;
 
 public class BitCast extends Inst {
 
@@ -27,6 +30,12 @@ public class BitCast extends Inst {
     public String toString() {
         return dest().toString() + " = " + it.type().toString() + " " + it.toString() +
                 " to " + dest().type().toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        destBlock.addInst(new BitCast(mirror.opMir(it),
+                (Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override

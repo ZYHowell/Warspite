@@ -4,6 +4,7 @@ import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import Util.MIRMirror;
 
 import java.util.ArrayList;
 
@@ -23,6 +24,9 @@ public class Call extends Inst{
     public Function callee() {
         return callee;
     }
+    public ArrayList<Operand> params() {
+        return params;
+    }
 
     @Override
     public String toString() {
@@ -39,6 +43,13 @@ public class Call extends Inst{
         }
         ret.append(")");
         return ret.toString();
+    }
+
+    @Override
+    public void addMirror(IRBlock destBlock, MIRMirror mirror) {
+        ArrayList<Operand> mirrorParams = new ArrayList<>();
+        params.forEach(param -> mirrorParams.add(mirror.opMir(param)));
+        destBlock.addInst(new Call(callee, mirrorParams, (Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override
