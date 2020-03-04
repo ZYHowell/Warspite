@@ -7,6 +7,8 @@ import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class Cmp extends Inst{
     public enum CmpOpCategory {
         slt, sgt, sle, sge, eq, ne
@@ -33,6 +35,13 @@ public class Cmp extends Inst{
         } else typeString = src1.type().toString();
         return dest().toString() + " = " + "icmp " + opCode.toString() + " " + typeString +
                 src1.toString()  + ", " + src2.toString();
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(src1);ret.add(src2);
+        return ret;
     }
 
     @Override

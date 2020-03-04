@@ -5,6 +5,8 @@ import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class Jump extends Inst {
 
     private IRBlock jumpDest;
@@ -26,6 +28,11 @@ public class Jump extends Inst {
     @Override
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addTerminator(new Jump(mirror.blockMir(jumpDest), destBlock));
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        return new HashSet<>();
     }
 
     @Override

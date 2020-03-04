@@ -33,21 +33,30 @@ public class Root {
         builtinFunctions.put("g_getString", getStringFunc);
         Function getIntFunc = new Function("getInt");
         builtinFunctions.put("g_getInt", getIntFunc);
+        //above: has side effect(I/O)
         Function toStringFunc = new Function("toString");
+        toStringFunc.setSideEffect(false);
         builtinFunctions.put("g_toString", toStringFunc);
         Function stringAdd = new Function("stringAdd");
+        stringAdd.setSideEffect(false);
         builtinFunctions.put("g_stringAdd", stringAdd);
         Function stringLT = new Function("stringLT");
+        stringLT.setSideEffect(false);
         builtinFunctions.put("g_stringLT", stringLT);
         Function stringGT = new Function("stringGT");
+        stringGT.setSideEffect(false);
         builtinFunctions.put("g_stringGT", stringGT);
         Function stringLE = new Function("stringLE");
+        stringLE.setSideEffect(false);
         builtinFunctions.put("g_stringLE", stringLE);
         Function stringGE = new Function("stringGE");
+        stringGE.setSideEffect(false);
         builtinFunctions.put("g_stringGE", stringGE);
         Function stringEQ = new Function("stringEQ");
+        stringEQ.setSideEffect(false);
         builtinFunctions.put("g_stringEQ", stringEQ);
         Function stringNE = new Function("stringNE");
+        stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
     }
 
@@ -76,6 +85,9 @@ public class Root {
     }
     public void addGlobalVar(GlobalReg var) {
         globalVar.add(var);
+    }
+    public ArrayList<GlobalReg> globalVar() {
+        return globalVar;
     }
     public void addConstString(String name, String value) {
         ConstStrings.put(name, value);

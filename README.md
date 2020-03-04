@@ -1,11 +1,10 @@
 # Mx-Compiler
 This is my solution for MS208 homework in ACM class, a compiler of Mx* language which is alike simplified C++ and Java. 
 This document contains two parts: details of the project and my bad experience of java&IDEA. 
+
 The front end of the compiler uses ANTLR4. 
 
 *java is a language that, at every place, shows how lazy its designer is and how much its user has to consider.*
-
-*How dare IDEA warn me for passing null to a parameter without noNull annotation!*
 
 ### Front End Design & HIR
 
@@ -20,6 +19,20 @@ Suggested by senior students' reports, a DCE is made in HIR level.
 ### MIR
 
 It is simply a LLVM IR. (and that's why this homework is not interesting: simply follow the LLVM is easy and sufficient)
+
+My optim already contains: 
+
+* Function inline
+* a precise side effect analysis and ADCE with it
+
+I intend to realize: 
+
+ * constant propagation
+ * CFG simplification
+ * scalar replacement of aggregate(really? maybe on HIR)
+ * value numbering
+ * common subexpression elimination
+ * redundant elimination
 
 ### References
 

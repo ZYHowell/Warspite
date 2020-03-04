@@ -6,6 +6,7 @@ import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Phi extends Inst {
 
@@ -48,7 +49,10 @@ public class Phi extends Inst {
         values.forEach(value -> mirrorValues.add(mirror.opMir(value)));
         destBlock.addPhi(new Phi((Register)mirror.opMir(dest()), mirrorBlocks, mirrorValues, destBlock));
     }
-
+    @Override
+    public HashSet<Operand> uses() {
+        return new HashSet<>(values);
+    }
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         for (int i = 0;i < values.size();++i)

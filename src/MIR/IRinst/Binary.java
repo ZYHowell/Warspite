@@ -5,7 +5,7 @@ import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
-import java.util.HashMap;
+import java.util.HashSet;
 
 public class Binary extends Inst {
     public enum BinaryOpCategory {
@@ -35,6 +35,13 @@ public class Binary extends Inst {
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addInst(new Binary(mirror.opMir(src1), mirror.opMir(src2),
                 (Register)mirror.opMir(dest()), opCode, destBlock));
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(src1);ret.add(src2);
+        return ret;
     }
 
     @Override

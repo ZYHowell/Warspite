@@ -5,6 +5,8 @@ import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class Store extends Inst{
 
     private Operand value;
@@ -37,6 +39,13 @@ public class Store extends Inst{
     @Override
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addInst(new Store(mirror.opMir(address), mirror.opMir(value), destBlock));
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(value);ret.add(address);
+        return ret;
     }
 
     @Override

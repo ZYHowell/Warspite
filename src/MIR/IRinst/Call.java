@@ -7,6 +7,7 @@ import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Call extends Inst{
 
@@ -43,6 +44,11 @@ public class Call extends Inst{
         }
         ret.append(")");
         return ret.toString();
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        return new HashSet<>(params);
     }
 
     @Override

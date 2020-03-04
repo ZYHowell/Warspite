@@ -5,7 +5,7 @@ import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
-import java.util.HashMap;
+import java.util.HashSet;
 
 abstract public class Inst {
 
@@ -31,5 +31,5 @@ abstract public class Inst {
     public abstract void ReplaceUseWith(Register replaced, Operand replaceTo);
     public abstract String toString();
     public abstract void addMirror(IRBlock destBlock, MIRMirror mirror);
-
+    public abstract HashSet<Operand> uses();
 }

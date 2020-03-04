@@ -5,6 +5,8 @@ import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class Malloc extends Inst {
 
     private Operand length;
@@ -26,7 +28,12 @@ public class Malloc extends Inst {
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addInst(new Malloc(mirror.opMir(length), (Register)mirror.opMir(dest()), destBlock));
     }
-
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(length);
+        return ret;
+    }
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (length == replaced) length = replaceTo;

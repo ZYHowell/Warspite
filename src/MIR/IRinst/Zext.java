@@ -6,6 +6,8 @@ import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class Zext extends Inst{
 
     private Operand origin;
@@ -34,7 +36,12 @@ public class Zext extends Inst{
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addInst(new Zext(mirror.opMir(origin), (Register)mirror.opMir(dest()), destBlock));
     }
-
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(origin);
+        return ret;
+    }
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (origin == replaced) origin = replaceTo;

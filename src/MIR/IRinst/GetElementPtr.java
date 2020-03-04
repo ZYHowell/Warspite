@@ -6,6 +6,8 @@ import MIR.IRoperand.Register;
 import MIR.IRtype.IRBaseType;
 import Util.MIRMirror;
 
+import java.util.HashSet;
+
 public class GetElementPtr extends Inst{
 
     private Operand arrayOffset, elementOffset;
@@ -32,6 +34,14 @@ public class GetElementPtr extends Inst{
                 elementOffset.type().toString() + " " + elementOffset.toString();
         return dest().toString() + " = getelementptr inbounds " + type.toString() + ", " +
                 ptr.type().toString() + ", " + arrayOffToStr + elementOffToStr;
+    }
+
+    @Override
+    public HashSet<Operand> uses() {
+        HashSet<Operand> ret = new HashSet<>();
+        ret.add(ptr);ret.add(arrayOffset);
+        if (elementOffset != null) ret.add(elementOffset);
+        return ret;
     }
 
     @Override
