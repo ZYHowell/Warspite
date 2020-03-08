@@ -4,7 +4,6 @@ import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import Util.MIRMirror;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 
@@ -46,7 +45,12 @@ public class Return extends Inst {
         if (value == replaced) value = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().removeTerminal();
+        if (value != null) value.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return true;
     }
 }

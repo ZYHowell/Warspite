@@ -24,6 +24,7 @@ public class primitiveType extends BaseType {
     }
     @Override
     public boolean sameType(Type it) {
-        return typeCategory == it.typeCategory() && it.dim() == 0;
+        return (isNull() && (it.isArray() || it.isClass())) ||
+                (typeCategory == it.typeCategory() && it.dim() == 0);
     }
 }

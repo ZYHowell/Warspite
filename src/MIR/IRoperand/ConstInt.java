@@ -1,5 +1,6 @@
 package MIR.IRoperand;
 
+import MIR.IRinst.Inst;
 import MIR.IRtype.IntType;
 
 public class ConstInt extends Operand {
@@ -14,6 +15,12 @@ public class ConstInt extends Operand {
     public int value() {
         return value;
     }
+
+    @Override
+    public void addUse(Inst inst) {}
+
+    @Override
+    public void removeUse(Inst inst) {}
 
     @Override
     public Operand copy() {

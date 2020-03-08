@@ -54,7 +54,12 @@ public class Branch extends Inst {
         if (condition == replaced) condition = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().removeTerminal();
+        condition.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return true;
     }
 }

@@ -12,7 +12,6 @@ abstract public class Operand {
     }
 
 
-    public void addUse(Inst inst) {}
     public Inst defInst() {
         return null;
     }
@@ -20,6 +19,8 @@ abstract public class Operand {
         return type;
     }
 
+    public abstract void addUse(Inst inst);
+    public abstract void removeUse(Inst inst);
     public abstract Operand copy();
     public abstract String toString();
 }

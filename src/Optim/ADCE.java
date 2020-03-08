@@ -5,8 +5,10 @@ import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.IRtype.Pointer;
 import MIR.Root;
+import Util.MIRFnGraph;
 
 import java.util.HashSet;
+import java.util.Iterator;
 
 /*
  * principle: I/O, "outer" store and side effect call are necessary
@@ -34,10 +36,12 @@ public class ADCE extends Pass {
     private boolean change, MoreLive;
     private HashSet<Inst> liveCode = new HashSet<>();
     private HashSet<Operand> outerOp = new HashSet<>();
+    private MIRFnGraph CallGraph;
 
     public ADCE(Root irRoot) {
         super();
         this.irRoot = irRoot;
+        CallGraph = new MIRFnGraph(irRoot, true);
     }
 
     private void initFnCollect(Function fn) {
@@ -54,6 +58,7 @@ public class ADCE extends Pass {
                         change = true;
                         outerOp.add(inst.dest());
                     } else assert inst instanceof Load || uses.isEmpty();
+                    if (inst.isTerminal()) liveCode.add(inst);
                       //i've never seen such judgement from any textbook, so check if my idea is correct...
                 });
                 block.phiInst().forEach((dest, inst) -> {
@@ -69,34 +74,63 @@ public class ADCE extends Pass {
     }
     private void initCollect() {
         //collect "outer" address of each function
+        CallGraph.build();
         outerOp.addAll(irRoot.globalVar());
+
         irRoot.functions().forEach((name, fn) -> {
             outerOp.addAll(fn.params());
             initFnCollect(fn);
             fn.setSideEffect(false);
         });
         //collect I/O and side effect functions and outer stores
-        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block ->
-            block.instructions().forEach(inst -> {
-                if (inst instanceof Call && ((Call)inst).callee().hasSideEffect()){
-                    liveCode.add(inst);
-                    fn.setSideEffect(true);
-                    //also add others?
-                }
-                else if (inst instanceof Store && outerOp.contains(((Store)inst).address())){
-                    liveCode.add(inst);
-                    fn.setSideEffect(true);
-                    //also add others?
-                }
-            })));
-        //side effect propagation
+        irRoot.functions().forEach((name, fn) -> {
+            if (!fn.hasSideEffect())
+                fn.blocks().forEach(block -> block.instructions().forEach(inst -> {
+                    if (inst instanceof Call && ((Call)inst).callee().hasSideEffect()){
+                        liveCode.add(inst);
+                        fn.setSideEffect(true);
+                        CallGraph.callerOf(fn).forEach(func -> func.setSideEffect(true));
+                    }
+                    else if (inst instanceof Store && outerOp.contains(((Store)inst).address())){
+                        liveCode.add(inst);
+                        fn.setSideEffect(true);
+                        CallGraph.callerOf(fn).forEach(func -> func.setSideEffect(true));
+                    }
+                }));
+        });
+    }
+
+    private void tryAdd(Inst inst) {
+        inst.uses().forEach(opr -> {
+            if (opr.defInst() != null && !liveCode.contains(opr.defInst())) {
+                MoreLive = true;
+                liveCode.add(opr.defInst());
+            }
+        });
     }
 
     private void collect() {
-        while(MoreLive) {
-            MoreLive = false;
+        irRoot.functions().forEach((name, fn) -> {
+            MoreLive = true;
+            while(MoreLive) {
+                MoreLive = false;
+                fn.blocks().forEach(block -> block.instructions().forEach(inst -> {
+                    if (liveCode.contains(inst)) tryAdd(inst);
+                }));
+            }
+        });
+    }
 
-        }
+    public void clean() {
+        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+            for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
+                Inst inst = iter.next();
+                if (!liveCode.contains(inst)) {
+                    iter.remove();
+                    inst.removeSelf(false);
+                }
+            }
+        }));
     }
 
     @Override
@@ -106,7 +140,7 @@ public class ADCE extends Pass {
         MoreLive = true;
         initCollect();
         collect();
-
+        clean();
         return false;
     }
 }

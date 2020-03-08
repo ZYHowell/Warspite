@@ -103,6 +103,7 @@ public class Root {
                 tmp = new Pointer(tmp, false);
             //consider int[][] t; t(int***) is resolvable, but of course the value(int**) of t is not.
             //consider int[][] f(); it returns int**, so not resolvable.
+            return tmp;
         }
         else if (type.isInt()) return new IntType(32);
         else if (type.isBool()) {

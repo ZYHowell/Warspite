@@ -56,7 +56,12 @@ public class Cmp extends Inst{
         if (src2 == replaced) src2 = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        src1.removeUse(this);src2.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

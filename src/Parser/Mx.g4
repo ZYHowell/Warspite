@@ -4,8 +4,8 @@ program : programfragment* EOF;
 
 programfragment : varDef | funcDef | classDef;
 
-classDef : Class Identifier '{' (varDef | funcDef)* '}';
-funcDef : type? Identifier '(' paramList? ')' suite ';';
+classDef : Class Identifier '{' (varDef | funcDef)* '}' ';';
+funcDef : type? Identifier '(' paramList? ')' suite;
 varDef : type singleVarDef (',' singleVarDef)* ';';
 
 singleVarDef : Identifier ('=' expression)?;
@@ -77,7 +77,8 @@ literal
     ;
 
 creator
-    : (basicType | Identifier) ('[' expression ']')+ ('[' ']')* #arrayCreator
+    : (basicType | Identifier) ('[' expression ']')+ ('[' ']')+ ('[' expression ']')+ #errorCreator
+    | (basicType | Identifier) ('[' expression ']')+ ('[' ']')* #arrayCreator
     | (basicType | Identifier) '(' ')'                          #classCreator
     | (basicType | Identifier)                                  #basicCreator
     ;
@@ -89,7 +90,6 @@ String : 'string';
 Null: 'null';
 If : 'if';
 Else : 'else';
-Const : 'const';
 Continue : 'continue';
 Break : 'break';
 For : 'for';
@@ -157,7 +157,7 @@ SChar
     ;
 
 Identifier
-    : [a-zA-Z_] [a-zA-Z_0-9]*
+    : [a-zA-Z] [a-zA-Z_0-9]*
     ;
 
 DecimalInteger

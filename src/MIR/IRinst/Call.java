@@ -65,7 +65,12 @@ public class Call extends Inst{
                 params.set(i, replaceTo);
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        params.forEach(param -> param.removeUse(this));
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

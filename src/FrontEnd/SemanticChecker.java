@@ -35,20 +35,30 @@ public class SemanticChecker implements ASTVisitor {
     private funDef currentFunction;
     private Stack<ASTNode> loopStack = new Stack<>();
     private boolean haveReturn = false;
+    private boolean classMemberCollect = false;
     private Root irRoot;
     private ClassType currentIRClass = null;
 
     public SemanticChecker(globalScope gScope, Root irRoot) {
         this.gScope = gScope;
         this.irRoot = irRoot;
-        currentScope = gScope;
     }
 
     @Override
     public void visit(rootNode it) {
+        currentScope = gScope;
         if (!it.allDef().isEmpty()) {
-            it.allDef().forEach(node -> node.accept(this));
+            classMemberCollect = true;
+            it.allDef().forEach(node -> {
+                if (node instanceof classDef) node.accept(this);
+            });
+            classMemberCollect = false;
+            it.allDef().forEach(node -> {
+                node.accept(this);
+            });
         }
+        if (!gScope.containsMethod("main", true))
+            throw new semanticError("no main", it.pos());
     }
 
 
@@ -58,10 +68,12 @@ public class SemanticChecker implements ASTVisitor {
         currentScope = defClass.scope();
         currentClass = defClass;
         currentIRClass = irRoot.getType(it.Identifier());
-        it.members().forEach(member -> member.accept(this));
+        if (classMemberCollect) it.members().forEach(member -> member.accept(this));
         currentIRClass = null;
-        it.methods().forEach(method -> method.accept(this));
-        it.constructors().forEach(constructor->constructor.accept(this));
+        if (!classMemberCollect) {
+            it.methods().forEach(method -> method.accept(this));
+            it.constructors().forEach(constructor->constructor.accept(this));
+        }
         currentClass = null;
         currentScope = currentScope.parentScope();
     }
@@ -70,6 +82,8 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(funDef it) {
         if(it.isConstructor()) {
             currentRetType = gScope.getVoidType();
+            if (!it.Identifier().equals(currentClass.name()))
+                throw new semanticError("mismatch constructor", it.pos());
         } else currentRetType = it.decl().returnType();
         currentFunction = it;
         haveReturn = false;
@@ -77,6 +91,13 @@ public class SemanticChecker implements ASTVisitor {
         currentScope = it.decl().scope();
         it.body().accept(this);
         currentScope = currentScope.parentScope();
+        if (it.Identifier().equals("main")) {
+            haveReturn = true;
+            if (!currentRetType.isInt())
+                throw new semanticError("return of main is not int", it.pos());
+            if (it.parameters().size() > 0)
+                throw new semanticError("main has args", it.pos());
+        }
         if (!haveReturn && !currentRetType.isVoid()) throw new semanticError("no return", it.pos());
         currentFunction = null;
         currentRetType = null;
@@ -88,7 +109,6 @@ public class SemanticChecker implements ASTVisitor {
                 currentScope == gScope);
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());
-        currentScope.defineMember(it.name(), theVar, it.pos());
 
         if (currentScope instanceof classScope) {
             theVar.setIsMember();
@@ -107,10 +127,13 @@ public class SemanticChecker implements ASTVisitor {
                                         theVar.type().toString() + ", actually is: " +
                                         it.init().type().toString(), it.pos());
         }
+        currentScope.defineMember(it.name(), theVar, it.pos());
     }
 
-    @Override   //not used
-    public void visit(varDefList it) {}
+    @Override
+    public void visit(varDefList it) {
+        it.getList().forEach(varDef -> varDef.accept(this));
+    }
 
 
     @Override
@@ -158,11 +181,11 @@ public class SemanticChecker implements ASTVisitor {
         if (it.incr() != null)
             it.incr().accept(this);
 
-        if (it.condition() != null)
+        if (it.condition() != null) {
             it.condition().accept(this);
-
-        if (!it.condition().type().isBool())
-            throw new semanticError("not a bool", it.condition().pos());
+            if (!it.condition().type().isBool())
+                throw new semanticError("not a bool", it.condition().pos());
+        }
 
         currentScope = new Scope(currentScope);
         loopStack.push(it);
@@ -193,7 +216,7 @@ public class SemanticChecker implements ASTVisitor {
         haveReturn = true;
         if (it.retValue() != null) {
             it.retValue().accept(this);
-            if (currentRetType.sameType(it.retValue().type()))
+            if (!currentRetType.sameType(it.retValue().type()))
                 throw new semanticError("not the correct return type: is " +
                                         it.retValue().type().toString() + ", should be: " +
                                         currentRetType.toString(), it.pos());
@@ -229,7 +252,13 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(arrayExpr it) {
         it.base().accept(this);
         it.width().accept(this);
-        it.setType(new arrayType(it.base().type()));
+        if (!it.width().type().isInt())
+            throw new semanticError("array index not int", it.width().pos());
+        if (it.base().type().dim() > 1)
+            it.setType(new arrayType(it.base().type()));
+        else if (it.base().type().dim() < 1)
+            throw new semanticError("not actually an array", it.base().pos());
+        else it.setType(it.base().type().baseType());
     }
 
     @Override
@@ -248,9 +277,10 @@ public class SemanticChecker implements ASTVisitor {
             if (!( (typeO.isInt() || typeO.sameType(gScope.getStringType()))
                     && (typeO.sameType(typeT)) ))
                 throw binaryCalError(typeO, typeT, opCode, it.pos());
-            it.setType(typeO);
+            if (opCode.ordinal() == 9) it.setType(typeO);
+            else it.setType(gScope.getBoolType());
         } else if (opCode.ordinal() < 16) {
-            if (!(typeO.isInt() && typeT.isInt()))
+            if (!(typeO.isBool() && typeT.isBool()))
                 throw binaryCalError(typeO, typeT, opCode, it.pos());
             it.setType(gScope.getBoolType());
         } else if (opCode.ordinal() < 18) {
@@ -286,9 +316,13 @@ public class SemanticChecker implements ASTVisitor {
             if (opCode.ordinal() > 2)   //++ or --
                 if (!it.src().isAssignable())
                     throw new semanticError("not a left value. ", it.src().pos());
-        } else if (!it.src().type().isBool())
-            throw new semanticError("operator not match. Type: " +
+            it.setType(gScope.getIntType());
+        } else {
+            it.setType(gScope.getBoolType());
+            if (!it.src().type().isBool())
+                throw new semanticError("operator not match. Type: " +
                                     it.src().type().toString(), it.pos());
+        }
     }
 
     @Override
@@ -299,6 +333,7 @@ public class SemanticChecker implements ASTVisitor {
                     it.src().type().toString(), it.pos());
         if (!it.src().isAssignable())
             throw new semanticError("not a left value. ", it.pos());
+        it.setType(gScope.getIntType());
     }
 
 
@@ -326,6 +361,7 @@ public class SemanticChecker implements ASTVisitor {
                                             params.get(i).type().toString() + "', should be :'" +
                                             args.get(i).type().toString() + "'", params.get(i).pos());
             }
+            it.setType(func.returnType());
         } else throw new semanticError("function not defined(as a function)", it.callee().pos());
     }
 
@@ -366,7 +402,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(newExpr it) {
         it.exprs().forEach(expr -> {
             expr.accept(this);
-            if (expr.type().isInt())
+            if (!expr.type().isInt())
                 throw new semanticError("not a int", expr.pos());
         }); //cannot be null
         it.setType(gScope.generateType(it.typeN()));

@@ -54,7 +54,13 @@ public class Store extends Inst{
         if (address == replaced) address = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        address.removeUse(this);
+        value.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

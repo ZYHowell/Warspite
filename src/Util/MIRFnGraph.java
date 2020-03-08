@@ -16,10 +16,9 @@ public class MIRFnGraph {
     public MIRFnGraph(Root irRoot, boolean callerCollect) {
         this.irRoot = irRoot;
         this.callerCollect = callerCollect;
-        collect();
     }
 
-    private void collect() {
+    public void build() {
         if (callerCollect)
             irRoot.functions().forEach((name, func) -> caller.put(func, new HashSet<>()));
         irRoot.functions().forEach((name, func) -> {
@@ -30,7 +29,8 @@ public class MIRFnGraph {
                         func.addCalleeFunction(((Call)inst).callee());
                         if (callerCollect) caller.get(((Call)inst).callee()).add(func);
                     }
-                }));
+                })
+            );
         });
     }
 

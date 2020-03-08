@@ -21,6 +21,12 @@ public class Register extends Operand {
     public void addUse(Inst inst) {
         uses.add(inst);
     }
+
+    @Override
+    public void removeUse(Inst inst) {
+        uses.remove(inst);
+    }
+
     public void setDef(Inst inst) {
         def = inst;
     }

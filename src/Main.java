@@ -3,6 +3,7 @@ import BackEnd.*;
 import FrontEnd.*;
 import Optim.*;
 import MIR.Root;
+import Parser.MxErrorListener;
 import Parser.MxLexer;
 import Parser.MxParser;
 import Util.error.error;
@@ -23,7 +24,12 @@ public class Main {
             Root irRoot = new Root();
             globalScope gScope = new globalScope();
 
-            MxParser parser = new MxParser(new CommonTokenStream(new MxLexer(CharStreams.fromStream(input))));
+            MxLexer lexer = new MxLexer(CharStreams.fromStream(input));
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(new MxErrorListener());
+            MxParser parser = new MxParser(new CommonTokenStream(lexer));
+            parser.removeErrorListeners();
+            parser.addErrorListener(new MxErrorListener());
             ParseTree parseTreeRoot = parser.program();
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot = (rootNode)astBuilder.visit(parseTreeRoot);
@@ -33,7 +39,7 @@ public class Main {
             //new SideEffectBuilder(gScope).visit(ASTRoot);
             //new HIRDCE(gScope).visit(ASTRoot);
 
-            new IRBuilder(gScope, irRoot).visit(ASTRoot);
+            // new IRBuilder(gScope, irRoot).visit(ASTRoot);
 
         } catch (error er) {
             System.err.println(er.toString());

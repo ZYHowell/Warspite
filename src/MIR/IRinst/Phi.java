@@ -60,7 +60,12 @@ public class Phi extends Inst {
                 values.set(i, replaceTo);
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        values.forEach(value -> value.removeUse(this));
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

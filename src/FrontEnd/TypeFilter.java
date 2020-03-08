@@ -19,6 +19,7 @@ public class TypeFilter implements ASTVisitor {
 
     @Override
     public void visit(rootNode it) {
+        currentScope = gScope;
         if (!it.allDef().isEmpty()) {
             it.allDef().forEach(node -> {
                 if (!(node instanceof varDef)) node.accept(this);
@@ -35,7 +36,6 @@ public class TypeFilter implements ASTVisitor {
         it.methods().forEach(method -> method.accept(this));                //cannot be null
         it.constructors().forEach(constructor-> constructor.accept(this));  //cannot be null
         currentScope = currentScope.parentScope();
-        gScope.defineClass(it.Identifier(), defClass, it.pos());
     }
 
     @Override
@@ -61,7 +61,6 @@ public class TypeFilter implements ASTVisitor {
         if (currentScope instanceof functionScope)
             ((functionScope)currentScope).addParam(param, it.pos());
         else throw new internalError("type filter visit vardef not a param", it.pos());
-        ((functionScope)currentScope).addParam(param, it.pos());
     }
 
     @Override public void visit(varDefList it){}

@@ -113,6 +113,9 @@ public class globalScope extends Scope {
             return typeMap.get(typeName);
         throw new semanticError("undefined type", pos);
     }
+    public boolean hasType(String typeName) {
+        return typeMap.containsKey(typeName);
+    }
 
     public Type generateType(typeNode it) {
         if (it.dim() != 0)

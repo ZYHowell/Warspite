@@ -17,7 +17,7 @@ public class prefixExpr extends exprNode{
      */
 
     public prefixExpr(exprNode src, prefixCode opCode, position pos) {
-        super(pos, false);
+        super(pos, (opCode == prefixCode.Decrement || opCode == prefixCode.Increment));
         this.src = src;
         this.opCode = opCode;
     }

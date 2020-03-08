@@ -57,7 +57,14 @@ public class GetElementPtr extends Inst{
         if (elementOffset == replaced) elementOffset = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        ptr.removeUse(this);
+        arrayOffset.removeUse(this);
+        if (elementOffset != null) elementOffset.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

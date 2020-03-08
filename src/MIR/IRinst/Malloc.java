@@ -39,7 +39,12 @@ public class Malloc extends Inst {
         if (length == replaced) length = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        length.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

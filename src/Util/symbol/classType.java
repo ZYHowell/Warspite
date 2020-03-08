@@ -36,7 +36,7 @@ public class classType extends BaseType {
         localScope.defineMethod(name, func, pos);
     }
     public int setElement(Type type) {
-        int ret = elementTypeList.size() - 1;
+        int ret = elementTypeList.size();
         elementTypeList.add(type);
         allocSize += type.size();
         return ret;
@@ -59,8 +59,7 @@ public class classType extends BaseType {
     }
     @Override
     public boolean sameType(Type it) {
-        return it.dim() == 0 &&
-               TypeCategory.CLASS == it.typeCategory() &&
-               this.name().equals(((classType)it).name());
+        return it.isNull() || (it.dim() == 0 && it.isClass() &&
+                    this.name().equals(((classType)it).name()));
     }
 }

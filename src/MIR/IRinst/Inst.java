@@ -27,7 +27,8 @@ abstract public class Inst {
         return dest;
     }
 
-    public abstract void removeSelf();
+    public abstract boolean isTerminal();
+    public abstract void removeSelf(boolean removeFromBlock);
     public abstract void ReplaceUseWith(Register replaced, Operand replaceTo);
     public abstract String toString();
     public abstract void addMirror(IRBlock destBlock, MIRMirror mirror);

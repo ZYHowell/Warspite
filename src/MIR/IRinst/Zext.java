@@ -47,7 +47,12 @@ public class Zext extends Inst{
         if (origin == replaced) origin = replaceTo;
     }
     @Override
-    public void removeSelf() {
-        block().remove(this);
+    public void removeSelf(boolean removeFromBlock) {
+        if (removeFromBlock) block().remove(this);
+        origin.removeUse(this);
+    }
+    @Override
+    public boolean isTerminal() {
+        return false;
     }
 }

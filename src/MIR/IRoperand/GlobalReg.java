@@ -1,5 +1,6 @@
 package MIR.IRoperand;
 
+import MIR.IRinst.Inst;
 import MIR.IRtype.IRBaseType;
 
 public class GlobalReg extends Operand {
@@ -11,6 +12,16 @@ public class GlobalReg extends Operand {
         this.name = name;
     }
 
+
+    @Override
+    public void addUse(Inst inst) {
+        //to consider: should we add use of a global reg?
+    }
+
+    @Override
+    public void removeUse(Inst inst) {
+        //to consider just like the one above
+    }
 
     @Override
     public Operand copy() {

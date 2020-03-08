@@ -1,18 +1,17 @@
 package AST;
 
+import Util.error.internalError;
 import Util.position;
 import Util.symbol.varEntity;
 
 public class arrayExpr extends exprNode{
 
     private exprNode base, width;
-    private varEntity var; //can only be funcDecl or varEntity
 
     public arrayExpr(exprNode base, exprNode width, position pos) {
         super(pos, base.isAssignable());
         this.base = base;
         this.width = width;
-        this.var = base.entity();
     }
 
     public exprNode base() {
@@ -25,7 +24,8 @@ public class arrayExpr extends exprNode{
 
     @Override
     public varEntity entity() {
-        return var;
+        throw new internalError("entity of arrayExpr??", pos());
+        // return base.entity();
     }
     @Override
     public void accept(ASTVisitor visitor) {

@@ -1,5 +1,6 @@
 package MIR.IRoperand;
 
+import MIR.IRinst.Inst;
 import MIR.IRtype.BoolType;
 
 public class ConstBool extends Operand{
@@ -14,6 +15,12 @@ public class ConstBool extends Operand{
     public boolean value() {
         return value;
     }
+
+    @Override
+    public void addUse(Inst inst) {}
+
+    @Override
+    public void removeUse(Inst inst) {}
 
     @Override
     public Operand copy() {

@@ -8,15 +8,19 @@ The front end of the compiler uses ANTLR4.
 
 ### Front End Design & HIR
 
+Commits of "I look to you". 
+
 HIR is mainly an AST. In order to make semantic check, symbol table is also needed and I combine it with the scope. 
 
 There are three kinds of type: primitive, class and function. They represent abstract "def" nodes. (defined but not used)
 
 A naïve optimization is made in HIR level, that to split print(string + string) to two print commands. 
 
-Suggested by senior students' reports, a DCE is made in HIR level. 
+Suggested by senior students' reports, a DCE is made in HIR level. But I think its MIR version is already in ADCE, so maybe it is not co useful now? 
 
 ### MIR
+
+Commits of "12 days of Christmas". 
 
 It is simply a LLVM IR. (and that's why this homework is not interesting: simply follow the LLVM is easy and sufficient)
 
@@ -27,11 +31,12 @@ My optim already contains:
 
 I intend to realize: 
 
- * constant propagation
+ * constant folding
+ * Algebraic simplification
  * CFG simplification
  * scalar replacement of aggregate(really? maybe on HIR)
  * value numbering
- * common subexpression elimination
+ * common subexpression elimination(I'm very interested in implementing this in EBB)
  * redundant elimination
 
 ### References
@@ -43,3 +48,7 @@ I intend to realize:
 3. Advanced Compiler Design and Implementation, Steven.S.Muchnick
 
 **天灭Java，Rust保平安**
+
+3月4日，IDEA给没有加Nullable标记的参数赋值null报错
+
+3月7日，IDEA不让我debug，一次DEBUG结束后再次开始时显示无法连接到target VM

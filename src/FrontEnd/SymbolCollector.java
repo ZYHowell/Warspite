@@ -43,12 +43,16 @@ public class SymbolCollector implements ASTVisitor {
         currentScope = currentScope.parentScope();
         defClass.addScope(localScope);
         gScope.defineClass(it.Identifier(), defClass, it.pos());
+        if (gScope.containsMethod(it.Identifier(), false))
+            throw new semanticError("same name with a function", it.pos());
     }
 
     @Override
     public void visit(funDef it) {
         funcDecl func = new funcDecl(it.Identifier(), it);
         if (currentScope != gScope) func.setIsMethod();
+        else if (gScope.hasType(it.Identifier()))
+            throw new semanticError("same name with a class", it.pos());
         it.setDecl(func);
         if (it.isConstructor())
             currentScope.defineConstructor(func, it.pos());

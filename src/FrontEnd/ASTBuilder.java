@@ -164,7 +164,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
                     block.addStmt(tmp);
                     break;
                 }
-                block.addStmt(tmp);
+                if (tmp instanceof varDefList)
+                    block.getStmtList().addAll(((varDefList) tmp).getList());
+                else block.addStmt(tmp);
             }
         }
         return block;
@@ -380,7 +382,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
             return new nullLiteral(new position(ctx));
         else throw new syntaxError("illegally parsed", new position(ctx));
     }
-
+    @Override
+    public ASTNode visitErrorCreator(MxParser.ErrorCreatorContext ctx) {
+        throw new semanticError("error creator", new position(ctx));
+    }
     @Override
     public ASTNode visitArrayCreator(MxParser.ArrayCreatorContext ctx) {
         String baseTypeName;

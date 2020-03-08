@@ -131,6 +131,7 @@ public class Mem2Reg extends Pass{
                         if (blockLiveOut.containsKey(address)){
                             inst.dest().replaceAllUseWith(blockLiveOut.get(address));
                             iter.remove();
+                            inst.removeSelf(false);
                         } //in the same block, no need to insert phi
                         else {
                             allocLoads.get(inst.block()).add((Load) inst);
@@ -143,6 +144,7 @@ public class Mem2Reg extends Pass{
                         defBlocks.add(inst.block());
                         allocStores.get(inst.block()).put((Register) address, ((Store) inst).value());
                         iter.remove();
+                        inst.removeSelf(false);
                     }
                 }
             }
@@ -198,7 +200,7 @@ public class Mem2Reg extends Pass{
                             break;
                         } else currentBlock = currentBlock.iDom();
                         //the replaced one can only from an ancestor of the currentBlock or itself
-                    load.removeSelf();
+                    load.removeSelf(true);
                     //this one is safe since it is not in iterating all instructions in the block
                 });
             }
