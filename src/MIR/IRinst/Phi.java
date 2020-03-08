@@ -27,6 +27,24 @@ public class Phi extends Inst {
         value.addUse(this);
     }
 
+    public ArrayList<Operand> values() {
+        return values;
+    }
+    public ArrayList<IRBlock> blocks() {
+        return blocks;
+    }
+
+    public void removeBlock(IRBlock block) {
+        int size = blocks.size();
+        for (int i = 0;i < size;++i) {
+            if (blocks.get(i) == block) {
+                blocks.remove(i);
+                values.remove(i);
+                --i;    //to consider: ugly
+            }
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder(dest().toString() + " = phi " + dest().type().toString());

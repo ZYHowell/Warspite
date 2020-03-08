@@ -103,8 +103,12 @@ public class IRBlock {
     }
 
     private void removeSuccessor(IRBlock successor) {
-        successor.precursors().remove(this);
+        successor.removePrecursor(this);
         successors.remove(successor);
+    }
+    private void removePrecursor(IRBlock precursor) {
+        precursors.remove(precursor);
+        phiInst().forEach((reg, phi) -> phi.removeBlock(precursor));
     }
 
     public void setDFSOrder(int order) {
@@ -143,6 +147,7 @@ public class IRBlock {
     public IRBlock minVer() {
         return minVer;
     }
+    //the part above is ugly. no need to keep these info after mem2reg.
     public void addDomFrontier(IRBlock domF) {
         domFrontiers.add(domF);
     }
@@ -159,7 +164,7 @@ public class IRBlock {
 
     public void mergeBlock(IRBlock merged) {
         assert !terminated;
-        assert merged.precursors().size() == 0;
+        assert merged.precursors().size() == 0; //so no phi
         successors.addAll(merged.successors());
         merged.successors().forEach(successor -> {
             successor.precursors().remove(merged);

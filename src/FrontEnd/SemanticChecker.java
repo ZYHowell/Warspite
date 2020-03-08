@@ -53,9 +53,7 @@ public class SemanticChecker implements ASTVisitor {
                 if (node instanceof classDef) node.accept(this);
             });
             classMemberCollect = false;
-            it.allDef().forEach(node -> {
-                node.accept(this);
-            });
+            it.allDef().forEach(node -> node.accept(this));
         }
         if (!gScope.containsMethod("main", true))
             throw new semanticError("no main", it.pos());

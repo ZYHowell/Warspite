@@ -24,6 +24,15 @@ public class Binary extends Inst {
         dest.setDef(this);
     }
     //the type is always the same as its src
+    public Operand src1() {
+        return src1;
+    }
+    public Operand src2() {
+        return src2;
+    }
+    public BinaryOpCategory opCode() {
+        return opCode;
+    }
 
     @Override
     public String toString() {

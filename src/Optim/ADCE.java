@@ -3,12 +3,14 @@ package Optim;
 import MIR.Function;
 import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
+import MIR.IRoperand.Register;
 import MIR.IRtype.Pointer;
 import MIR.Root;
 import Util.MIRFnGraph;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 
 /*
  * principle: I/O, "outer" store and side effect call are necessary
@@ -54,12 +56,13 @@ public class ADCE extends Pass {
                     uses.retainAll(outerOp);
                     if (!uses.isEmpty() &&
                         (inst instanceof BitCast || inst instanceof GetElementPtr ||
+                            (inst instanceof Call && inst.dest().type() instanceof Pointer) ||
                             (inst instanceof Load && inst.dest().type() instanceof Pointer))) {
                         change = true;
                         outerOp.add(inst.dest());
-                    } else assert inst instanceof Load || uses.isEmpty();
+                    } else assert inst instanceof Load || inst instanceof Call || uses.isEmpty();
+                    //i've never seen such judgement from any textbook, so check if my idea is correct...
                     if (inst.isTerminal()) liveCode.add(inst);
-                      //i've never seen such judgement from any textbook, so check if my idea is correct...
                 });
                 block.phiInst().forEach((dest, inst) -> {
                     HashSet<Operand> uses = inst.uses();
@@ -73,10 +76,10 @@ public class ADCE extends Pass {
         }
     }
     private void initCollect() {
-        //collect "outer" address of each function
         CallGraph.build();
+        outerOp.clear();
+        //collect "outer" address of each function
         outerOp.addAll(irRoot.globalVar());
-
         irRoot.functions().forEach((name, fn) -> {
             outerOp.addAll(fn.params());
             initFnCollect(fn);
@@ -114,9 +117,14 @@ public class ADCE extends Pass {
             MoreLive = true;
             while(MoreLive) {
                 MoreLive = false;
-                fn.blocks().forEach(block -> block.instructions().forEach(inst -> {
-                    if (liveCode.contains(inst)) tryAdd(inst);
-                }));
+                fn.blocks().forEach(block -> {
+                    block.instructions().forEach(inst -> {
+                        if (liveCode.contains(inst)) tryAdd(inst);
+                    });
+                    block.phiInst().forEach(((reg, inst) -> {
+                        if (liveCode.contains(inst)) tryAdd(inst);
+                    }));
+                });
             }
         });
     }
@@ -128,6 +136,15 @@ public class ADCE extends Pass {
                 if (!liveCode.contains(inst)) {
                     iter.remove();
                     inst.removeSelf(false);
+                    change = true;
+                }
+            }
+            for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext();) {
+                Phi inst = iter.next().getValue();
+                if (!liveCode.contains(inst)) {
+                    iter.remove();
+                    inst.removeSelf(false);
+                    change = true;
                 }
             }
         }));
@@ -137,10 +154,9 @@ public class ADCE extends Pass {
     public boolean run() {
         liveCode.clear();
         change = false;
-        MoreLive = true;
         initCollect();
         collect();
         clean();
-        return false;
+        return change;
     }
 }

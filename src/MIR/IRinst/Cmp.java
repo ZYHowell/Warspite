@@ -26,6 +26,15 @@ public class Cmp extends Inst{
         dest.setDef(this);
     }
 
+    public Operand src1() {
+        return src1;
+    }
+    public Operand src2() {
+        return src2;
+    }
+    public CmpOpCategory opCode() {
+        return opCode;
+    }
     @Override
     public String toString() {
         String typeString;

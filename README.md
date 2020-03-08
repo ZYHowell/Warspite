@@ -28,10 +28,10 @@ My optim already contains:
 
 * Function inline
 * a precise side effect analysis and ADCE with it
+* constant folding
 
 I intend to realize: 
 
- * constant folding
  * Algebraic simplification
  * CFG simplification
  * scalar replacement of aggregate(really? maybe on HIR)
@@ -49,6 +49,8 @@ I intend to realize:
 
 **天灭Java，Rust保平安**
 
+2月16日，Java有时候传引用有时候传值的设定让人费解
+
 3月4日，IDEA给没有加Nullable标记的参数赋值null报错
 
-3月7日，IDEA不让我debug，一次DEBUG结束后再次开始时显示无法连接到target VM
+3月7日，IDEA不让我debug，一次debug结束后再次开始时显示无法连接到target VM
