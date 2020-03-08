@@ -1,0 +1,20 @@
+//this is a test for side effect
+//not complete. 
+
+int cnt;
+
+class cl {
+    cl(){ cnt++; }  //this has side effect
+    int f() {
+        return cnt; //no side effect
+    }
+}
+
+void test() {
+    new cl();   //this one has side effect. 
+}
+
+int main() {
+    test();
+    printInt(cnt);
+}

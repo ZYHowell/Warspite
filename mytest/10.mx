@@ -1,0 +1,12 @@
+//this is to optim function whose caller is only itself(so remove it)
+//todo: make fn a very big function, thus it is urgent to remove it
+//so, a gen10.cpp might be here
+
+void fn() {
+    print("awsl");
+    fn();
+}
+
+int main() {
+
+}

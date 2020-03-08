@@ -1,0 +1,22 @@
+//this is also just an idea, and i do not know which opt can solve this. 
+//but there must be some opt able to solve this
+class cl {
+    int member;
+    void printMember(int x, int counter) {
+        if (counter > 0){
+            printInt(x);
+            printMember(x, counter - 1);
+        }
+    }
+};
+
+int main() {
+    int n = 1000, t;
+    for (t = 0; t < n;++t) {
+        cl a;
+        a.member = n - t;
+        a.printMember(a.member, t);
+        //it is suggested to remove the parameter x(by member) to achieve this opt. 
+        //but this condition is too rare to get my attention. 
+    }
+}

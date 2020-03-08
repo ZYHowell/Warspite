@@ -1,0 +1,46 @@
+//test if the side effect builder is precise enough
+//still, gen11 is needed to make it a heavy work if not remove some function.
+
+void a(int x) {
+    if (x <= 0) return;
+    //many works here 
+    b(x - 1);
+}
+
+void b(int x) {
+    if (x <= 0) return;
+    //many works here
+    a(x - 1);
+}
+//no side effect
+
+class cl {
+    int t;
+    cl u;
+}
+
+void f(int x, cl y) {
+    if (x <= 0) return;
+    int[10] calculator;
+    int i;
+    for (i = 0;i < x;++i) 
+        calculator[0] = y.t;
+    f(x - 1, y);
+}
+//no side effect
+
+void g(cl y) {
+    cl p = y.u;
+    p.t = 10;
+}
+//has side effect;
+
+int main() {
+    a(32767);
+    cl clEntity;
+    clEntity.t = 10;
+    f(32767, clEntity);
+    g(clEntity)
+    print(y.u.t);
+    return 0;
+}

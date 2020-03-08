@@ -1,0 +1,22 @@
+int x;
+int x() {
+    return 1;
+}
+class cl {
+    int x;
+    int x() {
+        return 3;
+    }
+    cl() {
+        x = 4;
+    }
+};
+
+int main() {
+    x = 2;
+    printInt(x);
+    printInt(x());
+    cl cla;
+    printInt(cla.x);
+    printInt(cla.x());
+}

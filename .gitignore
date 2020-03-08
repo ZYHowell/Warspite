@@ -1,11 +1,11 @@
 .vscode/
 .pseudocodes/
 .idea/
-mytest/
 .backup/
 *.iml
 out/
 gen/
+bin/
 idea-gitignore.jar
 resources/templates.list
 resources/gitignore/*

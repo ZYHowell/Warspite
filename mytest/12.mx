@@ -1,0 +1,29 @@
+//收下吧，jojo，这是我最后的side effect判定！
+class cl {
+    int t;
+    cl p;
+};
+
+void f(cl entity) {
+    int i;
+    for (i = 0;i < 214748364;++i) {
+        entity.t = entity.t + i;
+        entity.t--;
+        entity.t = entity.t / 2;
+        entity.t++;
+        //still many work can do
+    }
+}
+
+cl globalEntity;
+
+void g(cl a) {
+    globalEntity.p = a;   
+}
+
+int main() {
+    cl it;
+    f(it);
+    g(it);
+    printInt(globalEntity.p.t);
+}
