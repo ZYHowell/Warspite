@@ -3,9 +3,12 @@ package MIR.IRoperand;
 import MIR.IRinst.Inst;
 import MIR.IRtype.IRBaseType;
 
+import java.util.HashSet;
+
 public class GlobalReg extends Operand {
 
     private String name;
+    private HashSet<Inst> uses = new HashSet<>();
 
     public GlobalReg(IRBaseType type, String name) {
         super(type);
@@ -15,12 +18,16 @@ public class GlobalReg extends Operand {
 
     @Override
     public void addUse(Inst inst) {
-        //to consider: should we add use of a global reg?
+        uses.add(inst);
     }
 
     @Override
     public void removeUse(Inst inst) {
-        //to consider just like the one above
+        uses.remove(inst);
+    }
+    @Override
+    public HashSet<Inst> uses() {
+        return uses;
     }
 
     @Override

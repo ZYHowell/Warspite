@@ -3,6 +3,8 @@ package MIR.IRoperand;
 import MIR.IRinst.Inst;
 import MIR.IRtype.IRBaseType;
 
+import java.util.HashSet;
+
 abstract public class Operand {
 
     private IRBaseType type;
@@ -19,6 +21,7 @@ abstract public class Operand {
         return type;
     }
 
+    public abstract HashSet<Inst> uses();
     public abstract void addUse(Inst inst);
     public abstract void removeUse(Inst inst);
     public abstract Operand copy();

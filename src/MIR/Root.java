@@ -58,6 +58,10 @@ public class Root {
         Function stringNE = new Function("stringNE");
         stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
+        Function init = new Function("init");
+        init.setSideEffect(true);
+        init.setExitBlock(init.entryBlock());
+        functions.put("__init", init);
     }
 
     public void addType(String name, ClassType type) {
@@ -79,6 +83,9 @@ public class Root {
         if (functions.containsKey(name))
             return functions.get(name);
         else return builtinFunctions.get(name);
+    }
+    public Function getInit() {
+        return functions.get("__init");
     }
     public HashMap<String, Function> functions() {
         return functions;

@@ -80,7 +80,7 @@ public class FunctionInline extends Pass{
                 instr.setCurrentBlock(laterBlock);
                 if (instr instanceof Branch || instr instanceof Return || instr instanceof Jump){
                     laterBlock.addTerminator(instr);
-                    currentBlock.removeTerminal();
+                    currentBlock.removeTerminator();
                     break;
                 }
                 else {
@@ -94,9 +94,11 @@ public class FunctionInline extends Pass{
             }
         }
         //merge the entry block with the former one of current block
-        currentBlock.mergeBlock(mirrorBlocks.get(fn.entryBlock()));
+        fn.removeBlock(mirrorBlocks.get(callee.entryBlock()));
+        currentBlock.mergeBlock(mirrorBlocks.get(callee.entryBlock()));
         //merge the exit block with the laterBlock one of current block
-        mirrorBlocks.get(fn.exitBlock()).mergeBlock(laterBlock);
+        fn.removeBlock(laterBlock);
+        mirrorBlocks.get(callee.exitBlock()).mergeBlock(laterBlock);
     }
     private void checkInline(Function fn) {
         fn.blocks().forEach(block -> block.instructions().forEach(inst -> {

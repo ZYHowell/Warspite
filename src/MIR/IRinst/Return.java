@@ -46,7 +46,7 @@ public class Return extends Inst {
     }
     @Override
     public void removeSelf(boolean removeFromBlock) {
-        if (removeFromBlock) block().removeTerminal();
+        if (removeFromBlock) block().removeTerminator();
         if (value != null) value.removeUse(this);
     }
     @Override

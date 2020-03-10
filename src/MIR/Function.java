@@ -41,6 +41,9 @@ public class Function {
     public void addBlock(IRBlock block) {
         blocks.add(block);
     }
+    public void removeBlock(IRBlock block) {
+        blocks.remove(block);
+    }
     public HashSet<IRBlock> blocks() {
         return blocks;
     }

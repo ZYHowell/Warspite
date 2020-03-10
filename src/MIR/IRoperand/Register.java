@@ -36,6 +36,11 @@ public class Register extends Operand {
     }
 
     @Override
+    public HashSet<Inst> uses() {
+        return uses;
+    }
+
+    @Override
     public Operand copy() {
         return new Register(type(), name);
     }

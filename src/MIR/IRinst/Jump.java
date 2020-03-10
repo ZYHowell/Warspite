@@ -39,7 +39,7 @@ public class Jump extends Inst {
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {}
     @Override
     public void removeSelf(boolean removeFromBlock) {
-        if (removeFromBlock) block().removeTerminal();
+        if (removeFromBlock) block().removeTerminator();
     }
     @Override
     public boolean isTerminal() {

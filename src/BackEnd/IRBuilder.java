@@ -159,6 +159,8 @@ public class IRBuilder implements ASTVisitor {
         it.parameters().forEach(param -> param.accept(this));
         isParam = false;
 
+        if (currentFunction.name().equals("main"))
+            currentBlock.addInst(new Call(irRoot.getInit(), new ArrayList<>(), null, currentBlock));
         it.body().accept(this);
 
         if (returnList.size() == 0) {
@@ -172,7 +174,7 @@ public class IRBuilder implements ASTVisitor {
             ArrayList<Operand> values = new ArrayList<>();
             ArrayList<IRBlock> blocks = new ArrayList<>();
             returnList.forEach(ret -> {
-                ret.currentBlock().removeTerminal();
+                ret.currentBlock().removeTerminator();
                 values.add(ret.value());
                 blocks.add(ret.currentBlock());
                 ret.currentBlock().addTerminator(new Jump(rootReturn, ret.currentBlock()));
@@ -198,6 +200,12 @@ public class IRBuilder implements ASTVisitor {
             reg = new GlobalReg(new Pointer(type, true), it.name());
             it.entity().setOperand(reg);
             irRoot.addGlobalVar((GlobalReg)reg);
+            if (it.init() != null) {
+                currentBlock = irRoot.getInit().exitBlock();
+                assign(it.entity().asOperand(), it.init());
+                irRoot.getInit().setExitBlock(currentBlock);
+                currentBlock = null;
+            }
         }
         else {
             if (isParam) {

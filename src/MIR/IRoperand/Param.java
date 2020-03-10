@@ -24,7 +24,10 @@ public class Param extends Operand {
     public void removeUse(Inst inst) {
         uses.remove(inst);
     }
-
+    @Override
+    public HashSet<Inst> uses() {
+        return uses;
+    }
     @Override
     public Operand copy() {
         return new Param(type(), name);

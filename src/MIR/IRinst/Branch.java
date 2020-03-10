@@ -55,7 +55,7 @@ public class Branch extends Inst {
     }
     @Override
     public void removeSelf(boolean removeFromBlock) {
-        if (removeFromBlock) block().removeTerminal();
+        if (removeFromBlock) block().removeTerminator();
         condition.removeUse(this);
     }
     @Override

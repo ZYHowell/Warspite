@@ -71,7 +71,7 @@ public class IRBlock {
     public boolean terminated() {
         return terminated;
     }
-    public void removeTerminal() {
+    public void removeTerminator() {
         terminated = false;
         Inst currentTerm = instructions.get(instructions.size() - 1);
         if (currentTerm instanceof Jump) {
@@ -101,12 +101,18 @@ public class IRBlock {
     public HashMap<Register, Phi> phiInst() {
         return PhiInst;
     }
+    public Inst terminator() {
+        assert terminated;
+        return instructions.get(instructions.size() - 1);
+    }
 
-    private void removeSuccessor(IRBlock successor) {
+    public void removeSuccessor(IRBlock successor) {
+        //this one also removes precursor
         successor.removePrecursor(this);
         successors.remove(successor);
     }
     private void removePrecursor(IRBlock precursor) {
+        //this one does not remove successor
         precursors.remove(precursor);
         phiInst().forEach((reg, phi) -> phi.removeBlock(precursor));
     }
@@ -158,7 +164,7 @@ public class IRBlock {
     public void remove(Inst inst) {
         if (inst instanceof Phi) PhiInst.remove(inst.dest());
         else if (inst instanceof Branch || inst instanceof Return || inst instanceof Jump)
-            removeTerminal();
+            removeTerminator();
         else instructions.remove(inst);
     }
 

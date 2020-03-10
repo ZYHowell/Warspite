@@ -3,6 +3,8 @@ package MIR.IRoperand;
 import MIR.IRinst.Inst;
 import MIR.IRtype.IntType;
 
+import java.util.HashSet;
+
 public class ConstInt extends Operand {
 
     private int value;
@@ -14,6 +16,11 @@ public class ConstInt extends Operand {
 
     public int value() {
         return value;
+    }
+
+    @Override
+    public HashSet<Inst> uses() {
+        return null;
     }
 
     @Override
