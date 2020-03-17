@@ -31,6 +31,7 @@ public class CFGSimplification extends Pass {
 
     public CFGSimplification(Root irRoot) {
         super();
+        this.irRoot = irRoot;
     }
 
     private boolean isConst(Operand src) {
@@ -40,7 +41,7 @@ public class CFGSimplification extends Pass {
         ArrayList<IRBlock> precursors = block.precursors();
         return precursors.isEmpty() || (precursors.size() == 1 && precursors.get(0) == block);
     }
-    private void removeBB(Function fn) {
+    private boolean removeBB(Function fn) {
         HashSet<IRBlock> removedCollection = new HashSet<>();
         boolean newChange = true;
         while(newChange){
@@ -70,17 +71,46 @@ public class CFGSimplification extends Pass {
             }
         }
         fn.blocks().removeAll(removedCollection);
+        return !removedCollection.isEmpty();
     }
-    private void mergeBB(Function fn) {
-        //for those contains only a jump, very rare.
+    private boolean mergeBB(Function fn) {
+        HashSet<IRBlock> mergeSet = new HashSet<>();
+        fn.blocks().forEach(block -> {
+            if (block.phiInst().size() == 0 && block.instructions().size() == 1
+                    && block.terminator() instanceof Jump)
+                mergeSet.add(block);
+        });
+        mergeSet.forEach(merged -> {
+            IRBlock jumpDest = ((Jump) merged.terminator()).destBlock();
+            merged.precursors().forEach(pre -> {
+                if (pre.terminator() instanceof Jump) {
+                    pre.removeTerminator();
+                    pre.addTerminator(new Jump(jumpDest, pre));
+                } else {
+                    assert pre.terminator() instanceof Branch;
+                    Branch terminator = (Branch)pre.terminator(), newTerm;
+                    if (terminator.trueDest() == merged)
+                        newTerm = new Branch(terminator.condition(), jumpDest, terminator.falseDest(), pre);
+                    else newTerm = new Branch(terminator.condition(), terminator.trueDest(), jumpDest, pre);
+                    pre.removeTerminator();
+                    pre.addTerminator(newTerm);
+                }
+            });
+        });
+        fn.blocks().removeAll(mergeSet);
+        return !mergeSet.isEmpty();
     }
     private void InstModify(Function fn) {
         //modify instructions. hard to judge
     }
 
     private void simplify(Function fn) {
-        removeBB(fn);
-        mergeBB(fn);
+        boolean newChange = true;
+        while(newChange){
+            newChange = removeBB(fn);
+            newChange = mergeBB(fn) || newChange;
+            if (newChange) change = true;
+        }
     }
 
     @Override

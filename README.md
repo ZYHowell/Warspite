@@ -29,11 +29,11 @@ My optim already contains:
 * Function inline
 * a precise side effect analysis and ADCE with it
 * constant folding
+* CFG simplification(part of it)
 
 I intend to realize: 
 
  * Algebraic simplification
- * CFG simplification
  * scalar replacement of aggregate(really? maybe on HIR)
  * value numbering
  * common subexpression elimination(I'm very interested in implementing this in EBB)

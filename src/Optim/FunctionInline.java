@@ -14,7 +14,6 @@ public class FunctionInline extends Pass{
     private boolean change = false;
     private Root irRoot;
     private HashSet<Function> cannotInlineFun = new HashSet<>();
-    private HashSet<Function> called = new HashSet<>();
 
     public FunctionInline(Root irRoot) {
         super();
@@ -23,6 +22,7 @@ public class FunctionInline extends Pass{
 
     private ArrayList<Function> DFSStack = new ArrayList<>();
     private HashSet<Function> visited = new HashSet<>();
+    private HashMap<Function, HashSet<Function>> caller = new HashMap<>();
     private void DFS(Function it) {
         visited.add(it);
         DFSStack.add(it);
@@ -33,6 +33,7 @@ public class FunctionInline extends Pass{
         }
         it.callFunction().forEach(callee -> {
             if (!visited.contains(callee)) DFS(callee);
+            caller.get(callee).add(it);
         });
         DFSStack.remove(DFSStack.size() - 1);
     }
@@ -114,6 +115,8 @@ public class FunctionInline extends Pass{
             Map.Entry<String, Function> entry = iter.next();
             Function fn = entry.getValue();
             if (!cannotInlineFun.contains(fn)) iter.remove();
+            else if (caller.get(fn).size() == 1 && caller.get(fn).contains(fn)) iter.remove();
+            //very rare: its only caller is itself. This is used to speed up anal instead of running
         }   //remove inlined function
     }
 
@@ -122,7 +125,6 @@ public class FunctionInline extends Pass{
         change = false;
         /* cannotInlineFun().clear();
          * visited.clear();
-         * called.clear();
          * new MIRFuncCallCollect(irRoot).collect();
          */
         visited.addAll(irRoot.builtinFunctions().values());
