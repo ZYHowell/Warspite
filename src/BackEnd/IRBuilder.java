@@ -622,8 +622,7 @@ public class IRBuilder implements ASTVisitor {
         Operand src = resolvePointer(currentBlock, it.src().operand());
         switch (it.opCode()) {
             case Positive: {
-                currentBlock.addInst(new Binary(src, new ConstInt(0, 32),
-                                                (Register)it.operand(), add, currentBlock));
+                it.setOperand(it.src().operand());
                 break;
             }
             case Negative: {

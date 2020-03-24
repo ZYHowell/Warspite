@@ -14,15 +14,13 @@ public class IRBlock {
     private ArrayList<IRBlock> successors = new ArrayList<>();
     private ArrayList<Inst>    instructions = new ArrayList<>();
     private HashMap<Register, Phi>  PhiInst = new HashMap<>();
-    private HashSet<IRBlock> domChildren = new HashSet<>();
     private String name;
     private boolean terminated = false;
 
 
-    private int dfsOrder = 0;
-    private IRBlock DFSFather = null, sDom = null, unionRoot = this, minVer = this,
-                    iDom = null;
+    private IRBlock iDom = null;
     private HashSet<IRBlock> domFrontiers = new HashSet<>();
+    private HashSet<IRBlock> domChildren = new HashSet<>();
 
 
     public IRBlock(String name) {
@@ -109,34 +107,16 @@ public class IRBlock {
     }
 
     public void removeSuccessor(IRBlock successor) {
-        //this one also removes precursor
+        //this one also removes precursor, so public
         successor.removePrecursor(this);
         successors.remove(successor);
     }
     private void removePrecursor(IRBlock precursor) {
-        //this one does not remove successor
+        //this one does not remove successor, so private
         precursors.remove(precursor);
         phiInst().forEach((reg, phi) -> phi.removeBlock(precursor));
     }
 
-    public void setDFSOrder(int order) {
-        dfsOrder = order;
-    }
-    public int DFSOrder() {
-        return dfsOrder;
-    }
-    public void setDFSFather(IRBlock father) {
-        DFSFather = father;
-    }
-    public IRBlock DFSFather() {
-        return DFSFather;
-    }
-    public void setSDom(IRBlock sDom) {
-        this.sDom = sDom;
-    }
-    public IRBlock sDom() {
-        return sDom;
-    }
     public void setIDom(IRBlock iDom) {
         this.iDom = iDom;
         iDom.domChildren().add(this);
@@ -144,24 +124,16 @@ public class IRBlock {
     public IRBlock iDom() {
         return iDom;
     }
-    public void setUnionRoot(IRBlock uRoot) {
-        unionRoot = uRoot;
-    }
-    public IRBlock unionRoot() {
-        return unionRoot;
-    }
-    public void setMinVer(IRBlock minVer) {
-        this.minVer = minVer;
-    }
-    public IRBlock minVer() {
-        return minVer;
-    }
-    //the part above is ugly. no need to keep these info after mem2reg.
     public void addDomFrontier(IRBlock domF) {
         domFrontiers.add(domF);
     }
     public HashSet<IRBlock> domFrontiers() {
         return domFrontiers;
+    }
+    public void clearDomInfo() {
+        domFrontiers.clear();
+        domChildren.clear();
+        iDom = null;
     }
 
     public void remove(Inst inst) {

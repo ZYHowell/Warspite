@@ -10,6 +10,7 @@ import MIR.IRoperand.ConstInt;
 import MIR.IRoperand.ConstString;
 import MIR.IRoperand.Operand;
 import MIR.Root;
+import Util.DomGen;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -125,12 +126,18 @@ public class CFGSimplification extends Pass {
 
     private void simplify(Function fn) {
         boolean newChange;
+        boolean changed = false;
         do {
             newChange = removeBB(fn);
             newChange = mergeBB_1(fn) || newChange;
             newChange = mergeBB_2(fn) || newChange;
-            if (newChange) change = true;
+            if (newChange) {
+                change = true;
+                changed = true;
+            }
         } while(newChange);
+        if (changed) new DomGen(fn, true).runForFn();
+        //re-calculate the dom relationship
     }
 
     @Override

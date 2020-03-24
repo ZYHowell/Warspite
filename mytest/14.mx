@@ -1,0 +1,6 @@
+//value numbering or algebraic simplification
+int main() {
+    int i;
+    for (i = 0;i < 1000;++i)
+        printInt(++-+-++----+i + ----++++--++i);    //shot any programmer writing this
+}

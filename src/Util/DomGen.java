@@ -5,7 +5,6 @@ import MIR.IRBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class DomGen {
     private Function fn;
@@ -18,35 +17,43 @@ public class DomGen {
     ArrayList<ArrayList<IRBlock>> bucket = new ArrayList<>();
     private int tot = 0;
     private ArrayList<IRBlock> DFSIndex = new ArrayList<>();
+    private HashMap<IRBlock, Integer> dfsOrder = new HashMap<>();
+    private HashMap<IRBlock, IRBlock> sDom = new HashMap<>(),
+                                      union = new HashMap<>(),
+                                      minVer = new HashMap<>(),
+                                      dfsFather = new HashMap<>();
     private void DFS(IRBlock it) {
-        if (it.DFSOrder() != 0) return;
-        it.domChildren().clear();
+        if (dfsOrder.containsKey(it)) return;
+        it.clearDomInfo();
         DFSIndex.add(it);
-        it.setSDom(it);
-        it.setDFSOrder(++tot);
+        sDom.put(it, it);
+        dfsOrder.put(it, ++tot);
+        union.put(it, it);
+        minVer.put(it, it);
         it.successors().forEach(son -> {
             DFS(son);
-            son.setDFSFather(it);
+            dfsFather.put(son, it);
         });
     }
     private void DFSOrderGen(IRBlock entranceBlock) {
         tot = 0;
         DFSIndex.add(null); //1-base DFS order here, so...
         DFS(entranceBlock);
-        entranceBlock.setDFSFather(null);
+        dfsFather.put(entranceBlock, null);
     }
 
     private IRBlock FindUnionRoot(IRBlock it) {
-        if (it.unionRoot() == it) return it;
-        IRBlock ret = FindUnionRoot(it.unionRoot());
-        if (it.unionRoot().minVer().sDom().DFSOrder() < it.minVer().sDom().DFSOrder())
-            it.setMinVer(it.unionRoot().minVer());
-        it.setUnionRoot(ret);
+        if (union.get(it) == it) return it;
+        IRBlock ret = FindUnionRoot(union.get(it));
+        if (dfsOrder.get(sDom.get(minVer.get(union.get(it)))) <
+                dfsOrder.get(sDom.get(minVer.get(it))))
+            minVer.put(it, minVer.get(union.get(it)));
+        union.put(it, ret);
         return ret;
     }
     private IRBlock eval(IRBlock it) {
         FindUnionRoot(it);
-        return it.minVer();
+        return minVer.get(it);
     }
 
     public void runForFn() {
@@ -64,21 +71,21 @@ public class DomGen {
             tmp = DFSIndex.get(i);
             for (IRBlock pre : tmp.precursors()){
                 IRBlock evalBlock = eval(pre);
-                if (tmp.sDom().DFSOrder() > evalBlock.sDom().DFSOrder())
-                    tmp.setSDom(evalBlock.sDom());
+                if (dfsOrder.get(sDom.get(tmp)) > dfsOrder.get(sDom.get(evalBlock)))
+                    sDom.put(tmp, sDom.get(evalBlock));
             }
-            bucket.get(tmp.sDom().DFSOrder()).add(tmp);
-            IRBlock tmpFather = tmp.DFSFather();
-            tmp.setUnionRoot(tmpFather);
-            for (IRBlock buk : bucket.get(tmpFather.DFSOrder())) {
+            bucket.get(dfsOrder.get(sDom.get(tmp))).add(tmp);
+            IRBlock tmpFather = dfsFather.get(tmp);
+            union.put(tmp, tmpFather);
+            for (IRBlock buk : bucket.get(dfsOrder.get(tmpFather))) {
                 IRBlock u = eval(buk);
-                buk.setIDom(u.sDom() == buk.sDom() ? tmpFather : u);
+                buk.setIDom(sDom.get(u) == sDom.get(buk) ? tmpFather : u);
             }
-            bucket.get(tmpFather.DFSOrder()).clear();
+            bucket.get(dfsOrder.get(tmpFather)).clear();
         }
         for (int i = 2;i <= tot;++i) {
             tmp = DFSIndex.get(i);
-            if (tmp.iDom() != DFSIndex.get(tmp.sDom().DFSOrder()))
+            if (tmp.iDom() != DFSIndex.get(dfsOrder.get(sDom.get(tmp))))
                 tmp.setIDom(tmp.iDom().iDom());
         }
 
@@ -88,7 +95,6 @@ public class DomGen {
 
         //in any order is ok, but since I have DFSIndex to collect all blocks...
         for (IRBlock block : DFSIndex) {
-            fn.addBlock(block);
             if (block.precursors().size() >= 2) {
                 for (IRBlock runner : block.precursors()) {
                     while (runner != block.iDom()) {

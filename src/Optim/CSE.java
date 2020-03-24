@@ -5,9 +5,9 @@ import MIR.IRBlock;
 import MIR.IRinst.Inst;
 import MIR.IRoperand.Register;
 import MIR.Root;
-import org.antlr.v4.runtime.misc.Pair;
 
-import java.util.HashMap;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -30,44 +30,46 @@ public class CSE extends Pass {
     }
 
     private void tryAllUseOf(Register reg) {
-        HashMap<Inst, Register> removeInst = new HashMap<>();
+        ArrayList<Map.Entry<Inst, Register>> removeInst = new ArrayList<>();
+        //should be arrayList!!
         reg.uses().forEach(use -> {
             if (!visitedInst.contains(use)) {
-                visitedInst.add(use);
-                //make it visited to avoid being replaced
-
                 IRBlock useBlock = use.block();
                 reg.uses().forEach(inst -> {
-                    if (!visitedInst.contains(inst) && //no need to judge this(only a small improvement)
+                    if (!visitedInst.contains(inst) && inst != use &&
+                            //no need to judge such inst
                             inst.block().isDomed(useBlock) && inst.sameMeaning(use)) {
-                        removeInst.put(inst, use.dest());
+                        removeInst.add(new AbstractMap.SimpleEntry<>(inst, use.dest()));
                         visitedInst.add(inst);
                     }
                 });
 
             }
         });
+        visitedInst.addAll(reg.uses());
 
         fnNewChange = fnNewChange || removeInst.isEmpty();
 
-        for (Map.Entry<Inst, Register> entry : removeInst.entrySet()) {
+        for (Map.Entry<Inst, Register> entry : removeInst) {
             Inst inst = entry.getKey();
             Register value = entry.getValue();
             inst.dest().replaceAllUseWith(value);
             inst.removeSelf(true);
         }
+        //notice that, replace a by b, then b by c is correct;
+        //arrayList to make it kept in order
+        //and replace b by c, then a by b is impossible to happen; it will be replace a by c rather than b;
     }
 
     private void visit(IRBlock block) {
+        assert !visitedBlock.contains(block);
         visitedBlock.add(block);
 
         block.phiInst().forEach((reg, phi) ->tryAllUseOf(phi.dest()));
         block.instructions().forEach(inst -> tryAllUseOf(inst.dest()));
 
         //Deep first in dom tree(seems reasonable, at least better than successor)
-        block.domChildren().forEach(children -> {
-            if (!visitedBlock.contains(children)) visit(children);
-        });
+        block.domChildren().forEach(this::visit);
     }
 
     private void runForFn(Function fn) {
