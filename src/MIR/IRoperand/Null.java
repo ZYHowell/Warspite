@@ -31,4 +31,9 @@ public class Null extends Operand {
     public String toString() {
         return "null";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Null;
+    }
 }

@@ -33,4 +33,9 @@ public class Pointer extends IRBaseType {
     public String toString() {
         return pointTo.toString() + "*";
     }
+
+    @Override
+    public boolean sameType(IRBaseType o) {
+        return o instanceof Pointer && ((Pointer) o).pointTo().sameType(pointTo);
+    }
 }

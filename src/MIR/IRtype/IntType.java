@@ -18,4 +18,9 @@ public class IntType extends IRBaseType {
     public String toString() {
         return "i" + size;
     }
+
+    @Override
+    public boolean sameType(IRBaseType o) {
+        return o instanceof IntType && o.size() == size;
+    }
 }

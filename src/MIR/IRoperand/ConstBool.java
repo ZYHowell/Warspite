@@ -38,4 +38,9 @@ public class ConstBool extends Operand{
     public String toString() {
         return value ? "1" : "0";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof ConstBool && ((ConstBool) o).value() == value;
+    }
 }

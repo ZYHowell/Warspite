@@ -14,4 +14,8 @@ public class BoolType extends IRBaseType{
     public String toString() {
         return "i1";
     }
+    @Override
+    public boolean sameType(IRBaseType o) {
+        return o instanceof BoolType;
+    }
 }

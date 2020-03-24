@@ -19,6 +19,10 @@ public class BitCast extends Inst {
         dest.setDef(this);
     }
 
+    public Operand origin() {
+        return it;
+    }
+
     public IRBaseType originType() {
         return it.type();
     }
@@ -43,6 +47,14 @@ public class BitCast extends Inst {
         HashSet<Operand> ret = new HashSet<>();
         ret.add(it);
         return ret;
+    }
+
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        if (inst instanceof BitCast) {
+            BitCast cast = (BitCast) inst;
+            return cast.origin().equals(it) && cast.terminalType().sameType(dest().type());
+        } else return false;
     }
 
     @Override

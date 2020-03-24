@@ -14,6 +14,7 @@ public class IRBlock {
     private ArrayList<IRBlock> successors = new ArrayList<>();
     private ArrayList<Inst>    instructions = new ArrayList<>();
     private HashMap<Register, Phi>  PhiInst = new HashMap<>();
+    private HashSet<IRBlock> domChildren = new HashSet<>();
     private String name;
     private boolean terminated = false;
 
@@ -72,6 +73,7 @@ public class IRBlock {
         return terminated;
     }
     public void removeTerminator() {
+        if (!terminated) return;
         terminated = false;
         Inst currentTerm = instructions.get(instructions.size() - 1);
         if (currentTerm instanceof Jump) {
@@ -137,6 +139,7 @@ public class IRBlock {
     }
     public void setIDom(IRBlock iDom) {
         this.iDom = iDom;
+        iDom.domChildren().add(this);
     }
     public IRBlock iDom() {
         return iDom;
@@ -176,9 +179,23 @@ public class IRBlock {
             successor.precursors().remove(merged);
             successor.addPrecursor(this);
         });
-
+        merged.phiInst().forEach((reg, phi) -> phi.setCurrentBlock(this));
         merged.instructions().forEach(inst -> inst.setCurrentBlock(this));
         instructions.addAll(merged.instructions());
         terminated = merged.terminated();
+    }
+
+    public boolean isDomed(IRBlock tryDom) {
+        IRBlock dom = iDom;
+
+        while(dom != null) {
+            if (dom == tryDom) return true;
+            dom = dom.iDom();
+        }
+
+        return false;
+    }
+    public HashSet<IRBlock> domChildren() {
+        return domChildren;
     }
 }

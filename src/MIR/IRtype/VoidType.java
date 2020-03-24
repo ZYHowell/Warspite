@@ -17,4 +17,9 @@ public class VoidType extends IRBaseType{
     public String toString() {
         return "void";
     }
+
+    @Override
+    public boolean sameType(IRBaseType o) {
+        return o instanceof VoidType;
+    }
 }

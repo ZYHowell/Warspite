@@ -18,6 +18,10 @@ public class ClassType extends IRBaseType{
         size += member.size();
     }
 
+    public String name() {
+        return name;
+    }
+
     @Override
     public int size() {
         return size;
@@ -25,5 +29,10 @@ public class ClassType extends IRBaseType{
     @Override
     public String toString() {
         return "%struct." + name;
+    }
+
+    @Override
+    public boolean sameType(IRBaseType o) {
+        return o instanceof ClassType && ((ClassType) o).name().equals(name);
     }
 }

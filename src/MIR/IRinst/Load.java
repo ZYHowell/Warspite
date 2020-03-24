@@ -54,4 +54,8 @@ public class Load extends Inst{
     public boolean isTerminal() {
         return false;
     }
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
 }

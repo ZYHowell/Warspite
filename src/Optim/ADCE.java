@@ -139,6 +139,8 @@ public class ADCE extends Pass {
                     if (inst.isTerminal()) {
                         //this block is not effectively reachable
                         block.removeTerminator();   //to make CFG simplification faster
+                        block.addTerminator(new Jump(block, block));    //formal terminator
+                        //but maybe I can assert that there is no such block
                         break;
                     } else {
                         iter.remove();

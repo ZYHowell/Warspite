@@ -4,19 +4,21 @@ import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRinst.*;
 import MIR.IRoperand.*;
+import MIR.IRtype.BoolType;
+import MIR.IRtype.IntType;
 import MIR.Root;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
-public class ConstFold extends Pass {
+public class SCCP extends Pass {
 
     private Root irRoot;
     private HashMap<Operand, Operand> constMap = new HashMap<>();
+    private HashSet<Operand> uncertainOpr = new HashSet<>();
+    private HashSet<IRBlock> visited;
+    private boolean change;
 
-    public ConstFold(Root irRoot) {
+    public SCCP(Root irRoot) {
         super();
         this.irRoot = irRoot;
     }
@@ -63,7 +65,6 @@ public class ConstFold extends Pass {
                 }
                 ConstBool replaceConst = new ConstBool(destValue);
                 inst.dest().replaceAllUseWith(replaceConst);
-                constMap.put(inst.dest(), replaceConst);
             }
             return true;
         } else return false;
@@ -98,9 +99,24 @@ public class ConstFold extends Pass {
             }
             ConstBool replaceConst = new ConstBool(destValue);
             inst.dest().replaceAllUseWith(replaceConst);
-            constMap.put(inst.dest(), replaceConst);
             return true;
         } else return false;
+    }
+    private boolean zextCheck(Zext inst) {
+        int value;
+        if (inst.origin() instanceof ConstInt) value = ((ConstInt) inst.origin()).value();
+        else if (inst.origin() instanceof ConstBool)
+            value = ((ConstBool) inst.origin()).value() ? 1 : 0;
+        else return false;
+        Operand replace;
+        if (inst.dest().type() instanceof IntType) {
+            replace = new ConstInt(value, inst.dest().type().size());
+        } else {
+            assert inst.dest().type() instanceof BoolType;
+            replace = new ConstBool(value == 1);
+        }
+        inst.dest().replaceAllUseWith(replace);
+        return true;
     }
     private boolean phiCheck(Phi inst) {
         ArrayList<Operand> values = inst.values();
@@ -142,42 +158,74 @@ public class ConstFold extends Pass {
             else return false;
         }
     }
+    private boolean isConst(Operand src) {
+        return src instanceof ConstInt || src instanceof ConstBool || src instanceof ConstString;
+    }
 
-    @Override
-    public boolean run() {
-        boolean newChange = false;
-        boolean change = true;
-        while(change) {
-            change = false;
-            for (Map.Entry<String, Function> entry : irRoot.functions().entrySet()) {
-                Function fn = entry.getValue();
-                for (IRBlock block : fn.blocks()) {
-                    for (Iterator<Inst> iter = block.instructions().iterator(); iter.hasNext(); ) {
-                        Inst inst = iter.next();
-                        boolean instChange = false;
-                        if (inst instanceof Binary)
-                            instChange = binaryCheck((Binary) inst);
-                        else if (inst instanceof Cmp)
-                            instChange = cmpCheck((Cmp) inst);
-                        if (instChange) {
-                            change = true;
-                            iter.remove();
-                            inst.removeSelf(false);
-                        }
-                    }
-                    for (Iterator<Map.Entry<Register, Phi>> iter =
-                         block.phiInst().entrySet().iterator(); iter.hasNext();) {
-                        Phi inst = iter.next().getValue();
-                        if (phiCheck(inst)) {
-                            change = true;
-                            iter.remove();
-                            inst.removeSelf(false);
-                        }
-                    }
+    private void visit(IRBlock block) {
+        visited.add(block);
+        if (block.precursors().size() == 0) {
+            block.removeTerminator();   //unreachable block, wait to be removed
+            block.addTerminator(new Jump(block, block));
+            return;
+        }
+        for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Register, Phi> entry = iter.next();
+            Phi phi = entry.getValue();
+            if (phiCheck(phi)) {
+                iter.remove();
+                phi.removeSelf(false);
+                change = true;
+            }
+        }
+        for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
+            Inst inst = iter.next();
+            if (!iter.hasNext() && inst instanceof Branch) {
+                if (isConst(((Branch) inst).condition())) {
+                    Operand src = ((Branch) inst).condition();
+                    assert src instanceof ConstBool;
+                    block.removeTerminator();
+                    if (((ConstBool) src).value())
+                        block.addTerminator(new Jump(((Branch) inst).trueDest(), block));
+                    else
+                        block.addTerminator(new Jump(((Branch) inst).falseDest(), block));
+                    break;
                 }
             }
-            if (change) newChange = true;
+            if ((inst instanceof Binary && binaryCheck((Binary) inst)) ||
+                (inst instanceof Cmp && cmpCheck((Cmp) inst)) ||
+                (inst instanceof Zext && zextCheck((Zext) inst))) {
+                iter.remove();
+                inst.removeSelf(false);
+            }
         }
-        return newChange;
+
+        block.successors().forEach(suc -> {
+            if (!visited.contains(suc))
+                visit(suc);
+        });
+    }
+    private void runForFn(Function fn) {
+        visited = new HashSet<>();
+        visit(fn.entryBlock());
+    }
+    @Override
+    public boolean run() {
+        constMap = new HashMap<>();
+        uncertainOpr.addAll(irRoot.globalVar());
+        irRoot.functions().forEach((name, fn) -> uncertainOpr.addAll(fn.params()));
+        change = false;
+
+        irRoot.functions().forEach((name, fn) -> runForFn(fn));
+
+        return change;
+        //running: start from the entry block, check each inst. it can be:
+        // 1. some value used is uncertain: set the dest be uncertain,
+        // and put all used into 'has uncertain' bucket
+        // 2. all values used are certain: replace all use of the result.
+        // 3. a branch inst, the result is uncertain/a jump inst: all dest blocks are alive.
+        // 4. a branch inst, the result is certain: set the unreachable dest be unreachable by this one,
+        // notice that, only if all precursors of a block are executed, can the block executed
+        // so the block has 4 conditions: executed, halted, unreachable, executable
     }
 }

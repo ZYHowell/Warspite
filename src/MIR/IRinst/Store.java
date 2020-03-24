@@ -49,6 +49,11 @@ public class Store extends Inst{
     }
 
     @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (value == replaced) value = replaceTo;
         if (address == replaced) address = replaceTo;

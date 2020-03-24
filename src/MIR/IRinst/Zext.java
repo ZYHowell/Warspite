@@ -19,6 +19,9 @@ public class Zext extends Inst{
         dest.setDef(this);
     }
 
+    public Operand origin() {
+        return origin;
+    }
     public IRBaseType originType() {
         return origin.type();
     }
@@ -42,6 +45,16 @@ public class Zext extends Inst{
         ret.add(origin);
         return ret;
     }
+
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        if (inst instanceof Zext) {
+            Zext instr = (Zext) inst;
+            return instr.origin().equals(origin) && instr.destType().sameType(destType());
+        }
+        else return false;
+    }
+
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (origin == replaced) origin = replaceTo;

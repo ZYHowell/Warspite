@@ -52,6 +52,11 @@ public class Call extends Inst{
     }
 
     @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
+    @Override
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         ArrayList<Operand> mirrorParams = new ArrayList<>();
         params.forEach(param -> mirrorParams.add(mirror.opMir(param)));

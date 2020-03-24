@@ -38,4 +38,11 @@ public class ConstInt extends Operand {
     public String toString() {
         return "" + value;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof ConstInt &&
+                ((ConstInt) o).value == value &&
+                ((ConstInt) o).type().sameType(type());
+    }
 }

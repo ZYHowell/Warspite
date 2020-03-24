@@ -27,6 +27,16 @@ public class GetElementPtr extends Inst{
         dest.setDef(this);
     }
 
+    public Operand ptr() {
+        return ptr;
+    }
+    public Operand arrayOffset() {
+        return arrayOffset;
+    }
+    public Operand elementOffset() {
+        return elementOffset;
+    }
+
     @Override
     public String toString() {
         String arrayOffToStr = arrayOffset.type().toString() + " " + arrayOffset.toString();
@@ -66,5 +76,13 @@ public class GetElementPtr extends Inst{
     @Override
     public boolean isTerminal() {
         return false;
+    }
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        if (inst instanceof GetElementPtr) {
+            GetElementPtr instr = (GetElementPtr) inst;
+            return instr.ptr().equals(ptr) && instr.arrayOffset().equals(arrayOffset)
+                    && instr.elementOffset().equals(elementOffset);
+        } else return false;
     }
 }

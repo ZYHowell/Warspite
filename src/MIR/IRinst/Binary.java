@@ -10,16 +10,20 @@ import java.util.HashSet;
 public class Binary extends Inst {
     public enum BinaryOpCategory {
         mul, sdiv, srem, shl, ashr, and, or, xor, sub, add
-        //* / % << >> & | ^ - + =
+        //*  /     %     <<   >>    &    |   ^    -    +
     }
     private BinaryOpCategory opCode;
     private Operand src1, src2;
+    private boolean canCommute;
 
     public Binary(Operand src1, Operand src2, Register dest, BinaryOpCategory opCode, IRBlock block) {
         super(dest, block);
         this.src1 = src1;
         this.src2 = src2;
         this.opCode = opCode;
+        canCommute = opCode == BinaryOpCategory.add || opCode == BinaryOpCategory.mul ||
+                     opCode == BinaryOpCategory.and || opCode == BinaryOpCategory.or ||
+                     opCode == BinaryOpCategory.xor;
         src1.addUse(this);src2.addUse(this);
         dest.setDef(this);
     }
@@ -51,6 +55,21 @@ public class Binary extends Inst {
         HashSet<Operand> ret = new HashSet<>();
         ret.add(src1);ret.add(src2);
         return ret;
+    }
+
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        if (inst instanceof Binary) {
+            Binary instr = (Binary)inst;
+            if (opCode == instr.opCode()){
+                if (canCommute) {
+                return (instr.src1().equals(src1) && instr.src2().equals(src2)) ||
+                       (instr.src1().equals(src2) && instr.src2().equals(src1));
+                }
+                else return instr.src1().equals(src1) && instr.src2().equals(src2);
+            }
+        }
+        return false;
     }
 
     @Override

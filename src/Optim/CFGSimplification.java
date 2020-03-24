@@ -43,10 +43,16 @@ public class CFGSimplification extends Pass {
     }
     private boolean removeBB(Function fn) {
         HashSet<IRBlock> removedCollection = new HashSet<>();
-        boolean newChange = true;
-        while(newChange){
+        boolean newChange;
+        do {
             newChange = false;
             for (IRBlock block : fn.blocks()) {
+                if (!block.terminated()) {
+                    newChange = true;
+                    removedCollection.add(block);
+                    block.removeTerminator();
+                    continue;
+                }
                 Inst terminator = block.terminator();
                 if (terminator instanceof Branch) {
                     if (isConst(((Branch) terminator).condition())) {
@@ -69,11 +75,11 @@ public class CFGSimplification extends Pass {
                     block.removeTerminator();
                 }
             }
-        }
+        } while(newChange);
         fn.blocks().removeAll(removedCollection);
         return !removedCollection.isEmpty();
     }
-    private boolean mergeBB(Function fn) {
+    private boolean mergeBB_1(Function fn) {
         HashSet<IRBlock> mergeSet = new HashSet<>();
         fn.blocks().forEach(block -> {
             if (block.phiInst().size() == 0 && block.instructions().size() == 1
@@ -100,17 +106,31 @@ public class CFGSimplification extends Pass {
         fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
     }
+    private boolean mergeBB_2(Function fn) {    //T1-T2 trans
+        HashSet<IRBlock> mergeSet = new HashSet<>();
+        fn.blocks().forEach(block -> {
+            if (block.precursors().size() == 1 && block.precursors().get(0).successors().size() == 1)
+                mergeSet.add(block);
+        });
+        mergeSet.forEach(block -> {
+            IRBlock pre = block.precursors().get(0);
+            pre.removeTerminator();
+            pre.mergeBlock(block);
+        });
+        return !mergeSet.isEmpty();
+    }
     private void InstModify(Function fn) {
         //modify instructions. hard to judge
     }
 
     private void simplify(Function fn) {
-        boolean newChange = true;
-        while(newChange){
+        boolean newChange;
+        do {
             newChange = removeBB(fn);
-            newChange = mergeBB(fn) || newChange;
+            newChange = mergeBB_1(fn) || newChange;
+            newChange = mergeBB_2(fn) || newChange;
             if (newChange) change = true;
-        }
+        } while(newChange);
     }
 
     @Override

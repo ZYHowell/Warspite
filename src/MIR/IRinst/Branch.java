@@ -50,6 +50,11 @@ public class Branch extends Inst {
     }
 
     @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (condition == replaced) condition = replaceTo;
     }

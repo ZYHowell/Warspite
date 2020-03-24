@@ -27,17 +27,20 @@ It is simply a LLVM IR. (and that's why this homework is not interesting: simply
 My optim already contains: 
 
 * Function inline
-* a precise side effect analysis and ADCE with it
-* constant folding
+* a precise side effect analysis(also, a rough alias analysis) and ADCE with it
+* SCCP
 * CFG simplification(part of it)
+* global CSE
 
 I intend to realize: 
 
  * Algebraic simplification
  * scalar replacement of aggregate(really? maybe on HIR)
- * value numbering
- * common subexpression elimination(I'm very interested in implementing this in EBB)
- * redundant elimination
+ * strength reduction
+ * loop-invariant code motion
+ * naïve alias analysis and load/store replacement
+
+ No partial redundant elimination, since it equals CSE+LICM but is hard to realize. 
 
 ### References
 
@@ -54,3 +57,4 @@ I intend to realize:
 3月4日，IDEA给没有加Nullable标记的参数赋值null报错
 
 3月7日，IDEA不让我debug，一次debug结束后再次开始时显示无法连接到target VM
+

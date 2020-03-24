@@ -13,4 +13,5 @@ abstract public class IRBaseType {
 
     public abstract int size();
     public abstract String toString();
+    public abstract boolean sameType(IRBaseType o);
 }

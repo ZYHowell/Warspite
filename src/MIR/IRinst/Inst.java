@@ -33,4 +33,5 @@ abstract public class Inst {
     public abstract String toString();
     public abstract void addMirror(IRBlock destBlock, MIRMirror mirror);
     public abstract HashSet<Operand> uses();
+    public abstract boolean sameMeaning(Inst inst);
 }

@@ -34,6 +34,12 @@ public class Malloc extends Inst {
         ret.add(length);
         return ret;
     }
+
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (length == replaced) length = replaceTo;

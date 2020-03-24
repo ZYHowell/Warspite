@@ -6,6 +6,7 @@ import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.Root;
+import Util.DomGen;
 
 import java.util.*;
 
@@ -20,69 +21,6 @@ public class Mem2Reg extends Pass{
         this.irRoot = irRoot;
     }
 
-
-    ArrayList<ArrayList<IRBlock>> bucket = new ArrayList<>();
-    private int tot = 0;
-    private ArrayList<IRBlock> DFSIndex = new ArrayList<>();
-    private void DFS(IRBlock it) {
-        if (it.DFSOrder() != 0) return;
-        DFSIndex.add(it);
-        it.setSDom(it);
-        it.setDFSOrder(++tot);
-        it.successors().forEach(son -> {
-            DFS(son);
-            son.setDFSFather(it);
-        });
-    }
-    private void DFSOrderGen(IRBlock entranceBlock) {
-        tot = 0;
-        DFSIndex.add(null); //1-base DFS order here, so...
-        DFS(entranceBlock);
-        entranceBlock.setDFSFather(null);
-    }
-
-    private IRBlock FindUnionRoot(IRBlock it) {
-        if (it.unionRoot() == it) return it;
-        IRBlock ret = FindUnionRoot(it.unionRoot());
-        if (it.unionRoot().minVer().sDom().DFSOrder() < it.minVer().sDom().DFSOrder())
-            it.setMinVer(it.unionRoot().minVer());
-        it.setUnionRoot(ret);
-        return ret;
-    }
-    private IRBlock eval(IRBlock it) {
-        FindUnionRoot(it);
-        return it.minVer();
-    }
-
-    private void iDomGen(IRBlock entranceBlock) {
-        IRBlock tmp;
-
-        DFSOrderGen(entranceBlock);
-
-        for (int i = 0;i <= tot;++i) bucket.add(new ArrayList<>());
-
-        for (int i = tot;i > 1;--i) {
-            tmp = DFSIndex.get(i);
-            for (IRBlock pre : tmp.precursors()){
-                IRBlock evalBlock = eval(pre);
-                if (tmp.sDom().DFSOrder() > evalBlock.sDom().DFSOrder())
-                    tmp.setSDom(evalBlock.sDom());
-            }
-            bucket.get(tmp.sDom().DFSOrder()).add(tmp);
-            IRBlock tmpFather = tmp.DFSFather();
-            tmp.setUnionRoot(tmpFather);
-            for (IRBlock buk : bucket.get(tmpFather.DFSOrder())) {
-                IRBlock u = eval(buk);
-                buk.setIDom(u.sDom() == buk.sDom() ? tmpFather : u);
-            }
-            bucket.get(tmpFather.DFSOrder()).clear();
-        }
-        for (int i = 2;i <= tot;++i) {
-            tmp = DFSIndex.get(i);
-            if (tmp.iDom() != DFSIndex.get(tmp.sDom().DFSOrder()))
-                tmp.setIDom(tmp.iDom().iDom());
-        }
-    }
     private void runForFn(Function fn) {
     //only a normal minimal SSA
         HashSet<Register> allocVars = fn.allocVars();
@@ -92,32 +30,17 @@ public class Mem2Reg extends Pass{
         HashMap<IRBlock, HashMap<Register, Register>> allocPhiMap = new HashMap<>();
         HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new HashMap<>();
 
-        bucket = new ArrayList<>();
-        DFSIndex = new ArrayList<>();
-        tot = 0;
+        new DomGen(fn, false).runForFn();
 
-        iDomGen(fn.entryBlock());
-        //in any order is ok, but since I have DFSIndex to collect all blocks...
-        for (int i = 1; i <= tot;++i) {
-            IRBlock block = DFSIndex.get(i);
-            fn.addBlock(block);
+        fn.blocks().forEach(block -> {
             allocLoads.put(block, new HashSet<>());
             allocStores.put(block, new HashMap<>());
             allocPhiMap.put(block, new HashMap<>());
-            if (block.precursors().size() >= 2) {
-                for (IRBlock runner : block.precursors()) {
-                    while (runner != block.iDom()) {
-                        runner.addDomFrontier(block);
-                        runner = runner.iDom();
-                    }
-                }
-            }
-        }
+        });
 
         //collect load/store info.
-        for (int i = 1; i <= tot;++i) {
-            IRBlock block = DFSIndex.get(i);
-            for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
+        for (IRBlock block : fn.blocks()) {
+            for (Iterator<Inst> iter = block.instructions().iterator(); iter.hasNext(); ) {
                 Inst inst = iter.next();
                 if (inst instanceof Load) {
                     Operand address = ((Load) inst).address();
@@ -128,7 +51,7 @@ public class Mem2Reg extends Pass{
                          * and form pruned SSA rather than minimal SSA/
                          */
                         HashMap<Register, Operand> blockLiveOut = allocStores.get(inst.block());
-                        if (blockLiveOut.containsKey(address)){
+                        if (blockLiveOut.containsKey(address)) {
                             inst.dest().replaceAllUseWith(blockLiveOut.get(address));
                             iter.remove();
                             inst.removeSelf(false);
@@ -186,8 +109,7 @@ public class Mem2Reg extends Pass{
         }
 
         //rename: remove all load about alloca reg(stores is already removed above)
-        for (int i = 1; i <= tot;++i) {
-            IRBlock block = DFSIndex.get(i);
+        fn.blocks().forEach(block -> {
             if (!allocLoads.get(block).isEmpty()) {
                 allocLoads.get(block).forEach(load -> {
                     Register reg = load.dest();
@@ -204,7 +126,7 @@ public class Mem2Reg extends Pass{
                     //this one is safe since it is not in iterating all instructions in the block
                 });
             }
-        }
+        });
     }
 
 

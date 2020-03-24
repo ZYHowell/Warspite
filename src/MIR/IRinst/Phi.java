@@ -71,6 +71,12 @@ public class Phi extends Inst {
     public HashSet<Operand> uses() {
         return new HashSet<>(values);
     }
+
+    @Override
+    public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
     @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         for (int i = 0;i < values.size();++i)
