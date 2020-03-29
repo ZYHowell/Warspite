@@ -6,7 +6,7 @@ The front end of the compiler uses ANTLR4.
 
 *java is a language that, at every place, shows how lazy its designer is and how much its user has to consider.*
 
-### Front End Design & HIR
+### Frontend Design & HIR
 
 Commits of "I look to you". 
 
@@ -16,7 +16,7 @@ There are three kinds of type: primitive, class and function. They represent abs
 
 A naïve optimization is made in HIR level, that to split print(string + string) to two print commands. 
 
-Suggested by senior students' reports, a DCE is made in HIR level. But I think its MIR version is already in ADCE, so maybe it is not co useful now? 
+Suggested by senior students' reports, a DCE is made in HIR level. But I think its MIR version is already in ADCE, so maybe it is not so useful now? 
 
 ### MIR
 
@@ -31,24 +31,29 @@ My optim already contains:
 * SCCP
 * CFG simplification(part of it)
 * global CSE
+* LICM
 
 I intend to realize: 
 
  * Algebraic simplification
- * scalar replacement of aggregate(really? maybe on HIR)
+ * scalar replacement of aggregate(maybe on HIR)
  * strength reduction
- * loop-invariant code motion
  * naïve alias analysis and load/store replacement
 
  No partial redundant elimination, since it equals CSE+LICM but is hard to realize. 
 
+### Backend Design
+
+not now. But I guess that during register allocation, there is an optimization that, if the result of a register should be stored, try to judge if it can be re-calculated instead of load&store. (Use dominate info may help with this)
+
+Or, maybe move the global CSE to LIR. 
+
 ### References
 
 1. SSA book, Lots of authors, http://ssabook.gforge.inria.fr/latest/book.pdf ;
-
 2. Engineering a Compiler ed.2, Keith.D.Cooper & Linda Torczon;
-
-3. Advanced Compiler Design and Implementation, Steven.S.Muchnick
+3. Advanced Compiler Design and Implementation, Steven.S.Muchnick;
+4. Witnessing Control Flow Graph Optimizations, Dario Casula;
 
 **天灭Java，Rust保平安**
 
@@ -57,4 +62,12 @@ I intend to realize:
 3月4日，IDEA给没有加Nullable标记的参数赋值null报错
 
 3月7日，IDEA不让我debug，一次debug结束后再次开始时显示无法连接到target VM
+
+3月25日，IDEA提示下述代码有Null Pointer Exception，必须把while放前面
+
+```
+queue.offer(x);
+do {y = queue.poll(); use y then} 
+while (!queue.isEmpty());
+```
 

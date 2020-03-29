@@ -26,7 +26,8 @@ public class MIRFnGraph {
             func.blocks().forEach(block ->
                 block.instructions().forEach(inst -> {
                     if (inst instanceof Call) {
-                        func.addCalleeFunction(((Call)inst).callee());
+                        if ( !irRoot.isBuiltIn(((Call) inst).callee().name()) )
+                            func.addCalleeFunction(((Call)inst).callee());
                         if (callerCollect) caller.get(((Call)inst).callee()).add(func);
                     }
                 })

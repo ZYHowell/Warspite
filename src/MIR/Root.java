@@ -21,44 +21,44 @@ public class Root {
     private HashMap<String, ClassType> types = new HashMap<>();
 
     public Root() {
-        Function printFunc = new Function("print");
+        Function printFunc = new Function("g_print");
         builtinFunctions.put("g_print", printFunc);
-        Function printlnFunc = new Function("println");
+        Function printlnFunc = new Function("g_println");
         builtinFunctions.put("g_println", printlnFunc);
-        Function printIntFunc = new Function("printInt");
+        Function printIntFunc = new Function("g_printInt");
         builtinFunctions.put("g_printInt", printIntFunc);
-        Function printlnIntFunc = new Function("printlnInt");
+        Function printlnIntFunc = new Function("g_printlnInt");
         builtinFunctions.put("g_printlnInt", printlnIntFunc);
-        Function getStringFunc = new Function("getString");
+        Function getStringFunc = new Function("g_getString");
         builtinFunctions.put("g_getString", getStringFunc);
-        Function getIntFunc = new Function("getInt");
+        Function getIntFunc = new Function("g_getInt");
         builtinFunctions.put("g_getInt", getIntFunc);
         //above: has side effect(I/O)
-        Function toStringFunc = new Function("toString");
+        Function toStringFunc = new Function("g_toString");
         toStringFunc.setSideEffect(false);
         builtinFunctions.put("g_toString", toStringFunc);
-        Function stringAdd = new Function("stringAdd");
+        Function stringAdd = new Function("g_stringAdd");
         stringAdd.setSideEffect(false);
         builtinFunctions.put("g_stringAdd", stringAdd);
-        Function stringLT = new Function("stringLT");
+        Function stringLT = new Function("g_stringLT");
         stringLT.setSideEffect(false);
         builtinFunctions.put("g_stringLT", stringLT);
-        Function stringGT = new Function("stringGT");
+        Function stringGT = new Function("g_stringGT");
         stringGT.setSideEffect(false);
         builtinFunctions.put("g_stringGT", stringGT);
-        Function stringLE = new Function("stringLE");
+        Function stringLE = new Function("g_stringLE");
         stringLE.setSideEffect(false);
         builtinFunctions.put("g_stringLE", stringLE);
-        Function stringGE = new Function("stringGE");
+        Function stringGE = new Function("g_stringGE");
         stringGE.setSideEffect(false);
         builtinFunctions.put("g_stringGE", stringGE);
-        Function stringEQ = new Function("stringEQ");
+        Function stringEQ = new Function("g_stringEQ");
         stringEQ.setSideEffect(false);
         builtinFunctions.put("g_stringEQ", stringEQ);
-        Function stringNE = new Function("stringNE");
+        Function stringNE = new Function("g_stringNE");
         stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
-        Function init = new Function("init");
+        Function init = new Function("__init");
         init.setSideEffect(true);
         init.setExitBlock(init.entryBlock());
         functions.put("__init", init);
@@ -101,6 +101,9 @@ public class Root {
     }
     public String getConstString(String name) {
         return ConstStrings.get(name);
+    }
+    public boolean isBuiltIn(String name) {
+        return builtinFunctions.containsKey(name);
     }
 
     public IRBaseType getIRType(Type type, boolean isMemSet) {

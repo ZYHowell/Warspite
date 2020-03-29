@@ -107,7 +107,7 @@ public class CFGSimplification extends Pass {
         fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
     }
-    private boolean mergeBB_2(Function fn) {    //T1-T2 trans
+    private boolean mergeBB_2(Function fn) {    //T1 trans, or called straightening
         HashSet<IRBlock> mergeSet = new HashSet<>();
         fn.blocks().forEach(block -> {
             if (block.precursors().size() == 1 && block.precursors().get(0).successors().size() == 1)
