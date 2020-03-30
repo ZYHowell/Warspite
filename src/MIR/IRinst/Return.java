@@ -46,6 +46,11 @@ public class Return extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (value == replaced) value = replaceTo;
     }

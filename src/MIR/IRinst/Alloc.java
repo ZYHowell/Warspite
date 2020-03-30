@@ -41,6 +41,11 @@ public class Alloc extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {}
     @Override
     public void removeSelf(boolean removeFromBlock) {

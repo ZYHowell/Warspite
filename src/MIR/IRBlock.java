@@ -44,8 +44,11 @@ public class IRBlock {
         return successors;
     }
 
-    public void addInst(Inst inst) {
+    public void addInst(Inst inst) {    //add inst in unterminated block
         instructions.add(inst);
+    }
+    public void addInstTerminated(Inst inst) {  //add inst in terminated blocks
+        instructions.add(instructions.size() - 1, inst);
     }
     public ArrayList<Inst> instructions() {
         return instructions;
@@ -169,5 +172,53 @@ public class IRBlock {
     }
     public HashSet<IRBlock> domChildren() {
         return domChildren;
+    }
+
+    public void replaceSuccessor(IRBlock origin, IRBlock dest) {
+        if (terminator() instanceof Jump) {
+            removeTerminator();
+            addTerminator(new Jump(dest, this));
+        } else {
+            assert terminator() instanceof Branch;
+            Branch terminator = (Branch)terminator(), newTerm;
+            if (terminator.trueDest() == origin)
+                newTerm = new Branch(terminator.condition(), dest, terminator.falseDest(), this);
+            else newTerm = new Branch(terminator.condition(), terminator.trueDest(), dest, this);
+            removeTerminator();
+            addTerminator(newTerm);
+        }
+    }
+
+    private void phiMerge(IRBlock origin) {
+        assert origin.successors().size() == 1 && origin.successors().contains(this);
+        HashMap<Register, Phi> merged = origin.phiInst();
+        HashSet<Register> notCopy = new HashSet<>();
+        PhiInst.forEach((reg, phi) -> {
+            //if the phiInst uses a phi in merged blocks, merge the two, no need to replaceAllUse
+            ArrayList<Operand> values = phi.values();
+            for (Operand value : values) {
+                if (value instanceof Register && merged.containsKey(value)) {
+                    Phi mergeInst = merged.get(value);
+                    ArrayList<Operand> mergeValues = mergeInst.values();
+                    ArrayList<IRBlock> mergeBlocks = mergeInst.blocks();
+                    for (int j = 0; j < mergeValues.size(); ++j)
+                        phi.addOrigin(mergeValues.get(j), mergeBlocks.get(j));
+                    notCopy.add(mergeInst.dest());
+                }
+            }
+        });
+
+        merged.forEach((reg, phi) -> {
+            //otherwise, copy it currently
+            if (notCopy.contains(reg)) {
+                //to consider: remove this check in the final version
+                phi.dest().uses().forEach(use -> {assert use.block() == this;});
+            }
+            else phi.moveTo(this);
+        });
+    }
+    public void mergeEmptyBlock(IRBlock merged) {
+        phiMerge(merged);
+        merged.precursors().forEach(pre -> pre.replaceSuccessor(merged, this));
     }
 }

@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import AST.*;
 import Util.position;
 import Util.error.*;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import static AST.binaryExpr.opCategory.*;
 import static AST.prefixExpr.prefixCode.*;

@@ -89,13 +89,16 @@ public class Mem2Reg extends Pass{
                             Operand value = entry.getValue();
                     //for the domFrontier of runner, try to add phi
                     //in the runner, allocVar is defined(by store or phi), whose liveOut value is value
-                            if (allocPhiMap.get(df).containsKey(allocVar))
+                            if (allocPhiMap.get(df).containsKey(allocVar)){
                                 //the phi already exists, simply add one source
-                                df.PhiInsertion(allocPhiMap.get(df).get(allocVar), value, runner);
+                                for (IRBlock pre : df.precursors()) if (pre.isDomed(runner))
+                                    df.PhiInsertion(allocPhiMap.get(df).get(allocVar), value, pre);
+                            }
                             else {
                                 //the phi does not exist, needs to do more and use it in the next cycle
                                 Register dest = new Register(value.type(), allocVar.name() + "_phi");
-                                df.PhiInsertion(dest, value, runner);
+                                for (IRBlock pre : df.precursors()) if (pre.isDomed(runner))
+                                    df.PhiInsertion(dest, value, pre);
                                 if (!allocStores.get(df).containsKey(allocVar)) {
                                     allocStores.get(df).put(allocVar, dest);
                                     defBlocks.add(df);

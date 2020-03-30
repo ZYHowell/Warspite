@@ -58,4 +58,9 @@ public class Load extends Inst{
     public boolean sameMeaning(Inst inst) {
         return false;
     }
+
+    @Override
+    public boolean canHoist() {
+        return true;
+    }
 }

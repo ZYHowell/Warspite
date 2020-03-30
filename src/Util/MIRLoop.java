@@ -7,11 +7,17 @@ import java.util.HashSet;
 public class MIRLoop {
 
     private HashSet<IRBlock> blocks = new HashSet<>();
-    private IRBlock head;
+    private HashSet<IRBlock> tails = new HashSet<>();
     private HashSet<MIRLoop> children = new HashSet<>();
+    private IRBlock preHead;
 
-    public MIRLoop(IRBlock head) {
-        this.head = head;
+    public MIRLoop() {}
+
+    public void setPreHead(IRBlock preHeader) {
+        this.preHead = preHeader;
+    }
+    public IRBlock preHead() {
+        return preHead;
     }
     public void addBlock(IRBlock block) {
         blocks.add(block);
@@ -27,5 +33,11 @@ public class MIRLoop {
     }
     public HashSet<MIRLoop> children() {
         return children;
+    }
+    public void addTail(IRBlock tail) {
+        tails.add(tail);
+    }
+    public HashSet<IRBlock> tails() {
+        return tails;
     }
 }

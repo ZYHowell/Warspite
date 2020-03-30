@@ -73,6 +73,11 @@ public class Binary extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return true;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (src1 == replaced) src1 = replaceTo;
         if (src2 == replaced) src2 = replaceTo;

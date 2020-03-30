@@ -40,7 +40,7 @@ public class Phi extends Inst {
             if (blocks.get(i) == block) {
                 blocks.remove(i);
                 values.remove(i);
-                --i;    //to consider: ugly
+                break;
             }
         }
     }
@@ -74,6 +74,11 @@ public class Phi extends Inst {
 
     @Override
     public boolean sameMeaning(Inst inst) {
+        return false;
+    }
+
+    @Override
+    public boolean canHoist() {
         return false;
     }
 

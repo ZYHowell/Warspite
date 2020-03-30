@@ -56,6 +56,11 @@ public class Zext extends Inst{
     }
 
     @Override
+    public boolean canHoist() {
+        return true;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (origin == replaced) origin = replaceTo;
     }

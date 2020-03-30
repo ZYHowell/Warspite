@@ -83,26 +83,12 @@ public class CFGSimplification extends Pass {
     private boolean mergeBB_1(Function fn) {
         HashSet<IRBlock> mergeSet = new HashSet<>();
         fn.blocks().forEach(block -> {
-            if (block.phiInst().size() == 0 && block.instructions().size() == 1
-                    && block.terminator() instanceof Jump)
+            if (block.instructions().size() == 1 && block.terminator() instanceof Jump)
                 mergeSet.add(block);
         });
         mergeSet.forEach(merged -> {
             IRBlock jumpDest = ((Jump) merged.terminator()).destBlock();
-            merged.precursors().forEach(pre -> {
-                if (pre.terminator() instanceof Jump) {
-                    pre.removeTerminator();
-                    pre.addTerminator(new Jump(jumpDest, pre));
-                } else {
-                    assert pre.terminator() instanceof Branch;
-                    Branch terminator = (Branch)pre.terminator(), newTerm;
-                    if (terminator.trueDest() == merged)
-                        newTerm = new Branch(terminator.condition(), jumpDest, terminator.falseDest(), pre);
-                    else newTerm = new Branch(terminator.condition(), terminator.trueDest(), jumpDest, pre);
-                    pre.removeTerminator();
-                    pre.addTerminator(newTerm);
-                }
-            });
+            jumpDest.mergeEmptyBlock(merged);
         });
         fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
@@ -118,10 +104,12 @@ public class CFGSimplification extends Pass {
             pre.removeTerminator();
             pre.mergeBlock(block);
         });
+        fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
     }
     private void InstModify(Function fn) {
         //modify instructions. hard to judge
+        //to consider: add this?
     }
 
     private void simplify(Function fn) {

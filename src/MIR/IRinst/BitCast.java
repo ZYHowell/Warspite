@@ -58,6 +58,11 @@ public class BitCast extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return true;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (it == replaced) it = replaceTo;
     }

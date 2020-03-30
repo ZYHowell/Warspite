@@ -54,6 +54,11 @@ public class Store extends Inst{
     }
 
     @Override
+    public boolean canHoist() {
+        return true;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (value == replaced) value = replaceTo;
         if (address == replaced) address = replaceTo;

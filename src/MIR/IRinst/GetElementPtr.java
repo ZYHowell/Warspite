@@ -85,4 +85,9 @@ public class GetElementPtr extends Inst{
                     && instr.elementOffset().equals(elementOffset);
         } else return false;
     }
+
+    @Override
+    public boolean canHoist() {
+        return true;
+    }
 }

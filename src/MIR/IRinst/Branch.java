@@ -55,6 +55,11 @@ public class Branch extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (condition == replaced) condition = replaceTo;
     }

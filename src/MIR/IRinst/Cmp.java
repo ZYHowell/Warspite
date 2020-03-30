@@ -72,6 +72,11 @@ public class Cmp extends Inst{
     }
 
     @Override
+    public boolean canHoist() {
+        return true;
+    }
+
+    @Override
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         destBlock.addInst(new Cmp(mirror.opMir(src1), mirror.opMir(src2),
                 (Register)mirror.opMir(dest()), opCode, destBlock));

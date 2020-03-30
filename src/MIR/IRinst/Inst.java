@@ -26,6 +26,9 @@ abstract public class Inst {
     public Register dest() {
         return dest;
     }
+    public void moveTo(IRBlock block) {
+        this.block = block;
+    }
 
     public abstract boolean isTerminal();
     public abstract void removeSelf(boolean removeFromBlock);
@@ -34,4 +37,5 @@ abstract public class Inst {
     public abstract void addMirror(IRBlock destBlock, MIRMirror mirror);
     public abstract HashSet<Operand> uses();
     public abstract boolean sameMeaning(Inst inst);
+    public abstract boolean canHoist();
 }

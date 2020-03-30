@@ -1,11 +1,7 @@
 package Optim;
 
-import MIR.Function;
-import MIR.IRBlock;
 import MIR.IRinst.*;
-import MIR.IRoperand.GlobalReg;
 import MIR.IRoperand.Operand;
-import MIR.IRoperand.Param;
 import MIR.IRoperand.Register;
 import MIR.IRtype.Pointer;
 import MIR.Root;

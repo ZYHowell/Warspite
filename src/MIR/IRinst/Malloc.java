@@ -41,6 +41,11 @@ public class Malloc extends Inst {
     }
 
     @Override
+    public boolean canHoist() {
+        return false;
+    }
+
+    @Override
     public void ReplaceUseWith(Register replaced, Operand replaceTo) {
         if (length == replaced) length = replaceTo;
     }
