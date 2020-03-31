@@ -47,7 +47,7 @@ public class Phi extends Inst {
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder(dest().toString() + " = phi " + dest().type().toString());
+        StringBuilder ret = new StringBuilder(dest().toString() + " = phi " + dest().type().toString() + " ");
         for (int i = 0;i < values.size();i++) {
             if (i > 0) ret.append(", ");
             ret.append("[ ");

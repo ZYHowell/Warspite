@@ -15,6 +15,9 @@ public class GlobalReg extends Operand {
         this.name = name;
     }
 
+    public String name() {
+        return name;
+    }
 
     @Override
     public void addUse(Inst inst) {

@@ -24,8 +24,8 @@ public class Load extends Inst{
 
     @Override
     public String toString() {
-        return dest().name() + " = load " + dest().type().toString() + ", " +
-                address.type().toString() + " " + address.toString() + ", align" +
+        return "%" + dest().name() + " = load " + dest().type().toString() + ", " +
+                address.type().toString() + " " + address.toString() + ", align " +
                 dest().type().size() / 8;
     }
 

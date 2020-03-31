@@ -14,7 +14,7 @@ public class Function {
     private String name;
     private Register classPtr;
     private IRBaseType retType;
-    private ArrayList<Param> parameters;
+    private ArrayList<Param> parameters = new ArrayList<>();
     private IRBlock entryBlock = new IRBlock("entry"),
                     exitBlock;
     private HashSet<Function> callFunction = new HashSet<>();

@@ -130,6 +130,8 @@ public class Mem2Reg extends Pass{
                 });
             }
         });
+
+        fn.blocks().forEach(block -> block.instructions().removeIf(inst -> inst instanceof Alloc));
     }
 
 

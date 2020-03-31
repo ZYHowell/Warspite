@@ -61,9 +61,13 @@ public class Root {
         Function init = new Function("__init");
         init.setSideEffect(true);
         init.setExitBlock(init.entryBlock());
+        init.setRetType(new VoidType());
         functions.put("__init", init);
     }
 
+    public HashMap<String, ClassType> types() {
+        return types;
+    }
     public void addType(String name, ClassType type) {
         types.put(name, type);
     }
@@ -99,8 +103,8 @@ public class Root {
     public void addConstString(String name, String value) {
         ConstStrings.put(name, value);
     }
-    public String getConstString(String name) {
-        return ConstStrings.get(name);
+    public HashMap<String, String> constStrings() {
+        return ConstStrings;
     }
     public boolean isBuiltIn(String name) {
         return builtinFunctions.containsKey(name);

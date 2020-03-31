@@ -39,7 +39,8 @@ public class Main {
             //new SideEffectBuilder(gScope).visit(ASTRoot);
             //new HIRDCE(gScope).visit(ASTRoot);
 
-            // new IRBuilder(gScope, irRoot).visit(ASTRoot);
+            new IRBuilder(gScope, irRoot).visit(ASTRoot);
+            new IRPrinter(true).run(irRoot);
             //optim order: mem2reg-inline-(ADCE-SCCP-CFGSimplify)
         } catch (error er) {
             System.err.println(er.toString());

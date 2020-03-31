@@ -18,6 +18,9 @@ public class ClassType extends IRBaseType{
         size += member.size();
     }
 
+    public ArrayList<IRBaseType> members() {
+        return members;
+    }
     public String name() {
         return name;
     }

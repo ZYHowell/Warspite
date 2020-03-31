@@ -40,7 +40,7 @@ public class Binary extends Inst {
 
     @Override
     public String toString() {
-        return dest().name() + " = " + opCode.toString() + " " +
+        return dest().toString() + " = " + opCode.toString() + " " +
                 src1.type().toString() + " " + src1.toString() + ", " + src2.toString();
     }
 

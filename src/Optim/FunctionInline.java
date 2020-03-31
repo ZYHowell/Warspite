@@ -97,9 +97,15 @@ public class FunctionInline extends Pass{
         //merge the entry block with the former one of current block
         fn.removeBlock(mirrorBlocks.get(callee.entryBlock()));
         currentBlock.mergeBlock(mirrorBlocks.get(callee.entryBlock()));
-        //merge the exit block with the laterBlock one of current block
-        fn.removeBlock(laterBlock);
-        mirrorBlocks.get(callee.exitBlock()).mergeBlock(laterBlock);
+        //merge the exit block with the laterBlock one of current block,
+        //no need to remove laterBlock since it is never added
+        IRBlock exitBlock = mirrorBlocks.get(callee.exitBlock());
+        assert exitBlock.terminator() instanceof Return;
+        Return retInst = (Return) exitBlock.terminator();
+        if (retInst.value() != null) inst.dest().replaceAllUseWith(retInst.value());
+        exitBlock.removeTerminator();
+
+        exitBlock.mergeBlock(laterBlock);
     }
     private void checkInline(Function fn) {
         fn.blocks().forEach(block -> block.instructions().forEach(inst -> {

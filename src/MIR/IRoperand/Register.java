@@ -52,10 +52,16 @@ public class Register extends Operand {
         });
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
     public String name() {
         return name;
     }
     public String toString() {
         return "%" + name;
+    }
+    public Inst def() {
+        return def;
     }
 }

@@ -31,7 +31,7 @@ public class Store extends Inst{
 
     @Override
     public String toString() {
-        return "store " + value.type().toString() + ", " + value.toString() +
+        return "store " + value.type().toString() + ", " + value.toString() + " " +
                 address.type().toString() + " " + address.toString() +
                 ", align " + value.type().size() / 8;
     }
@@ -55,7 +55,7 @@ public class Store extends Inst{
 
     @Override
     public boolean canHoist() {
-        return true;
+        return false;
     }
 
     @Override

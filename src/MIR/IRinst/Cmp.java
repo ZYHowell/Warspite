@@ -48,7 +48,7 @@ public class Cmp extends Inst{
             if (src2 instanceof Null) typeString = "int*";
             else typeString = src2.type().toString();
         } else typeString = src1.type().toString();
-        return dest().toString() + " = " + "icmp " + opCode.toString() + " " + typeString +
+        return dest().toString() + " = " + "icmp " + opCode.toString() + " " + typeString + " " +
                 src1.toString()  + ", " + src2.toString();
     }
 

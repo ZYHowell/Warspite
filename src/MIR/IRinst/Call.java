@@ -31,11 +31,16 @@ public class Call extends Inst{
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder(dest().toString());
-        ret.append(" = ");
-        ret.append(dest().type().toString());
-        ret.append(" @");
+        StringBuilder ret = new StringBuilder();
+        if (dest() != null) {
+            ret.append(dest().toString());
+            ret.append(" = ");
+            ret.append(dest().type().toString());
+            ret.append(" ");
+        }
+        ret.append("@");
         ret.append(callee.name());
+        if (params.size() == 0) ret.append("(");
         for (int i = 0;i < params.size();++i){
             ret.append((i == 0 ? "(" : ", "));
             ret.append(params.get(i).type().toString());
