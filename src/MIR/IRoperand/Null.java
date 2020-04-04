@@ -29,7 +29,7 @@ public class Null extends Operand {
 
     @Override
     public String toString() {
-        return "null";
+        return "0";
     }
 
     @Override

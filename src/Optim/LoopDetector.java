@@ -118,6 +118,19 @@ public class LoopDetector {
         visit(fn.entryBlock());
     }
 
+    private void mergePreHead(MIRLoop loop) {
+        if (!loop.children().isEmpty())
+            loop.children().forEach(this::mergePreHead);
+        IRBlock preHead = loop.preHead();
+        if (preHead.instructions().size() == 1){
+            fn.blocks().remove(preHead);
+            preHead.successors().get(0).mergeEmptyBlock(preHead);
+        }
+    }
+    public void mergePreHeads() {
+        rootLoops.forEach(this::mergePreHead);
+    }
+
     public void runForFn() {
         //assume that the dominator relation is correct.
         fn.blocks().forEach(block -> {

@@ -16,7 +16,7 @@ public class Root {
 
     private HashMap<String, Function> builtinFunctions = new HashMap<>();
     private HashMap<String, Function> functions = new HashMap<>();
-    private HashMap<String, String> ConstStrings = new HashMap<>();
+    private HashMap<String, ConstString> ConstStrings = new HashMap<>();
     private ArrayList<GlobalReg> globalVar = new ArrayList<>();
     private HashMap<String, ClassType> types = new HashMap<>();
 
@@ -101,9 +101,12 @@ public class Root {
         return globalVar;
     }
     public void addConstString(String name, String value) {
-        ConstStrings.put(name, value);
+        ConstStrings.put(name, new ConstString(name, value));
     }
-    public HashMap<String, String> constStrings() {
+    public ConstString getConstString(String name) {
+        return ConstStrings.get(name);
+    }
+    public HashMap<String, ConstString> constStrings() {
         return ConstStrings;
     }
     public boolean isBuiltIn(String name) {

@@ -8,22 +8,22 @@ import Util.MIRMirror;
 import java.util.HashSet;
 
 public class Binary extends Inst {
-    public enum BinaryOpCategory {
+    public enum BinaryOpCat {
         mul, sdiv, srem, shl, ashr, and, or, xor, sub, add
         //*  /     %     <<   >>    &    |   ^    -    +
     }
-    private BinaryOpCategory opCode;
+    private BinaryOpCat opCode;
     private Operand src1, src2;
     private boolean canCommute;
 
-    public Binary(Operand src1, Operand src2, Register dest, BinaryOpCategory opCode, IRBlock block) {
+    public Binary(Operand src1, Operand src2, Register dest, BinaryOpCat opCode, IRBlock block) {
         super(dest, block);
         this.src1 = src1;
         this.src2 = src2;
         this.opCode = opCode;
-        canCommute = opCode == BinaryOpCategory.add || opCode == BinaryOpCategory.mul ||
-                     opCode == BinaryOpCategory.and || opCode == BinaryOpCategory.or ||
-                     opCode == BinaryOpCategory.xor;
+        canCommute = opCode == BinaryOpCat.add || opCode == BinaryOpCat.mul ||
+                     opCode == BinaryOpCat.and || opCode == BinaryOpCat.or ||
+                     opCode == BinaryOpCat.xor;
         src1.addUse(this);src2.addUse(this);
         dest.setDef(this);
     }
@@ -34,8 +34,17 @@ public class Binary extends Inst {
     public Operand src2() {
         return src2;
     }
-    public BinaryOpCategory opCode() {
+    public BinaryOpCat opCode() {
         return opCode;
+    }
+    public void strengthReduction(Operand src1, Operand src2, BinaryOpCat opCode) {
+        this.src1.removeUse(this);
+        this.src2.removeUse(this);
+        src1.addUse(this);
+        src2.addUse(this);
+        this.src1 = src1;
+        this.src2 = src2;
+        this.opCode = opCode;
     }
 
     @Override

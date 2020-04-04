@@ -78,9 +78,9 @@ public class IRPrinter {
             System.out.println("@" + gVar.name() + " = global " + gVar.type().toString() +
                     "zeroinitializer, align " + gVar.type().size() / 8)
         );
-        irRoot.constStrings().forEach((name, value) -> System.out.println(
-                "@" + name + " private unnamed_addr constant "
-                + "[" + (value.length() + 1) + " * i8] c" + "\"" + value + "\\00\", align 1"));
+        irRoot.constStrings().forEach((name, constString) -> System.out.println(
+                "@" + name + " = private unnamed_addr constant "
+                + "[" + (constString.value().length() + 1) + " * i8] c" + "\"" + constString.value() + "\\00\", align 1"));
         irRoot.functions().forEach(this::printFn);
     }
 }

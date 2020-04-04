@@ -14,7 +14,7 @@ import Util.symbol.varEntity;
 
 import java.util.ArrayList;
 
-import static MIR.IRinst.Binary.BinaryOpCategory.*;
+import static MIR.IRinst.Binary.BinaryOpCat.*;
 import static MIR.IRinst.Cmp.CmpOpCategory.*;
 
 /*
@@ -193,6 +193,11 @@ public class IRBuilder implements ASTVisitor {
         } else {
             currentFunction.setExitBlock(returnList.get(0).currentBlock());
         }
+        IRBlock entryBlock = currentFunction.entryBlock();
+        currentFunction.allocVars().forEach(var ->{
+            if (var.type() instanceof Pointer)
+                entryBlock.instructions().add(0, new Store(var, new Null(), entryBlock));
+        });
 
         returnList.clear();
         currentFunction = null;
@@ -388,7 +393,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(binaryExpr it) {
         Operand src1, src2;
         Inst inst;
-        Binary.BinaryOpCategory binaryOp = null;
+        Binary.BinaryOpCat binaryOp = null;
         Cmp.CmpOpCategory cmpOp = null;
         Function stringCall = null;
 
@@ -797,9 +802,12 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(stringLiteral it) {
         String name = currentFunction.name() +"." + symbolCtr++;
-        it.setOperand(new ConstString(name));
         String realValue = it.value().substring(1, it.value().length() - 1);
         irRoot.addConstString(name, realValue);
+        it.setOperand(new Register(new Pointer(new IntType(8), false), "resolved_"+name));
+        currentBlock.addInst(new GetElementPtr(new ArrayType(realValue.length() + 1, new IntType(8)),
+                irRoot.getConstString(name), new ConstInt(0, 32),
+                new ConstInt(0, 32), (Register)it.operand(), currentBlock));
     }
 
     private void arrayMalloc(int nowDim, newExpr it, Register result) {

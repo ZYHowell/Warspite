@@ -58,7 +58,7 @@ public class ADCE extends Pass {
                         testOp(inst.dest(), addedOp);
                     }
                 } else assert (inst instanceof Load || inst instanceof Call
-                    || (inst instanceof Binary && ((Binary)inst).opCode() == Binary.BinaryOpCategory.sub));
+                    || (inst instanceof Binary && ((Binary)inst).opCode() == Binary.BinaryOpCat.sub));
                     //the last one is to get the size.
             });
         }

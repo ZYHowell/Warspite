@@ -66,14 +66,8 @@ public class LICM extends Pass{
         LoopDetector loops = new LoopDetector(fn);
         loops.runForFn();
         loops.rootLoops().forEach(this::runForLoop);
-        loops.rootLoops().forEach(loop -> {
-            IRBlock preHead = loop.preHead();
-            if (preHead.instructions().size() == 1){
-                fn.blocks().remove(preHead);
-                preHead.successors().get(0).mergeEmptyBlock(preHead);
-            }
-            //merge unnecessary preHead, is safe here since the loops are used up
-        });
+        loops.mergePreHeads();
+        //merge unnecessary preHead, is safe here since the loops are used up
     }
 
     @Override

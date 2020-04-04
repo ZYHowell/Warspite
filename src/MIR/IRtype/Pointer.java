@@ -31,11 +31,14 @@ public class Pointer extends IRBaseType {
     }
     @Override
     public String toString() {
+        if (pointTo instanceof VoidType) return "";
         return pointTo.toString() + "*";
     }
 
     @Override
     public boolean sameType(IRBaseType o) {
-        return o instanceof Pointer && ((Pointer) o).pointTo().sameType(pointTo);
+        return (o instanceof Pointer &&
+                (((Pointer) o).pointTo() instanceof VoidType || ((Pointer) o).pointTo().sameType(pointTo)))
+                || (o instanceof ArrayType && o.sameType(this));
     }
 }
