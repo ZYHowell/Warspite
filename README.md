@@ -44,7 +44,9 @@ I intend to realize:
 
 ### Backend Design
 
-not now. But I guess that during register allocation, there is an optimization that, if the result of a register should be stored, try to judge if it can be re-calculated instead of load&store. (Use dominate info may help with this)
+Commits of "Young and beautiful"
+
+I guess that during register allocation, there is an optimization that, if the result of a register should be stored, try to judge if it can be re-calculated instead of load&store. (Use dominate info may help with this)
 
 Or, maybe move the global CSE to LIR. 
 

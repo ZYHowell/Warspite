@@ -40,8 +40,9 @@ public class Main {
             //new HIRDCE(gScope).visit(ASTRoot);
 
             new IRBuilder(gScope, irRoot).visit(ASTRoot);
+            new Mem2Reg(irRoot).run();
             new IRPrinter(true).run(irRoot);
-            //optim order: mem2reg-inline-(ADCE-SCCP-CFGSimplify)
+            //optim order: inline-(ADCE-SCCP-CFGSimplify)
         } catch (error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

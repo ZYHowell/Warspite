@@ -11,6 +11,7 @@ abstract public class Inst {
 
     private Register dest;
     private IRBlock block;
+    public HashSet<Operand> liveIn = new HashSet<>(), liveOut = new HashSet<>();
 
     public Inst(Register dest, IRBlock block) {
         this.dest = dest;
