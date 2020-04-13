@@ -25,7 +25,7 @@ public class PhiResolve {
 
     private static class paraCopy {
         public ArrayList<Move> copies = new ArrayList<>();
-        public HashMap<Register, Integer> useMap = new HashMap<>();
+        public HashMap<Operand, Integer> useMap = new HashMap<>();
 
         public paraCopy() {}
 
@@ -33,8 +33,8 @@ public class PhiResolve {
             copies.add(move);
             Operand origin = move.origin();
             if (origin instanceof Register)
-                if (useMap.containsKey(origin)) useMap.put((Register)origin, useMap.get(origin) + 1);
-                else useMap.put((Register)origin, 0);
+                if (useMap.containsKey(origin)) useMap.put(origin, useMap.get(origin) + 1);
+                else useMap.put(origin, 0);
         }
     }
 
@@ -51,8 +51,12 @@ public class PhiResolve {
             for (Iterator<Move> iter = para.copies.iterator(); iter.hasNext(); ) {
                 Move inst = iter.next();
                 if (!(inst.origin() instanceof Register &&
-                        para.useMap.containsKey((Register) inst.origin()))) {
+                        para.useMap.containsKey(inst.origin()))) {
                     iter.remove();
+                    int num = para.useMap.get(inst.origin()) - 1;
+                    if (num > 0) para.useMap.put(inst.origin(), num);
+                    else para.useMap.remove(inst.origin());
+
                     block.addInstTerminated(new Move(inst.origin(), inst.dest(), block, true));
                     hasMore = true;
                 }
@@ -66,6 +70,7 @@ public class PhiResolve {
                         block.addInstTerminated(new Move(inst.origin(),
                                 mirror, block, true));
                         //replace all origin in remained copies by mirror then
+                        para.useMap.remove(inst.origin());
                         para.copies.forEach(copy -> copy.ReplaceUseWith((Register) inst.origin(), mirror));
                         break;
                     }

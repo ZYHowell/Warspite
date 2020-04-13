@@ -32,12 +32,12 @@ My optim already contains:
 * CFG simplification(part of it)
 * global CSE
 * LICM
+* strength reduction
 
 I intend to realize: 
 
  * Algebraic simplification
  * scalar replacement of aggregate(maybe on HIR)
- * strength reduction
  * naïve alias analysis and load/store replacement
 
  No partial redundant elimination, since it equals CSE+LICM but is hard to realize. 

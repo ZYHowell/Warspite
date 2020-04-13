@@ -41,6 +41,11 @@ public class Cmp extends Inst{
     public CmpOpCategory opCode() {
         return opCode;
     }
+    public void modify(Operand src1, Operand src2, CmpOpCategory opCode) {
+        this.src1 = src1;
+        this.src2 = src2;
+        this.opCode = opCode;
+    }
     @Override
     public String toString() {
         String typeString;
