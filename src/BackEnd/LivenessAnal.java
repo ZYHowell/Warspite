@@ -3,6 +3,7 @@ package BackEnd;
 import Assemb.LFn;
 import Assemb.LIRBlock;
 import Assemb.LOperand.LOperand;
+import Assemb.LOperand.Reg;
 import Assemb.LRoot;
 import Assemb.RISCInst.RISCInst;
 
@@ -12,9 +13,9 @@ import java.util.HashSet;
 //this is done after phi resolution
 public class LivenessAnal {
     private LRoot irRoot;
-    private HashMap<LIRBlock, HashSet<LOperand>> blockUses = new HashMap<>();
-    private HashMap<LIRBlock, HashSet<LOperand>> blockDefs = new HashMap<>();
-    private HashMap<LIRBlock, HashSet<LOperand>> blockLiveIn = new HashMap<>(),
+    private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<Reg>> blockDefs = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<Reg>> blockLiveIn = new HashMap<>(),
                                                  blockLiveOut = new HashMap<>();
     private HashSet<LIRBlock> visited = new HashSet<>();
 
@@ -23,8 +24,8 @@ public class LivenessAnal {
     }
 
     public void runForBlockA(LIRBlock block) {
-        HashSet<LOperand> uses = new HashSet<>();
-        HashSet<LOperand> defs = new HashSet<>();
+        HashSet<Reg> uses = new HashSet<>();
+        HashSet<Reg> defs = new HashSet<>();
         block.instructions().forEach(inst -> {
             if (inst.dest() != null) defs.add(inst.dest());
             uses.addAll(inst.uses());
@@ -36,9 +37,9 @@ public class LivenessAnal {
     }
     public void LiveIO(LIRBlock block) {
         visited.add(block);
-        HashSet<LOperand> liveOut = new HashSet<>();
+        HashSet<Reg> liveOut = new HashSet<>();
         block.successors().forEach(suc -> liveOut.addAll(blockLiveOut.get(suc)));
-        HashSet<LOperand> liveIn = new HashSet<>(liveOut);
+        HashSet<Reg> liveIn = new HashSet<>(liveOut);
         liveIn.addAll(blockUses.get(block));
         liveIn.removeAll(blockDefs.get(block));
         blockLiveOut.get(block).addAll(liveOut);

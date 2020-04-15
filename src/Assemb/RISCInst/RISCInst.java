@@ -3,6 +3,7 @@ package Assemb.RISCInst;
 import Assemb.LIRBlock;
 import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
+import Assemb.LOperand.VirtualReg;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 
@@ -12,6 +13,9 @@ public abstract class RISCInst {
 
     public enum CalCategory {
         add, sub, slt, sltU, xor, or, and , sll, srl, sra, mul, mulH, div, rem
+    }
+    public enum EzCategory {
+        eq, ne, le, ge, lt, gt
     }
     private Reg dest;
     private LIRBlock block;
@@ -29,5 +33,5 @@ public abstract class RISCInst {
         return block;
     }
 
-    public abstract HashSet<LOperand> uses();
+    public abstract HashSet<Reg> uses();
 }

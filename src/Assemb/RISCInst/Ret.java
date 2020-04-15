@@ -1,7 +1,7 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.LOperand;
+import Assemb.LOperand.Reg;
 
 import java.util.HashSet;
 
@@ -11,7 +11,7 @@ public class Ret extends RISCInst{
     }
 
     @Override
-    public HashSet<LOperand> uses() {
+    public HashSet<Reg> uses() {
         return new HashSet<>();
     }
 }

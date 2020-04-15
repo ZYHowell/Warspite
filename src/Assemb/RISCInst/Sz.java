@@ -1,27 +1,21 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.*;
+import Assemb.LOperand.LOperand;
+import Assemb.LOperand.Reg;
+import Assemb.LOperand.VirtualReg;
 
 import java.util.HashSet;
 
-public class IType extends RISCInst {
+public class Sz extends RISCInst{
 
     private Reg src;
-    private Imm imm;
-    private CalCategory opCode;
+    private EzCategory opCode;
 
-    public IType(Reg src, Imm imm, CalCategory opCode, Reg dest, LIRBlock block) {
+    public Sz(Reg src, EzCategory opCode, Reg dest, LIRBlock block) {
         super(dest, block);
         this.src = src;
-        this.imm = imm;
         this.opCode = opCode;
-    }
-    public Imm imm() {
-        return imm;
-    }
-    public CalCategory opCode() {
-        return opCode;
     }
 
     @Override

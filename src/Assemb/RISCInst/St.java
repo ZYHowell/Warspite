@@ -36,8 +36,8 @@ public class St extends RISCInst{
     }
 
     @Override
-    public HashSet<LOperand> uses() {
-        HashSet<LOperand> ret = new HashSet<>();
+    public HashSet<Reg> uses() {
+        HashSet<Reg> ret = new HashSet<>();
         if (address instanceof VirtualReg) ret.add(address);
         if (value instanceof VirtualReg) ret.add(value);
         return ret;

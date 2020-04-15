@@ -12,9 +12,9 @@ import MIR.IRtype.Pointer;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static Assemb.RISCInst.Bz.BzCategory.*;
 import static Assemb.RISCInst.RISCInst.*;
 import static Assemb.RISCInst.RISCInst.CalCategory.*;
+import static Assemb.RISCInst.RISCInst.EzCategory.*;
 
 /*
  * for extra params(a8, a9, ...an) they are in stack:
@@ -107,6 +107,14 @@ public class InstSelection {
         }
         block.addInst(new RType(RegM2L(src1), RegM2L(src2), opCode, dest, block));
     }
+    private void genSltLIR(Operand src1, Operand src2, Reg dest) {
+        if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value(), 12)){
+            currentBlock.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
+                    slt, dest, currentBlock));
+            return;
+        }
+        currentBlock.addInst(new RType(RegM2L(src1), RegM2L(src2), slt, dest, currentBlock));
+    }
     private void genLIR(Inst inst) {
         LIRBlock block = currentBlock;
         if (inst instanceof Binary) {
@@ -114,18 +122,47 @@ public class InstSelection {
             genBinaryLIR(bi.src1(), bi.src2(), RegM2L(inst.dest()), bi.opCode(), bi.commutable());
         }
         else if (inst instanceof BitCast) {
-            regMap.put(inst.dest(), RegM2L(((BitCast) inst).origin()));
+            if (regMap.containsKey(inst.dest()))
+                block.addInst(new Mv(RegM2L(((BitCast) inst).origin()), regMap.get(inst.dest()), block));
+            else regMap.put(inst.dest(), RegM2L(((BitCast) inst).origin()));
         }
         else if (inst instanceof Branch) {
             Branch br = (Branch) inst;
             if (br.condition() instanceof Register && isBranchReg((Register)br.condition(), inst.block())) {
                 if (((Register) br.condition()).def() instanceof Cmp) {
-                    //todo:use beq/bne/blt/bge
-
+                    Cmp cm = (Cmp) ((Register) br.condition()).def();
+                    Cmp.CmpOpCategory opCode = cm.opCode();
+                    switch (opCode){
+                        case slt:
+                            block.addInst(new Br(RegM2L(cm.src1()), RegM2L(cm.src2()), Br.BrCategory.lt,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                        case sgt:
+                            block.addInst(new Br(RegM2L(cm.src2()), RegM2L(cm.src1()), Br.BrCategory.lt,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                        case sle:
+                            block.addInst(new Br(RegM2L(cm.src2()), RegM2L(cm.src1()), Br.BrCategory.ge,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                        case sge:
+                            block.addInst(new Br(RegM2L(cm.src1()), RegM2L(cm.src2()), Br.BrCategory.ge,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                        case eq:
+                            block.addInst(new Br(RegM2L(cm.src1()), RegM2L(cm.src2()), Br.BrCategory.eq,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                        case ne:
+                            block.addInst(new Br(RegM2L(cm.src1()), RegM2L(cm.src2()), Br.BrCategory.ne,
+                                    blockMap.get(br.trueDest()), block));
+                            break;
+                    }
+                    block.addInst(new Jp(blockMap.get(br.falseDest()), block));
                     return;
                 }
             }
-            block.addInst(new Bz(RegM2L(br.condition()), eq,  blockMap.get(br.falseDest()), block));
+            block.addInst(new Bz(RegM2L(br.condition()), eq, blockMap.get(br.falseDest()), block));
             block.addInst(new Jp(blockMap.get(br.trueDest()), block));
         }
         else if (inst instanceof Call) {
@@ -152,30 +189,32 @@ public class InstSelection {
             if (isBranchReg(cm.dest(), inst.block())) return;
             switch (cm.opCode()) {
                 case slt: {
-                    if (cm.src2() instanceof ConstInt && inBounds(((ConstInt)cm.src2()).value(), 12)){
-                        block.addInst(new IType(RegM2L(cm.src1()), new Imm(((ConstInt)cm.src2()).value()),
-                                slt, RegM2L(cm.dest()), block));
-                        return;
-                    }
-                    block.addInst(new RType(RegM2L(cm.src1()), RegM2L(cm.src2()), slt,
-                            RegM2L(cm.dest()), block));
+                    genSltLIR(cm.src1(), cm.src2(), RegM2L(cm.dest()));
                     break;
                 }
                 case sgt:
-                    if (cm.src1() instanceof ConstInt && inBounds(((ConstInt)cm.src1()).value(), 12)){
-                        block.addInst(new IType(RegM2L(cm.src2()), new Imm(((ConstInt)cm.src1()).value()),
-                                slt, RegM2L(cm.dest()), block));
-                        return;
-                    }
-                    block.addInst(new RType(RegM2L(cm.src2()), RegM2L(cm.src1()), slt,
-                            RegM2L(cm.dest()), block));
+                    genSltLIR(cm.src2(), cm.src1(), RegM2L(cm.dest()));
                     break;
                 case sle:
-
+                    VirtualReg sleTmp = new VirtualReg(4);
+                    genSltLIR(cm.src2(), cm.src1(), sleTmp);
+                    block.addInst(new IType(sleTmp, new Imm(1), xor, RegM2L(cm.dest()), block));
                     break;
-                case sge: break;
-                case eq: break;
-                case ne: break;
+                case sge:
+                    VirtualReg sgeTmp = new VirtualReg(4);
+                    genSltLIR(cm.src1(), cm.src2(), sgeTmp);
+                    block.addInst(new IType(sgeTmp, new Imm(1), xor, RegM2L(cm.dest()), block));
+                    break;
+                case eq:
+                    VirtualReg eqTmp = new VirtualReg(4);
+                    genBinaryLIR(cm.src1(), cm.src2(), eqTmp, Binary.BinaryOpCat.xor, true);
+                    block.addInst(new Sz(eqTmp, eq, RegM2L(cm.dest()), block));
+                    break;
+                case ne:
+                    VirtualReg neTmp = new VirtualReg(4);
+                    genBinaryLIR(cm.src1(), cm.src2(), neTmp, Binary.BinaryOpCat.xor, true);
+                    block.addInst(new Sz(neTmp, ne, RegM2L(cm.dest()), block));
+                    break;
             }
         }
         else if (inst instanceof GetElementPtr) {
@@ -213,7 +252,9 @@ public class InstSelection {
                             destPtr, block));
                 }
             }
-            regMap.put(gep.dest(), destPtr);
+            if (regMap.containsKey(gep.dest())) {
+                block.addInst(new Mv(destPtr, regMap.get(gep.dest()), block));
+            } else regMap.put(gep.dest(), destPtr);
         }
         else if (inst instanceof Jump) {
             block.addInst(new Jp(blockMap.get(((Jump) inst).destBlock()), block));
@@ -247,7 +288,9 @@ public class InstSelection {
                     value.type().size(), block));
         }
         else if (inst instanceof Zext) {
-            regMap.put(inst.dest(), RegM2L(((Zext)inst).origin()));
+            if (regMap.containsKey(inst.dest()))
+                block.addInst(new Mv(RegM2L(((Zext)inst).origin()), regMap.get(inst.dest()), block));
+            else regMap.put(inst.dest(), RegM2L(((Zext)inst).origin()));
         }
     }
 

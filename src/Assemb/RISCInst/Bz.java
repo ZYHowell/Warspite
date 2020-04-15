@@ -2,18 +2,16 @@ package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
 import Assemb.LOperand.LOperand;
+import Assemb.LOperand.Reg;
 import Assemb.LOperand.VirtualReg;
 
 import java.util.HashSet;
 
 public class Bz extends RISCInst {
-    public enum BzCategory {
-        eq, ne, le, ge, lt, gt
-    }
-    private LOperand judged;
+    private Reg judged;
     private LIRBlock jumpTo;
-    private BzCategory opCode;
-    public Bz(LOperand judged, BzCategory opCode, LIRBlock jumpTo, LIRBlock block) {
+    private EzCategory opCode;
+    public Bz(Reg judged, EzCategory opCode, LIRBlock jumpTo, LIRBlock block) {
         super(null, block);
         this.judged = judged;
         this.jumpTo = jumpTo;
@@ -27,8 +25,8 @@ public class Bz extends RISCInst {
         return jumpTo;
     }
     @Override
-    public HashSet<LOperand> uses() {
-        HashSet<LOperand> ret = new HashSet<>();
+    public HashSet<Reg> uses() {
+        HashSet<Reg> ret = new HashSet<>();
         if (judged instanceof VirtualReg) ret.add(judged);
         return ret;
     }
