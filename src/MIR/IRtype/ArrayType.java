@@ -12,7 +12,7 @@ public class ArrayType extends IRBaseType {
     }
     @Override
     public int size() {
-        return 8;
+        return type.size();
     }
 
     @Override

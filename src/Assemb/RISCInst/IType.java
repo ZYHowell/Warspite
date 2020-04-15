@@ -1,25 +1,23 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import MIR.IRoperand.ConstInt;
-import MIR.IRoperand.Operand;
-import MIR.IRoperand.Register;
+import Assemb.LOperand.*;
 
 import java.util.HashSet;
 
 public class IType extends RISCInst {
 
-    private Operand src;
-    private ConstInt imm;
+    private LOperand src;
+    private Imm imm;
     private CalCategory opCode;
 
-    public IType(Operand src, ConstInt imm, CalCategory opCode, Register dest, LIRBlock block) {
+    public IType(LOperand src, Imm imm, CalCategory opCode, Reg dest, LIRBlock block) {
         super(dest, block);
         this.src = src;
         this.imm = imm;
         this.opCode = opCode;
     }
-    public ConstInt imm() {
+    public Imm imm() {
         return imm;
     }
     public CalCategory opCode() {
@@ -27,9 +25,9 @@ public class IType extends RISCInst {
     }
 
     @Override
-    public HashSet<Operand> uses() {
-        HashSet<Operand> ret = new HashSet<>();
-        ret.add(src);
+    public HashSet<LOperand> uses() {
+        HashSet<LOperand> ret = new HashSet<>();
+        if (src instanceof VirtualReg) ret.add(src);
         return ret;
     }
 }

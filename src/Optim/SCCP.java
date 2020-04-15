@@ -213,7 +213,10 @@ public class SCCP extends Pass {
     public boolean run() {
         constMap = new HashMap<>();
         uncertainOpr.addAll(irRoot.globalVar());
-        irRoot.functions().forEach((name, fn) -> uncertainOpr.addAll(fn.params()));
+        irRoot.functions().forEach((name, fn) -> {
+            if (fn.getClassPtr() != null) uncertainOpr.add(fn.getClassPtr());
+            uncertainOpr.addAll(fn.params());
+        });
         change = false;
 
         irRoot.functions().forEach((name, fn) -> runForFn(fn));

@@ -3,8 +3,6 @@ package MIR;
 import MIR.IRoperand.ConstString;
 import MIR.IRoperand.GlobalReg;
 import MIR.IRtype.*;
-import Util.error.internalError;
-import Util.position;
 import Util.symbol.Type;
 import Util.symbol.arrayType;
 import Util.symbol.classType;
@@ -58,6 +56,9 @@ public class Root {
         Function stringNE = new Function("g_stringNE");
         stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
+        Function malloc = new Function("g_Malloc");
+        malloc.setSideEffect(false);
+        builtinFunctions.put("g_Malloc", malloc);
         Function init = new Function("__init");
         init.setSideEffect(true);
         init.setExitBlock(init.entryBlock());
@@ -101,10 +102,11 @@ public class Root {
         return globalVar;
     }
     public void addConstString(String name, String value) {
-        ConstStrings.put(name, new ConstString(name, value));
+        if (!ConstStrings.containsKey(value))
+            ConstStrings.put(value, new ConstString(name, value));
     }
-    public ConstString getConstString(String name) {
-        return ConstStrings.get(name);
+    public ConstString getConstString(String value) {
+        return ConstStrings.get(value);
     }
     public HashMap<String, ConstString> constStrings() {
         return ConstStrings;

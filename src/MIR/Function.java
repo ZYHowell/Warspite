@@ -12,7 +12,7 @@ import java.util.HashSet;
 public class Function {
 
     private String name;
-    private Register classPtr;
+    private Register classPtr;  //this is very ugly! classPtr is better to be param[0]
     private IRBaseType retType;
     private ArrayList<Param> parameters = new ArrayList<>();
     private IRBlock entryBlock = new IRBlock("entry"),

@@ -1,17 +1,34 @@
 package Assemb;
 
+import Assemb.LOperand.LOperand;
+import Assemb.LOperand.Reg;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 
 public class LFn {
 
     private HashSet<LIRBlock> blocks = new HashSet<>();
+    private ArrayList<Reg> params = new ArrayList<>();
     private LIRBlock entryBlock, exitBlock;
+    public int paramOffset = 0;
+    private String name;
 
-    public LFn(LIRBlock entryBlock, LIRBlock exitBlock) {
+    public LFn(String name, LIRBlock entryBlock, LIRBlock exitBlock) {
         this.entryBlock = entryBlock;
         this.exitBlock = exitBlock;
+        this.name = name;
     }
 
+    public String name() {
+        return name;
+    }
+    public void addPara(Reg para){
+        params.add(para);
+    }
+    public ArrayList<Reg> params() {
+        return params;
+    }
     public LIRBlock entryBlock() {
         return entryBlock;
     }

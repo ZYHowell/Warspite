@@ -3,6 +3,7 @@ package BackEnd;
 import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRoperand.Param;
+import MIR.IRoperand.Register;
 import MIR.Root;
 
 import java.util.ArrayList;
@@ -52,6 +53,11 @@ public class IRPrinter {
         symbolCnt = blockCnt = 0;
         System.out.print("define " + fn.retType().toString() + " @" + fn.name() + "(");
         int size = fn.params().size();
+        if (fn.getClassPtr() != null) {
+            Register classPtr = fn.getClassPtr();
+            classPtr.setName("" + symbolCnt++);
+            System.out.print(classPtr.type().toString() + " " + classPtr.toString() + (size > 0 ? ", " : ""));
+        }
         for (int i = 0;i < size;++i) {
             Param param = fn.params().get(i);
             param.setName("" + symbolCnt++);

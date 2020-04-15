@@ -18,6 +18,11 @@ public class ClassType extends IRBaseType{
         size += member.size();
     }
 
+    public int getEleOff(int idx) {
+        int ret = 0;
+        for (int i = 0;i < idx;++i) ret += members.get(i).size();
+        return ret;
+    }
     public ArrayList<IRBaseType> members() {
         return members;
     }

@@ -46,6 +46,9 @@ public class Binary extends Inst {
         this.src2 = src2;
         this.opCode = opCode;
     }
+    public boolean commutable() {
+        return canCommute;
+    }
 
     @Override
     public String toString() {

@@ -2,10 +2,9 @@ package BackEnd;
 
 import Assemb.LFn;
 import Assemb.LIRBlock;
+import Assemb.LOperand.LOperand;
 import Assemb.LRoot;
 import Assemb.RISCInst.RISCInst;
-import MIR.IRoperand.Operand;
-import MIR.IRoperand.Register;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,10 +12,10 @@ import java.util.HashSet;
 //this is done after phi resolution
 public class LivenessAnal {
     private LRoot irRoot;
-    private HashMap<LIRBlock, HashSet<Operand>> blockUses = new HashMap<>();
-    private HashMap<LIRBlock, HashSet<Register>> blockDefs = new HashMap<>();
-    private HashMap<LIRBlock, HashSet<Operand>> blockLiveIn = new HashMap<>(),
-                                               blockLiveOut = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<LOperand>> blockUses = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<LOperand>> blockDefs = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<LOperand>> blockLiveIn = new HashMap<>(),
+                                                 blockLiveOut = new HashMap<>();
     private HashSet<LIRBlock> visited = new HashSet<>();
 
     public LivenessAnal(LRoot irRoot) {
@@ -24,8 +23,8 @@ public class LivenessAnal {
     }
 
     public void runForBlockA(LIRBlock block) {
-        HashSet<Operand> uses = new HashSet<>();
-        HashSet<Register> defs = new HashSet<>();
+        HashSet<LOperand> uses = new HashSet<>();
+        HashSet<LOperand> defs = new HashSet<>();
         block.instructions().forEach(inst -> {
             if (inst.dest() != null) defs.add(inst.dest());
             uses.addAll(inst.uses());
@@ -37,9 +36,9 @@ public class LivenessAnal {
     }
     public void LiveIO(LIRBlock block) {
         visited.add(block);
-        HashSet<Operand> liveOut = new HashSet<>();
+        HashSet<LOperand> liveOut = new HashSet<>();
         block.successors().forEach(suc -> liveOut.addAll(blockLiveOut.get(suc)));
-        HashSet<Operand> liveIn = new HashSet<>(liveOut);
+        HashSet<LOperand> liveIn = new HashSet<>(liveOut);
         liveIn.addAll(blockUses.get(block));
         liveIn.removeAll(blockDefs.get(block));
         blockLiveOut.get(block).addAll(liveOut);
@@ -53,7 +52,7 @@ public class LivenessAnal {
         });
     }
     public void runForBlockB(LIRBlock block) {
-        HashSet<Operand> currentLive = new HashSet<>(blockLiveOut.get(block));
+        HashSet<LOperand> currentLive = new HashSet<>(blockLiveOut.get(block));
         int size = block.instructions().size();
         for (int i = size - 1;i >= 0;--i) {
             RISCInst inst = block.instructions().get(i);

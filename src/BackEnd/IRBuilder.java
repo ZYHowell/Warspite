@@ -806,8 +806,8 @@ public class IRBuilder implements ASTVisitor {
         irRoot.addConstString(name, realValue);
         it.setOperand(new Register(new Pointer(new IntType(8), false), "resolved_"+name));
         currentBlock.addInst(new GetElementPtr(new ArrayType(realValue.length() + 1, new IntType(8)),
-                irRoot.getConstString(name), new ConstInt(0, 32),
-                new ConstInt(0, 32), (Register)it.operand(), currentBlock));
+                irRoot.getConstString(realValue), new ConstInt(0, 32),
+                null, (Register)it.operand(), currentBlock));
     }
 
     private void arrayMalloc(int nowDim, newExpr it, Register result) {

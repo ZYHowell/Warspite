@@ -18,6 +18,10 @@ public class Malloc extends Inst {
         dest.setDef(this);
     }
 
+    public Operand length() {
+        return length;
+    }
+
     @Override
     public String toString() {
         return dest().toString() + " = call noalias i8* @malloc(" +
