@@ -34,7 +34,7 @@ public class PhiResolve {
             Operand origin = move.origin();
             if (origin instanceof Register)
                 if (useMap.containsKey(origin)) useMap.put(origin, useMap.get(origin) + 1);
-                else useMap.put(origin, 0);
+                else useMap.put(origin, 1);
         }
     }
 
@@ -50,12 +50,13 @@ public class PhiResolve {
             boolean hasMore = false;
             for (Iterator<Move> iter = para.copies.iterator(); iter.hasNext(); ) {
                 Move inst = iter.next();
-                if (!(inst.origin() instanceof Register &&
-                        para.useMap.containsKey(inst.origin()))) {
+                if (!para.useMap.containsKey(inst.dest())) {
                     iter.remove();
-                    int num = para.useMap.get(inst.origin()) - 1;
-                    if (num > 0) para.useMap.put(inst.origin(), num);
-                    else para.useMap.remove(inst.origin());
+                    if (inst.origin() instanceof Register) {
+                        int num = para.useMap.get(inst.origin()) - 1;
+                        if (num > 0) para.useMap.put(inst.origin(), num);
+                        else para.useMap.remove(inst.origin());
+                    }
 
                     block.addInstTerminated(new Move(inst.origin(), inst.dest(), block, true));
                     hasMore = true;

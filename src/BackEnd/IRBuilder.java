@@ -314,7 +314,6 @@ public class IRBuilder implements ASTVisitor {
                 condBlock = new IRBlock("while_cond");
 
         it.setDestBlock(destBlock);
-        currentBlock.addTerminator(new Jump(condBlock, currentBlock));
 
         if (it.condition() != null){
             currentBlock.addTerminator(new Jump(condBlock, currentBlock));

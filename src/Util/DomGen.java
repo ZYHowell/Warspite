@@ -91,10 +91,13 @@ public class DomGen {
 
         if (!blockCollected) {
             fn.blocks().addAll(DFSIndex);
+            fn.blocks().remove(null);
         }
 
         //in any order is ok, but since I have DFSIndex to collect all blocks...
-        for (IRBlock block : DFSIndex) {
+        int size = DFSIndex.size();
+        for (int i = 1;i < size;++i) {
+            IRBlock block = DFSIndex.get(i);
             if (block.precursors().size() >= 2) {
                 for (IRBlock runner : block.precursors()) {
                     while (runner != block.iDom()) {

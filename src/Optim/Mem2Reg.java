@@ -27,7 +27,7 @@ public class Mem2Reg extends Pass{
 
         HashSet<IRBlock> defBlocks = new HashSet<>();
         HashMap<IRBlock, HashSet<Load>> allocLoads = new HashMap<>();
-        HashMap<IRBlock, HashMap<Register, Register>> allocPhiMap = new HashMap<>();
+        HashMap<IRBlock, HashMap<Register, Phi>> allocPhiMap = new HashMap<>();
         HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new HashMap<>();
 
         new DomGen(fn, false).runForFn();
@@ -45,11 +45,6 @@ public class Mem2Reg extends Pass{
                 if (inst instanceof Load) {
                     Operand address = ((Load) inst).address();
                     if (address instanceof Register && (allocVars.contains(address))) {
-                        /*
-                         * add live-in info, which may be used to make an early liveness analysis
-                         * which may release the pressure on later liveness analysis
-                         * and form pruned SSA rather than minimal SSA/
-                         */
                         HashMap<Register, Operand> blockLiveOut = allocStores.get(inst.block());
                         if (blockLiveOut.containsKey(address)) {
                             inst.dest().replaceAllUseWith(blockLiveOut.get(address));
@@ -74,13 +69,12 @@ public class Mem2Reg extends Pass{
         }
 
         //phi inserting. not the quickest, but the faster one seems needing a "cache"(by SSA book. consider later)
-        IRBlock runner;
+        //this version is totally incorrect here
         HashSet<IRBlock> runningSet;
         while(defBlocks.size() > 0){
             runningSet = defBlocks;
             defBlocks = new HashSet<>();
-            for (IRBlock irBlock : runningSet) {
-                runner = irBlock;
+            for (IRBlock runner : runningSet) {
                 HashMap<Register, Operand> runnerDefAlloc = allocStores.get(runner);
                 if (runnerDefAlloc.size() != 0) {
                     for (IRBlock df : runner.domFrontiers()) {
@@ -89,21 +83,17 @@ public class Mem2Reg extends Pass{
                             Operand value = entry.getValue();
                     //for the domFrontier of runner, try to add phi
                     //in the runner, allocVar is defined(by store or phi), whose liveOut value is value
-                            if (allocPhiMap.get(df).containsKey(allocVar)){
-                                //the phi already exists, simply add one source
-                                for (IRBlock pre : df.precursors()) if (pre.isDomed(runner))
-                                    df.PhiInsertion(allocPhiMap.get(df).get(allocVar), value, pre);
-                            }
-                            else {
+                    //MENTION: !!! fill the value of phi later rather than in creating
+                            if (!allocPhiMap.get(df).containsKey(allocVar)) {
                                 //the phi does not exist, needs to do more and use it in the next cycle
                                 Register dest = new Register(value.type(), allocVar.name() + "_phi");
-                                for (IRBlock pre : df.precursors()) if (pre.isDomed(runner))
-                                    df.PhiInsertion(dest, value, pre);
+                                Phi phi = new Phi(dest, new ArrayList<>(), new ArrayList<>(), df);
+                                df.addPhi(phi);
                                 if (!allocStores.get(df).containsKey(allocVar)) {
                                     allocStores.get(df).put(allocVar, dest);
                                     defBlocks.add(df);
                                 }
-                                allocPhiMap.get(df).put(allocVar, dest);
+                                allocPhiMap.get(df).put(allocVar, phi);
                             }
                         }
                     }
@@ -111,8 +101,15 @@ public class Mem2Reg extends Pass{
             }
         }
 
-        //rename: remove all load about alloca reg(stores is already removed above)
+        //rename: remove all load about alloca reg(stores are already removed above)
         fn.blocks().forEach(block -> {
+            if (!allocPhiMap.get(block).isEmpty()) {
+                allocPhiMap.get(block).forEach((address, phi) -> block.precursors().forEach(pre -> {
+                    IRBlock runner = pre;
+                    while (!allocStores.get(runner).containsKey(address)) runner = runner.iDom();
+                    phi.addOrigin(allocStores.get(runner).get(address), pre);
+                }));
+            }
             if (!allocLoads.get(block).isEmpty()) {
                 allocLoads.get(block).forEach(load -> {
                     Register reg = load.dest();

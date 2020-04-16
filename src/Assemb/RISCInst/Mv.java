@@ -18,7 +18,7 @@ public class Mv extends RISCInst{
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (origin instanceof VirtualReg) ret.add(origin);
+        ret.add(origin);
         return ret;
     }
 }

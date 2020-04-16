@@ -66,6 +66,7 @@ public class Main {
                 new PhiResolve(irRoot).run();
                 LRoot lRoot = new InstSelection(irRoot).run();
                 new LivenessAnal(lRoot).run();
+
             }
         } catch (error er) {
             System.err.println(er.toString());

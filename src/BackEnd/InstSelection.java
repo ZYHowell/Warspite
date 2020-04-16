@@ -9,6 +9,7 @@ import MIR.IRinst.*;
 import MIR.IRtype.ClassType;
 import MIR.IRtype.Pointer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -70,8 +71,8 @@ public class InstSelection {
             return reg;
         }
     }
-    private boolean inBounds(int value, int bit) {
-        return (value < (1 << (bit - 1))) && (value > (-1 * (1 << (bit - 1))));
+    private boolean inBounds(int value) {
+        return (value < (1 << 11)) && (value > (-1 * (1 << 11)));
     }
     private boolean isBranchReg(Register reg, IRBlock block) {
         HashSet<Inst> uses = reg.uses();
@@ -95,12 +96,12 @@ public class InstSelection {
             case add: opCode = add;break;
         }
         if (src1 instanceof ConstInt && commutable &&
-                inBounds(((ConstInt)src1).value(), 12)){
+                inBounds(((ConstInt)src1).value())){
             block.addInst(new IType(RegM2L(src2), new Imm(((ConstInt)src1).value()),
                     opCode, dest, block));
             return;
         }
-        else if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value(), 12)){
+        else if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value())){
             block.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
                     opCode,  dest, block));
             return;
@@ -108,7 +109,7 @@ public class InstSelection {
         block.addInst(new RType(RegM2L(src1), RegM2L(src2), opCode, dest, block));
     }
     private void genSltLIR(Operand src1, Operand src2, Reg dest) {
-        if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value(), 12)){
+        if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value())){
             currentBlock.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
                     slt, dest, currentBlock));
             return;
@@ -246,7 +247,7 @@ public class InstSelection {
                     assert gep.type() instanceof ClassType;
                     value = ((ClassType) gep.type()).getEleOff(value) / 8;
                     destPtr = new VirtualReg(4);
-                    if (inBounds(value, 12)) block.addInst(new IType(destIdx, new Imm(value), add,
+                    if (inBounds(value)) block.addInst(new IType(destIdx, new Imm(value), add,
                             destPtr, block));
                     else block.addInst(new RType(destIdx, RegM2L(new ConstInt(value, 32)), add,
                             destPtr, block));
@@ -300,6 +301,7 @@ public class InstSelection {
     }
     private void runForFn(Function fn) {
         LFn lFn = fnMap.get(fn);
+        currentLFn = lFn;
         LIRBlock entryBlock = lFn.entryBlock();
         for (int i = 0;i < Integer.min(8, fn.params().size());++i) {
             entryBlock.addInst(new Mv(lRoot.getPhyReg(10 + i), lFn.params().get(i), entryBlock));

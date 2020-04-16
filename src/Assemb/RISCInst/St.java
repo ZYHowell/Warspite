@@ -1,10 +1,7 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.Imm;
-import Assemb.LOperand.LOperand;
-import Assemb.LOperand.Reg;
-import Assemb.LOperand.VirtualReg;
+import Assemb.LOperand.*;
 
 import java.util.HashSet;
 
@@ -38,8 +35,8 @@ public class St extends RISCInst{
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (address instanceof VirtualReg) ret.add(address);
-        if (value instanceof VirtualReg) ret.add(value);
+        if (!(address instanceof GReg)) ret.add(address);
+        ret.add(value);
         return ret;
     }
 }

@@ -19,7 +19,6 @@ public abstract class RISCInst {
     }
     private Reg dest;
     private LIRBlock block;
-    public HashSet<LOperand> liveIn = new HashSet<>(), liveOut = new HashSet<>();
 
     public RISCInst(Reg dest, LIRBlock block) {
         this.dest = dest;

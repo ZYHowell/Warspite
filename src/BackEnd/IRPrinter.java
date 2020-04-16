@@ -21,16 +21,16 @@ public class IRPrinter {
         this.bNC = bNC;
     }
 
-    private void printBlock(IRBlock block) {
-        System.out.println("%" + block.name() + ":");
-        block.phiInst().forEach((reg, phi) -> {
-            reg.setName("" + symbolCnt++);
-            System.out.println("\t" + phi.toString());
-        });
+    private void renameBlock(IRBlock block) {
+        block.phiInst().forEach((reg, phi) -> reg.setName("" + symbolCnt++));
         block.instructions().forEach(inst -> {
             if (inst.dest() != null) inst.dest().setName("" + symbolCnt++);
-            System.out.println("\t" + inst.toString());
         });
+    }
+    private void printBlock(IRBlock block) {
+        System.out.println("%" + block.name() + ":");
+        block.phiInst().forEach((reg, phi) -> System.out.println("\t" + phi.toString()));
+        block.instructions().forEach(inst -> System.out.println("\t" + inst.toString()));
     }
 
     private void collectWithRename(Function fn) {
@@ -69,6 +69,7 @@ public class IRPrinter {
 
         collectWithRename(fn);
 
+        visitList.forEach(this::renameBlock);
         visitList.forEach(this::printBlock);
     }
 

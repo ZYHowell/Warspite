@@ -29,7 +29,7 @@ public class Ld extends RISCInst {
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (address instanceof VirtualReg) ret.add(address);
+        ret.add(address);
         return ret;
     }
 }

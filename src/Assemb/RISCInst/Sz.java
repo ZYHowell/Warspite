@@ -21,7 +21,7 @@ public class Sz extends RISCInst{
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (src instanceof VirtualReg) ret.add(src);
+        ret.add(src);
         return ret;
     }
 }

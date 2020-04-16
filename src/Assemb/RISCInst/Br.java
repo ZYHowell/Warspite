@@ -33,8 +33,8 @@ public class Br extends RISCInst{
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (src1 instanceof VirtualReg) ret.add(src1);
-        if (src2 instanceof VirtualReg) ret.add(src2);
+        ret.add(src1);
+        ret.add(src2);
         return ret;
     }
 }

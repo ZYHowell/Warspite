@@ -1,7 +1,7 @@
 package Assemb;
 
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
+import Assemb.RISCInst.Mv;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +13,8 @@ public class LFn {
     private LIRBlock entryBlock, exitBlock;
     public int paramOffset = 0;
     private String name;
+    private DAG dag = new DAG();
+    private HashSet<Mv> workListMv = new HashSet<>();
 
     public LFn(String name, LIRBlock entryBlock, LIRBlock exitBlock) {
         this.entryBlock = entryBlock;
@@ -22,6 +24,12 @@ public class LFn {
 
     public String name() {
         return name;
+    }
+    public DAG dag() {
+        return dag;
+    }
+    public HashSet<Mv> workListMv() {
+        return workListMv;
     }
     public void addPara(Reg para){
         params.add(para);

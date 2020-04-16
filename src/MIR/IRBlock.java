@@ -90,19 +90,6 @@ public class IRBlock {
     public void addPhi(Phi inst) {
         PhiInst.put(inst.dest(), inst);
     }
-    public void PhiInsertion(Register dest, Operand value, IRBlock origin) {
-        if (PhiInst.containsKey(dest)) {
-            Phi phi = PhiInst.get(dest);
-            phi.addOrigin(value, origin);
-        } else {
-            ArrayList<IRBlock> blocks = new ArrayList<>();
-            blocks.add(origin);
-            ArrayList<Operand> values = new ArrayList<>();
-            values.add(value);
-            Phi phi = new Phi(dest, blocks, values, this);
-            PhiInst.put(dest, phi);
-        }
-    }
     public HashMap<Register, Phi> phiInst() {
         return PhiInst;
     }
