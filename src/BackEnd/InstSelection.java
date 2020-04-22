@@ -8,6 +8,7 @@ import MIR.IRoperand.*;
 import MIR.IRinst.*;
 import MIR.IRtype.ClassType;
 import MIR.IRtype.Pointer;
+import Optim.LoopDetector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -173,11 +174,11 @@ public class InstSelection {
                 block.addInst(new Mv(RegM2L(ca.params().get(i)), lRoot.getPhyReg(i + 10), block));
             //store extra params
             int paramOff = 0;
-            for (int i = ca.params().size() - 1;i >= 8;--i) {
+            for (int i = 8;i < ca.params().size();++i) {
                 Operand param = ca.params().get(i);
                 block.addInst(new St(lRoot.getPhyReg(2), RegM2L(param), new Imm(paramOff),
                         param.type().size() / 8, block));
-                paramOff += param.type().size() / 8;
+                paramOff += 4;
             }
             if (paramOff > currentLFn.paramOffset) currentLFn.paramOffset = paramOff;
             //add function call
@@ -307,7 +308,7 @@ public class InstSelection {
             entryBlock.addInst(new Mv(lRoot.getPhyReg(10 + i), lFn.params().get(i), entryBlock));
         }
         int paraOffset = 0;
-        for (int i = fn.params().size() - 1;i >= 8;--i) {
+        for (int i = 8; i < fn.params().size();++i) {
             entryBlock.addInst(new Ld(lRoot.getPhyReg(2), lFn.params().get(i),
                     new SLImm(paraOffset), fn.params().get(i).type().size() / 8, entryBlock));
             paraOffset += fn.params().get(i).type().size() / 8;
@@ -325,10 +326,12 @@ public class InstSelection {
             fnMap.put(fn, func);
         });
         irRoot.functions().forEach((name, fn) -> {
+            new LoopDetector(fn, false).runForFn();
             fn.blocks().forEach(block -> {
-                LIRBlock lBlock = new LIRBlock();
+                LIRBlock lBlock = new LIRBlock(block.loopDepth);
                 blockMap.put(block, lBlock);
             });
+            //this is for reg alloc
             LFn lFn = new LFn(name, blockMap.get(fn.entryBlock()), blockMap.get(fn.exitBlock()));
             fnMap.put(fn, lFn);
             if (fn.getClassPtr() != null) lFn.addPara(RegM2L(fn.getClassPtr()));

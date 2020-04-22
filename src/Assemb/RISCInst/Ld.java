@@ -2,9 +2,7 @@ package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
 import Assemb.LOperand.Imm;
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
-import Assemb.LOperand.VirtualReg;
 
 import java.util.HashSet;
 
@@ -31,5 +29,10 @@ public class Ld extends RISCInst {
         HashSet<Reg> ret = new HashSet<>();
         ret.add(address);
         return ret;
+    }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {
+        if (address == origin) address = replaced;
     }
 }

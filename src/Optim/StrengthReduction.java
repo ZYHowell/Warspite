@@ -132,7 +132,7 @@ public class StrengthReduction extends Pass{
     }
 
     private void runForFn(Function fn) {
-        LoopDetector loops = new LoopDetector(fn);
+        LoopDetector loops = new LoopDetector(fn, true);
         loops.runForFn();
         loops.rootLoops().forEach(this::runForLoop);
         loops.mergePreHeads();

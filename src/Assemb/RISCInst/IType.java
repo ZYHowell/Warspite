@@ -30,4 +30,9 @@ public class IType extends RISCInst {
         if (src instanceof VirtualReg) ret.add(src);
         return ret;
     }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {
+        if (src == origin) src = replaced;
+    }
 }

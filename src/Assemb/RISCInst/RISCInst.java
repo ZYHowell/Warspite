@@ -28,9 +28,13 @@ public abstract class RISCInst {
     public Reg dest() {
         return dest;
     }
+    public void replaceDest(Reg origin, Reg replaced) {
+        if (dest == origin) dest = replaced;
+    }
     public LIRBlock block() {
         return block;
     }
 
     public abstract HashSet<Reg> uses();
+    public abstract void replaceUse(Reg origin, Reg replaced);
 }

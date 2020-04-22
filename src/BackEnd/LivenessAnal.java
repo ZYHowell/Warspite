@@ -3,7 +3,6 @@ package BackEnd;
 import Assemb.DAG;
 import Assemb.LFn;
 import Assemb.LIRBlock;
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
 import Assemb.LRoot;
 import Assemb.RISCInst.Cal;
@@ -15,19 +14,27 @@ import java.util.HashSet;
 
 //this is done after phi resolution
 public class LivenessAnal {
+    private LFn fn;
     private LRoot irRoot;
-    private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>();
-    private HashMap<LIRBlock, HashSet<Reg>> blockDefs = new HashMap<>();
+    private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>(),
+                                            blockDefs = new HashMap<>();
     private HashMap<LIRBlock, HashSet<Reg>> blockLiveIn = new HashMap<>(),
-                                                 blockLiveOut = new HashMap<>();
+                                            blockLiveOut = new HashMap<>();
     private HashSet<LIRBlock> visited = new HashSet<>();
-    private DAG currentDAG;
+    private DAG dag;
     private HashSet<Mv> workInstMv;
 
-    public LivenessAnal(LRoot irRoot) {
+    public LivenessAnal(LRoot irRoot, LFn fn) {
         this.irRoot = irRoot;
+        this.fn = fn;
     }
 
+    public void init(LIRBlock block) {
+        block.instructions().forEach(inst -> {
+            inst.uses().forEach(reg -> reg.moveInst.clear());
+            inst.dest().moveInst.clear();
+        });
+    }
     public void runForBlockA(LIRBlock block) {
         HashSet<Reg> uses = new HashSet<>();
         HashSet<Reg> defs = new HashSet<>();
@@ -72,18 +79,20 @@ public class LivenessAnal {
             HashSet<Reg> defs = new HashSet<>();
             if (inst.dest() != null) defs.add(inst.dest());
             if (inst instanceof Cal) defs.addAll(irRoot.callerSave());
-            defs.forEach(def -> currentLive.forEach(reg -> currentDAG.addEdge(reg, def)));
+            defs.forEach(def -> currentLive.forEach(reg -> dag.addEdge(reg, def)));
             
             currentLive.removeAll(defs);
-
             currentLive.addAll(inst.uses());
         }
         //no phi inst here
     }
 
-    public void runForFn(LFn fn) {
-        currentDAG = fn.dag();
+    public void runForFn() {
+        dag = fn.dag();
+        dag.init();
         workInstMv = fn.workListMv();
+        workInstMv.clear();
+        fn.blocks().forEach(this::init);
         //run the first round in each block: collect def and use in each block
         fn.blocks().forEach(this::runForBlockA);
         //run to get the live-in and live-out of each block
@@ -92,7 +101,4 @@ public class LivenessAnal {
         fn.blocks().forEach(this::runForBlockB);
     }
 
-    public void run() {
-        irRoot.functions().forEach(this::runForFn);
-    }
 }

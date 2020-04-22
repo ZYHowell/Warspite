@@ -1,6 +1,7 @@
 package Assemb;
 
 import Assemb.LOperand.Reg;
+import Assemb.LOperand.VirtualReg;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,12 +9,23 @@ import java.util.HashSet;
 public class DAG {
 
     private HashMap<Reg, HashSet<Reg>> connected = new HashMap<>();
+    private HashSet<Reg> initial = new HashSet<>();
     public DAG() {}
 
+    public void init() {
+        connected.clear();
+        initial.clear();
+    }
     private void addNode(Reg a, Reg b) {
-        if (!connected.containsKey(a))  connected.put(a, new HashSet<>());
+        if (!connected.containsKey(a))  {
+            connected.put(a, new HashSet<>());
+            if (a instanceof VirtualReg) initial.add(a);
+        }
         connected.get(a).add(b);
         ++a.degree;
+    }
+    public HashSet<Reg> initial() {
+        return initial;
     }
     public void addEdge(Reg a, Reg b) {
         if (a != b){

@@ -2,6 +2,7 @@ package Assemb;
 
 import Assemb.LOperand.GReg;
 import Assemb.LOperand.PhyReg;
+import Assemb.LOperand.Reg;
 import MIR.IRoperand.Register;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public class LRoot {
     private HashSet<LFn> functions = new HashSet<>(), builtinFunctions = new HashSet<>();
     private ArrayList<PhyReg> phyRegs = new ArrayList<>();
     private ArrayList<PhyReg> callerSaveRegs = new ArrayList<>(), calleeSaveRegs = new ArrayList<>();
+    private HashSet<PhyReg> assignableRegs = new HashSet<>();
     private HashMap<GReg, String> strings = new HashMap<>();
     private HashSet<GReg> globalRegs = new HashSet<>();
 
@@ -32,10 +34,21 @@ public class LRoot {
                 case 2: calleeSaveRegs.add(phyRegs.get(i));break;
             }
         }
+        assignableRegs.addAll(callerSaveRegs);
+        assignableRegs.addAll(calleeSaveRegs);
     }
 
     public void addBuiltinFunction(LFn fn) {
         builtinFunctions.add(fn);
+    }
+    public HashSet<LFn> builtinFunctions() {
+        return builtinFunctions;
+    }
+    public HashSet<Reg> phyRegs() {
+        return new HashSet<>(phyRegs);
+    }
+    public HashSet<PhyReg> assignableRegs() {
+        return new HashSet<>(assignableRegs);
     }
     public ArrayList<PhyReg> callerSave() {
         return callerSaveRegs;

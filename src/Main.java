@@ -14,12 +14,25 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.ListIterator;
 
 
 public class Main {
     public static void main(String[] args) throws Exception{
         boolean doCodeGen = false, doOptimization = false;
         String name = null;
+
+        ArrayList<String> tmp = new ArrayList<>(Arrays.asList("a", "b", "c", "d"));
+        ListIterator<String> iter = tmp.listIterator();
+        iter.next();
+        iter.next();
+        iter.remove();
+        for (iter = tmp.listIterator();iter.hasNext();)
+            System.out.println(iter.next());
+
+
         if (args.length > 0) {
             for (String arg : args) {
                 switch (arg) {
@@ -65,8 +78,8 @@ public class Main {
 
                 new PhiResolve(irRoot).run();
                 LRoot lRoot = new InstSelection(irRoot).run();
-                new LivenessAnal(lRoot).run();
-
+                new RegAlloc(lRoot).run();
+                new AsmPrinter(lRoot).run();
             }
         } catch (error er) {
             System.err.println(er.toString());

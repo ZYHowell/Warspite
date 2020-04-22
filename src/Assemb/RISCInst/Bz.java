@@ -30,4 +30,9 @@ public class Bz extends RISCInst {
         ret.add(judged);
         return ret;
     }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {
+        if (judged == origin) judged = replaced;
+    }
 }

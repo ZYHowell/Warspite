@@ -39,4 +39,10 @@ public class St extends RISCInst{
         ret.add(value);
         return ret;
     }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {
+        if (address == origin) address = replaced;
+        if (value == origin) value = replaced;
+    }
 }

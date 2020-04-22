@@ -22,4 +22,7 @@ public class Jp extends RISCInst{
     public HashSet<Reg> uses() {
         return new HashSet<>();
     }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {}
 }

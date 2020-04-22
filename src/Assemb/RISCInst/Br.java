@@ -1,9 +1,7 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
-import Assemb.LOperand.VirtualReg;
 
 import java.util.HashSet;
 
@@ -36,5 +34,11 @@ public class Br extends RISCInst{
         ret.add(src1);
         ret.add(src2);
         return ret;
+    }
+
+    @Override
+    public void replaceUse(Reg origin, Reg replaced) {
+        if (src1 == origin) src1 = replaced;
+        if (src2 == origin) src2 = replaced;
     }
 }

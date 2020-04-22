@@ -15,20 +15,22 @@ import java.util.*;
 public class LoopDetector {
 
     private Function fn;
+    private boolean addPreHeader;
     private HashMap<IRBlock, MIRLoop> loopMap = new HashMap<>();
     private HashSet<MIRLoop> rootLoops = new HashSet<>();
     private HashSet<IRBlock> visited = new HashSet<>();
     private Stack<MIRLoop> loopStack = new Stack<>();
 
-    public LoopDetector(Function fn) {
+    public LoopDetector(Function fn, boolean addPreHeader) {
         this.fn = fn;
+        this.addPreHeader = addPreHeader;
     }
 
     private void collectLoop(IRBlock tail, IRBlock head) {
         if (!loopMap.containsKey(head)) {
             MIRLoop loop = new MIRLoop();
             loopMap.put(head, loop);
-            addPreHeader(head, loop);
+            if (addPreHeader) addPreHeader(head, loop);
         }
         loopMap.get(head).addTail(tail);
     }
@@ -110,6 +112,7 @@ public class LoopDetector {
             else loopStack.peek().addChild(loop);
             loopStack.push(loop);
         }
+        block.loopDepth = loopStack.size();
         block.successors().forEach(suc -> {
            if (!visited.contains(suc)) visit(suc);
         });

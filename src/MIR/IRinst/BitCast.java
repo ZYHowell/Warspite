@@ -23,16 +23,13 @@ public class BitCast extends Inst {
         return it;
     }
 
-    public IRBaseType originType() {
-        return it.type();
-    }
     public IRBaseType terminalType() {
         return dest().type();
     }
 
     @Override
     public String toString() {
-        return dest().toString() + " = " + it.type().toString() + " " + it.toString() +
+        return dest().toString() + " = bitcast " + it.type().toString() + " " + it.toString() +
                 " to " + dest().type().toString();
     }
 

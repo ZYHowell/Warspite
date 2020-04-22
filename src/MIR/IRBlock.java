@@ -16,7 +16,7 @@ public class IRBlock {
     private HashMap<Register, Phi>  PhiInst = new HashMap<>();
     private String name;
     private boolean terminated = false;
-
+    public int loopDepth = 0;
 
     private IRBlock iDom = null;
     private HashSet<IRBlock> domFrontiers = new HashSet<>();
