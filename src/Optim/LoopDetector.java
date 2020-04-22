@@ -100,8 +100,7 @@ public class LoopDetector {
 
     private void judgeOutOfLoop(IRBlock block) {
         if (!loopStack.isEmpty())
-            while (!loopStack.peek().blocks().contains(block))
-                loopStack.pop();
+            while (!loopStack.isEmpty() && !loopStack.peek().blocks().contains(block)) loopStack.pop();
     }
     private void visit(IRBlock block) {
         visited.add(block);

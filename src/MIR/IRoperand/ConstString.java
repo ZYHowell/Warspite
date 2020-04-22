@@ -9,7 +9,7 @@ import java.util.HashSet;
 
 public class ConstString extends Operand {
 
-    private String name;
+    public String name;
     private String value;
 
     public ConstString(String name, String value) {

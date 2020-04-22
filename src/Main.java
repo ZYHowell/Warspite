@@ -14,24 +14,12 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.ListIterator;
 
 
 public class Main {
     public static void main(String[] args) throws Exception{
         boolean doCodeGen = false, doOptimization = false;
         String name = null;
-
-        ArrayList<String> tmp = new ArrayList<>(Arrays.asList("a", "b", "c", "d"));
-        ListIterator<String> iter = tmp.listIterator();
-        iter.next();
-        iter.next();
-        iter.remove();
-        for (iter = tmp.listIterator();iter.hasNext();)
-            System.out.println(iter.next());
-
 
         if (args.length > 0) {
             for (String arg : args) {
@@ -72,7 +60,7 @@ public class Main {
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
-                new IRPrinter(true).run(irRoot);
+                //new IRPrinter(true).run(irRoot);
                 //optim order: inline-(ADCE-SCCP-CFGSimplify)
                 if (doOptimization) new Optimization(irRoot).run();
 

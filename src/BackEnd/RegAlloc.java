@@ -207,7 +207,7 @@ public class RegAlloc {
         HashSet<Reg> newTemps = new HashSet<>();
         spilledNodes.forEach(v -> {
             assert v instanceof VirtualReg;
-            v.stackOffset = new SLImm(stackLength); // if stackOffset is 0, it is actually store 4(sp)
+            v.stackOffset = new SLImm(-1 * stackLength); // if stackOffset is 0, it is actually store 4(sp)
             stackLength += 4;
         });
         currentFn.blocks().forEach(block -> {
@@ -273,6 +273,7 @@ public class RegAlloc {
         new LivenessAnal(root, fn).runForFn();
         workListMv = fn.workListMv();
         currentDAG = fn.dag();
+        currentDAG.initCollect = false;
         currentDAG.initial().forEach(node -> {
             if (node.degree >= K) spillWorkList.add(node);
             else if (moveRelated(node)) freezeWorkList.add(node);
@@ -293,7 +294,7 @@ public class RegAlloc {
             runForFn(fn);
         }
     }
-    public void useDefCollect(LFn fn) {
+    private void useDefCollect(LFn fn) {
         fn.blocks().forEach(block ->{
             int weight = block.loopDepth == 0 ? 1 : 10 * block.loopDepth;
             block.instructions().forEach(inst -> {
@@ -303,6 +304,12 @@ public class RegAlloc {
         });
     }
 
+    private void subtleModify() {
+        currentFn.blocks().forEach(block -> block.instructions().forEach(inst -> inst.stackLengthAdd(stackLength)));
+        currentFn.blocks().forEach(block -> block.instructions().removeIf(inst ->
+                inst instanceof Mv && ((Mv) inst).origin().color == inst.dest().color));
+    }
+
     public void run() {
         root.functions().forEach(this::useDefCollect);
         root.functions().forEach(fn -> {
@@ -310,6 +317,7 @@ public class RegAlloc {
             currentFn = fn;
             runForFn(fn);
             stackLength += fn.paramOffset;
+            subtleModify();
         });
     }
 }

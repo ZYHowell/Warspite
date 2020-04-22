@@ -2,7 +2,6 @@ package Assemb.RISCInst;
 
 import Assemb.LFn;
 import Assemb.LIRBlock;
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
 
 import java.util.HashSet;
@@ -26,4 +25,12 @@ public class Cal extends RISCInst{
 
     @Override
     public void replaceUse(Reg origin, Reg replaced) {}
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "call " + callee.name();
+    }
 }

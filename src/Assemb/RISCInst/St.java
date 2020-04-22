@@ -45,4 +45,15 @@ public class St extends RISCInst{
         if (address == origin) address = replaced;
         if (value == origin) value = replaced;
     }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {
+        if (offset instanceof SLImm) offset = new Imm(stackLength + offset.value);
+    }
+
+    @Override
+    public String toString() {
+        return "s" + ((size == 1) ? "b" : ((size == 4) ? "w" : "h")) + " " + value + ", "
+                + offset.value + "(" + address + ")";
+    }
 }

@@ -51,7 +51,10 @@ public class InstSelection {
                 int size;
                 if (src.type().isResolvable()) size = ((Pointer)src.type()).pointTo().size();
                 else size = src.type().size();
-                GReg reg = new GReg(size / 8);
+                String name;
+                if (src instanceof GlobalReg) name = ((GlobalReg)src).name();
+                else name = "." + ((ConstString)src).name;
+                GReg reg = new GReg(size / 8, name);
                 regMap.put(src, reg);
                 if (src instanceof ConstString) lRoot.addString(reg, ((ConstString)src).value());
                 else lRoot.addGlobalReg(reg);
@@ -282,7 +285,7 @@ public class InstSelection {
             if (value != null) {
                 block.addInst(new Mv(RegM2L(value), lRoot.getPhyReg(10), block));
             }
-            block.addInst(new Ret(block));
+            // block.addInst(new Ret(block));
         }
         else if (inst instanceof Store) {
             Operand value = ((Store) inst).value(), address = ((Store) inst).address();
@@ -303,7 +306,13 @@ public class InstSelection {
     private void runForFn(Function fn) {
         LFn lFn = fnMap.get(fn);
         currentLFn = lFn;
-        LIRBlock entryBlock = lFn.entryBlock();
+        LIRBlock entryBlock = lFn.entryBlock(), exitBlock = lFn.exitBlock();
+        ArrayList<VirtualReg> calleeSaveMap = new ArrayList<>();
+        lRoot.calleeSave().forEach(reg -> {
+            VirtualReg map = new VirtualReg(4);
+            calleeSaveMap.add(map);
+            entryBlock.addInst(new Mv(reg, map, entryBlock));
+        });
         for (int i = 0;i < Integer.min(8, fn.params().size());++i) {
             entryBlock.addInst(new Mv(lRoot.getPhyReg(10 + i), lFn.params().get(i), entryBlock));
         }
@@ -318,6 +327,9 @@ public class InstSelection {
             copyBlock(block, lBlock);
             lFn.addBlock(lBlock);
         });
+        for (int i = 0;i < lRoot.calleeSave().size();++i)
+            exitBlock.addInst(new Mv(calleeSaveMap.get(i), lRoot.calleeSave().get(i), entryBlock));
+        exitBlock.addInst(new Ret(exitBlock));
     }
     public LRoot run() {
         irRoot.builtinFunctions().forEach((name, fn) -> {
@@ -328,7 +340,7 @@ public class InstSelection {
         irRoot.functions().forEach((name, fn) -> {
             new LoopDetector(fn, false).runForFn();
             fn.blocks().forEach(block -> {
-                LIRBlock lBlock = new LIRBlock(block.loopDepth);
+                LIRBlock lBlock = new LIRBlock(block.loopDepth, "." + fn.name() + "_" + block.name());
                 blockMap.put(block, lBlock);
             });
             //this is for reg alloc

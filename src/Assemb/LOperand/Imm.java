@@ -7,4 +7,9 @@ public class Imm extends LOperand{
     public Imm(int value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "" + value;
+    }
 }

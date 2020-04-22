@@ -17,4 +17,12 @@ public class Ret extends RISCInst{
 
     @Override
     public void replaceUse(Reg origin, Reg replaced) {}
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "ret";
+    }
 }

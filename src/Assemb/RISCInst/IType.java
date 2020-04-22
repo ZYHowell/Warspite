@@ -17,9 +17,6 @@ public class IType extends RISCInst {
         this.imm = imm;
         this.opCode = opCode;
     }
-    public Imm imm() {
-        return imm;
-    }
     public CalCategory opCode() {
         return opCode;
     }
@@ -34,5 +31,15 @@ public class IType extends RISCInst {
     @Override
     public void replaceUse(Reg origin, Reg replaced) {
         if (src == origin) src = replaced;
+    }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {
+        if (imm instanceof SLImm) imm = new Imm(stackLength + imm.value);
+    }
+
+    @Override
+    public String toString() {
+        return opCode + "i " + dest() + ", " + src + ", " + imm.value;
     }
 }

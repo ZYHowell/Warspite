@@ -27,4 +27,12 @@ public class Sz extends RISCInst{
     public void replaceUse(Reg origin, Reg replaced) {
         if (src == origin) src = replaced;
     }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "s" + opCode + "z " + dest() + ", " + src;
+    }
 }

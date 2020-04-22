@@ -10,6 +10,7 @@ public class DAG {
 
     private HashMap<Reg, HashSet<Reg>> connected = new HashMap<>();
     private HashSet<Reg> initial = new HashSet<>();
+    public boolean initCollect = true;
     public DAG() {}
 
     public void init() {
@@ -19,7 +20,7 @@ public class DAG {
     private void addNode(Reg a, Reg b) {
         if (!connected.containsKey(a))  {
             connected.put(a, new HashSet<>());
-            if (a instanceof VirtualReg) initial.add(a);
+            if (initCollect && a instanceof VirtualReg) initial.add(a);
         }
         connected.get(a).add(b);
         ++a.degree;

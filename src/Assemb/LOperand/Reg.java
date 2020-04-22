@@ -4,7 +4,7 @@ import Assemb.RISCInst.Mv;
 
 import java.util.HashSet;
 
-public class Reg extends LOperand {
+public abstract class Reg extends LOperand {
     public int degree = 0, weight = 0;
     public Reg alias = null;
     public PhyReg color;

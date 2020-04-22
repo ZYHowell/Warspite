@@ -41,4 +41,12 @@ public class Br extends RISCInst{
         if (src1 == origin) src1 = replaced;
         if (src2 == origin) src2 = replaced;
     }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "b" + opCode + " " + src1 + ", " + src2 + ", " + destBlock;
+    }
 }

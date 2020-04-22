@@ -11,4 +11,10 @@ public class VirtualReg extends Reg {
     public int size() {
         return size;
     }
+
+    @Override
+    public String toString() {
+        if (color == null) return this.hashCode() + "";
+        return color.toString();
+    }
 }

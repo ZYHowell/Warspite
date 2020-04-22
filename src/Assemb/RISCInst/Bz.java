@@ -3,7 +3,6 @@ package Assemb.RISCInst;
 import Assemb.LIRBlock;
 import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
-import Assemb.LOperand.VirtualReg;
 
 import java.util.HashSet;
 
@@ -18,12 +17,6 @@ public class Bz extends RISCInst {
         this.opCode = opCode;
     }
 
-    public LOperand judged() {
-        return judged;
-    }
-    public LIRBlock jumpTo() {
-        return jumpTo;
-    }
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
@@ -34,5 +27,13 @@ public class Bz extends RISCInst {
     @Override
     public void replaceUse(Reg origin, Reg replaced) {
         if (judged == origin) judged = replaced;
+    }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "b" + opCode + "z " + judged + ", " + jumpTo;
     }
 }

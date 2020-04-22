@@ -37,4 +37,7 @@ public abstract class RISCInst {
 
     public abstract HashSet<Reg> uses();
     public abstract void replaceUse(Reg origin, Reg replaced);
+    public abstract void stackLengthAdd(int stackLength);
+    @Override
+    public abstract String toString();
 }

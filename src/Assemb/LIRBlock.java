@@ -12,9 +12,11 @@ public class LIRBlock {
     private ArrayList<LIRBlock> successors = new ArrayList<>();
     private List<RISCInst> instructions = new LinkedList<>();
     public int loopDepth;
+    public String name;
 
-    public LIRBlock(int loopDepth) {
+    public LIRBlock(int loopDepth, String name) {
         this.loopDepth = loopDepth;
+        this.name = name;
     }
 
     public void addInst(RISCInst inst) {
@@ -28,5 +30,9 @@ public class LIRBlock {
     }
     public ArrayList<LIRBlock> precursors() {
         return precursors;
+    }
+    @Override
+    public String toString() {
+        return name;
     }
 }

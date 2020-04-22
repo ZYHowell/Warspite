@@ -3,6 +3,7 @@ package Assemb.RISCInst;
 import Assemb.LIRBlock;
 import Assemb.LOperand.Imm;
 import Assemb.LOperand.Reg;
+import Assemb.LOperand.SLImm;
 
 import java.util.HashSet;
 
@@ -24,4 +25,14 @@ public class Li extends RISCInst {
 
     @Override
     public void replaceUse(Reg origin, Reg replaced) {}
+
+    @Override
+    public void stackLengthAdd(int stackLength) {
+        if (value instanceof SLImm) value = new Imm(value.value + stackLength);
+    }
+
+    @Override
+    public String toString() {
+        return "li " + dest() + ", " + value.value;
+    }
 }

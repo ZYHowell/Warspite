@@ -34,4 +34,12 @@ public class RType extends RISCInst {
         if (src1 == origin) src1 = replaced;
         if (src2 == origin) src2 = replaced;
     }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return opCode + " " + dest() + ", " + src1 + ", " + src2;
+    }
 }

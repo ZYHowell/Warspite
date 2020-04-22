@@ -28,4 +28,12 @@ public class Mv extends RISCInst{
     public void replaceUse(Reg origin, Reg replaced) {
         if (this.origin == origin) this.origin = replaced;
     }
+
+    @Override
+    public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public String toString() {
+        return "addi " + dest() + ", " + origin + ", 0";
+    }
 }

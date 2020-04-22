@@ -115,13 +115,19 @@ public class Mem2Reg extends Pass{
                     Register reg = load.dest();
                     assert load.address() instanceof Register;
                     Register replacedVar = (Register)load.address();
-                    IRBlock currentBlock = block;
-                    while(true)
-                        if (allocStores.get(currentBlock).containsKey(replacedVar)) {
-                            reg.replaceAllUseWith(allocStores.get(currentBlock).get(replacedVar));
-                            break;
-                        } else currentBlock = currentBlock.iDom();
-                        //the replaced one can only from an ancestor of the currentBlock or itself
+                    Operand replace;
+                    if (allocPhiMap.get(block).containsKey(replacedVar))
+                        replace = allocPhiMap.get(block).get(replacedVar).dest();
+                    else {
+                        IRBlock currentBlock = block.iDom();
+                        while (true)
+                            if (allocStores.get(currentBlock).containsKey(replacedVar)) {
+                                replace = allocStores.get(currentBlock).get(replacedVar);
+                                break;
+                            } else currentBlock = currentBlock.iDom();
+                    }
+                    //the replaced one can only from an ancestor of the currentBlock or itself
+                    reg.replaceAllUseWith(replace);
                     load.removeSelf(true);
                     //this one is safe since it is not in iterating all instructions in the block
                 });

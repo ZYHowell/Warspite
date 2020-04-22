@@ -23,8 +23,8 @@ public class LRoot {
     private ArrayList<PhyReg> phyRegs = new ArrayList<>();
     private ArrayList<PhyReg> callerSaveRegs = new ArrayList<>(), calleeSaveRegs = new ArrayList<>();
     private HashSet<PhyReg> assignableRegs = new HashSet<>();
-    private HashMap<GReg, String> strings = new HashMap<>();
-    private HashSet<GReg> globalRegs = new HashSet<>();
+    public HashMap<GReg, String> strings = new HashMap<>();
+    public HashSet<GReg> globalRegs = new HashSet<>();
 
     public LRoot() {
         for (int i = 0; i < 32; ++i) {

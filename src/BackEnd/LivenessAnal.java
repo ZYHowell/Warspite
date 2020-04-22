@@ -32,7 +32,7 @@ public class LivenessAnal {
     public void init(LIRBlock block) {
         block.instructions().forEach(inst -> {
             inst.uses().forEach(reg -> reg.moveInst.clear());
-            inst.dest().moveInst.clear();
+            if (inst.dest() != null) inst.dest().moveInst.clear();
         });
     }
     public void runForBlockA(LIRBlock block) {
