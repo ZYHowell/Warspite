@@ -119,6 +119,19 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(rootNode it) {
+        classType stringType = (classType)gScope.getStringType();
+        Function func = new Function("l_string_length");
+        irRoot.builtinFunctions().put("l_string_length", func);
+        stringType.scope().getMethod("length", null, false).setFunction(func);
+        func = new Function("l_string_substring");
+        irRoot.builtinFunctions().put("l_string_substring", func);
+        stringType.scope().getMethod("substring", null, false).setFunction(func);
+        func = new Function("l_string_parseInt");
+        irRoot.builtinFunctions().put("l_string_parseInt", func);
+        stringType.scope().getMethod("parseInt", null, false).setFunction(func);
+        func = new Function("l_string_ord");
+        irRoot.builtinFunctions().put("l_string_ord", func);
+        stringType.scope().getMethod("ord", null, false).setFunction(func);
         it.allDef().forEach(node -> {
             if (node instanceof funDef) {
                 Function fun = new Function("g_" + ((funDef)node).Identifier());

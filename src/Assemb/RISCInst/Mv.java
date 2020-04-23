@@ -1,6 +1,7 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
+import Assemb.LOperand.GReg;
 import Assemb.LOperand.Reg;
 
 import java.util.HashSet;
@@ -34,6 +35,7 @@ public class Mv extends RISCInst{
 
     @Override
     public String toString() {
+        if (origin instanceof GReg) return "li " + dest() + ", " + origin;
         return "addi " + dest() + ", " + origin + ", 0";
     }
 }

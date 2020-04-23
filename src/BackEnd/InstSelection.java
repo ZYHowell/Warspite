@@ -39,7 +39,6 @@ public class InstSelection {
     public InstSelection(Root irRoot) {
         this.irRoot = irRoot;
     }
-
     private Reg RegM2L(Operand src) {
         LIRBlock block = currentBlock;
         if (src instanceof Register || src instanceof Param) {
@@ -289,7 +288,14 @@ public class InstSelection {
         }
         else if (inst instanceof Store) {
             Operand value = ((Store) inst).value(), address = ((Store) inst).address();
-            block.addInst(new St(RegM2L(address), RegM2L(value), new Imm(0),
+            Reg addressReg = RegM2L(address);
+            if (addressReg instanceof GReg) {
+                VirtualReg tmp = new VirtualReg(4);
+                Relocation rel = new Relocation((GReg) addressReg, true);
+                block.addInst(new auipc(rel, tmp, block));
+                block.addInst(new St(tmp, RegM2L(value), rel, value.type().size(), block));
+            }
+            else block.addInst(new St(RegM2L(address), RegM2L(value), new Imm(0),
                     value.type().size(), block));
         }
         else if (inst instanceof Zext) {

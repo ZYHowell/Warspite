@@ -31,11 +31,13 @@ public class globalScope extends Scope {
         funcDecl tmpFunc;
 
         tmpFunc = new funcDecl("length", null);
+        tmpFunc.setIsMethod();
         tmpFunc.setScope(new functionScope(this));
         tmpFunc.setRetType(intInstance);
         stringType.defineMethod("length", tmpFunc, pos);
 
         tmpFunc = new funcDecl("substring", null);
+        tmpFunc.setIsMethod();
         tmpFunc.setScope(new functionScope(this));
         tmpFunc.addParam(new varEntity("left", intInstance, true, false), pos);
         tmpFunc.addParam(new varEntity("right", intInstance, true, false), pos);
@@ -43,11 +45,13 @@ public class globalScope extends Scope {
         stringType.defineMethod("substring", tmpFunc, pos);
 
         tmpFunc = new funcDecl("parseInt", null);
+        tmpFunc.setIsMethod();
         tmpFunc.setScope(new functionScope(this));
         tmpFunc.setRetType(intInstance);
         stringType.defineMethod("parseInt", tmpFunc, pos);
 
         tmpFunc = new funcDecl("ord", null);
+        tmpFunc.setIsMethod();
         tmpFunc.setScope(new functionScope(this));
         tmpFunc.addParam(new varEntity("pos", intInstance, true, false), pos);
         tmpFunc.setRetType(intInstance);

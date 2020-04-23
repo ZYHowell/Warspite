@@ -60,7 +60,7 @@ public class Main {
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
-                //new IRPrinter(true).run(irRoot);
+                new IRPrinter(true).run(irRoot);
                 //optim order: inline-(ADCE-SCCP-CFGSimplify)
                 if (doOptimization) new Optimization(irRoot).run();
 

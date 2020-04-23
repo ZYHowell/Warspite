@@ -19,14 +19,8 @@ public class St extends RISCInst{
         this.size = size;
     }
 
-    public Reg address() {
-        return address;
-    }
     public Reg value() {
         return value;
-    }
-    public Imm offset() {
-        return offset;
     }
     public int size() {
         return size;

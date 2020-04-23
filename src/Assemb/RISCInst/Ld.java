@@ -1,6 +1,7 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
+import Assemb.LOperand.GReg;
 import Assemb.LOperand.Imm;
 import Assemb.LOperand.Reg;
 import Assemb.LOperand.SLImm;
@@ -45,6 +46,6 @@ public class Ld extends RISCInst {
     @Override
     public String toString() {
         return "l" + ((size == 1) ? "b" : ((size == 4) ? "w" : "h")) + " " + dest() + ", "
-                + offset.value + "(" + address + ")";
+                + ((address instanceof GReg) ? address : (offset.value + "(" + address + ")"));
     }
 }
