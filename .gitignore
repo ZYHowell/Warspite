@@ -18,3 +18,5 @@ IgnoreLexer.java~
 
 /verification
 /test.mx
+/out.s
+/out.ll

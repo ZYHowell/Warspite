@@ -24,9 +24,28 @@ int g_getInt() {
     return ipt;
 }
 char * g_toString(int i) {
-    char *tmp = malloc(sizeof(char) * 1000);
-    sprintf(tmp, "%d", i);
-    return tmp;
+    if (i == 0){
+        char *r = (char *)malloc(sizeof(char) * 2);
+        r[0] = '0'; r[1] = '\0';
+        return r;
+    }
+    short digits[10];
+    short neg = i < 0;
+    if (neg) i=-i;
+    short len = 0;
+    while (i>0){
+        digits[len++] = i%10;
+        i/=10;
+    }
+    char *r = (char *)malloc(sizeof(char) * (len + neg + 1));
+    short p = 0;
+    if (neg) r[0] = '-';
+    while (p < len){
+        r[p + neg] = digits[len - p - 1] + '0';
+        ++p;
+    }
+    r[len + neg] = '\0';
+    return r;
 }
 int l_string_length(char *s) {
     return (int)strlen(s);

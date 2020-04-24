@@ -26,7 +26,7 @@ public class Return extends Inst {
 
     @Override
     public String toString() {
-        return "ret" + (value == null ? "" :
+        return "ret" + (value == null ? " void" :
                         (" " + value.type().toString() + " " + value.toString()));
     }
 

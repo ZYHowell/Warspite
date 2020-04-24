@@ -58,7 +58,7 @@ public class IRBuilder implements ASTVisitor {
         } else return it;
 
     }
-    private Operand resolveStringPointer(IRBlock currentBlock, Operand it) {
+    private Operand resolveStringPointer(IRBlock currentBlock, Operand it) {    //to consider: this is ugly
         if (it.type() instanceof Pointer) {
             if (((Pointer)it.type()).pointTo() instanceof Pointer) {
                 Register dest = new Register(((Pointer)it.type()).pointTo(),
@@ -72,7 +72,7 @@ public class IRBuilder implements ASTVisitor {
     }
     private Operand intTrans(Operand it) {
         if (it.type() instanceof BoolType) {
-            Register ext = new Register(new IntType(32), "ext_" + it.toString());
+            Register ext = new Register(Root.i32T, "ext_" + it.toString());
             currentBlock.addInst(new Zext(it, ext, currentBlock));
             return ext;
         } else {
@@ -84,15 +84,16 @@ public class IRBuilder implements ASTVisitor {
     private void assign(Operand reg, exprNode expr) {
         expr.accept(this);
         Operand tmp;
+        Operand value = resolvePointer(currentBlock, expr.operand());
         assert reg.type() instanceof Pointer;
-        if (expr.operand().type() instanceof BoolType) {
-            if (expr.operand() instanceof ConstBool) {
-                tmp = new ConstInt(((ConstBool)expr.operand()).value() ? 1 : 0, 8);
+        if (value.type() instanceof BoolType) {
+            if (value instanceof ConstBool) {
+                tmp = new ConstInt(((ConstBool)value).value() ? 1 : 0, 8);
             } else {
-                tmp = new Register(new IntType(8), "extTo");
-                currentBlock.addInst(new Zext(expr.operand(), (Register)tmp, currentBlock));
+                tmp = new Register(Root.charT, "extTo");
+                currentBlock.addInst(new Zext(value, (Register)tmp, currentBlock));
             }
-        } else tmp = expr.operand();
+        } else tmp = value;
         currentBlock.addInst(new Store(reg, tmp, currentBlock));
     }
     private void branchAdd(exprNode it) {
@@ -121,20 +122,32 @@ public class IRBuilder implements ASTVisitor {
     public void visit(rootNode it) {
         classType stringType = (classType)gScope.getStringType();
         Function func = new Function("l_string_length");
+        func.setRetType(Root.i32T);
+        func.addParam(new Param(Root.stringT, "s"));
         irRoot.builtinFunctions().put("l_string_length", func);
         stringType.scope().getMethod("length", null, false).setFunction(func);
         func = new Function("l_string_substring");
+        func.setRetType(Root.stringT);
+        func.addParam(new Param(Root.stringT, "s"));
+        func.setRetType(Root.i32T);
+        func.addParam(new Param(Root.i32T, "left"));
+        func.addParam(new Param(Root.i32T, "right"));
         irRoot.builtinFunctions().put("l_string_substring", func);
         stringType.scope().getMethod("substring", null, false).setFunction(func);
         func = new Function("l_string_parseInt");
+        func.setRetType(Root.i32T);
+        func.addParam(new Param(Root.stringT, "s"));
         irRoot.builtinFunctions().put("l_string_parseInt", func);
         stringType.scope().getMethod("parseInt", null, false).setFunction(func);
         func = new Function("l_string_ord");
+        func.setRetType(Root.charT);
+        func.addParam(new Param(Root.stringT, "s"));
+        func.addParam(new Param(Root.i32T, "ord"));
         irRoot.builtinFunctions().put("l_string_ord", func);
         stringType.scope().getMethod("ord", null, false).setFunction(func);
         it.allDef().forEach(node -> {
             if (node instanceof funDef) {
-                Function fun = new Function("g_" + ((funDef)node).Identifier());
+                Function fun = new Function(((funDef)node).Identifier());
                 ((funDef)node).decl().setFunction(fun);
                 irRoot.addFunction(fun.name(), fun);
             } else if (node instanceof classDef) {
@@ -180,12 +193,12 @@ public class IRBuilder implements ASTVisitor {
         it.parameters().forEach(param -> param.accept(this));
         isParam = false;
 
-        if (currentFunction.name().equals("g_main"))
+        if (currentFunction.name().equals("main"))
             currentBlock.addInst(new Call(irRoot.getInit(), new ArrayList<>(), null, currentBlock));
         it.body().accept(this);
 
         if (returnList.size() == 0) {
-            if (currentFunction.name().equals("g_main"))
+            if (currentFunction.name().equals("main"))
                 currentBlock.addTerminator(new Return(currentBlock, new ConstInt(0, 32)));
             else currentBlock.addTerminator(new Return(currentBlock, null));
             currentFunction.setExitBlock(currentBlock);
@@ -476,10 +489,10 @@ public class IRBuilder implements ASTVisitor {
                 if (binaryOp != null) {
                     src1 = resolvePointer(currentBlock, it.src1().operand());
                     src2 = resolvePointer(currentBlock, it.src2().operand());
-                    it.setOperand(new Register(new IntType(32), "binary_" + binaryOp.toString()));
+                    it.setOperand(new Register(Root.i32T, "binary_" + binaryOp.toString()));
                     inst = new Binary(src1, src2, (Register)it.operand(), binaryOp, currentBlock);
                 } else {
-                    it.setOperand(new Register(new Pointer(new IntType(8), false), "binary_string_plus"));
+                    it.setOperand(new Register(Root.stringT, "binary_string_plus"));
                     ArrayList<Operand> params = new ArrayList<>();
 
                     src1 = resolveStringPointer(currentBlock, it.src1().operand());
@@ -636,7 +649,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(prefixExpr it) {
         it.src().accept(this);
         IRBaseType type;
-        if (it.opCode().ordinal() < 5) type = new IntType(32);
+        if (it.opCode().ordinal() < 5) type = Root.i32T;
         else type = new BoolType();
         it.setOperand(new Register(type, "prefix_" + it.opCode().toString()));
 
@@ -683,7 +696,7 @@ public class IRBuilder implements ASTVisitor {
         it.src().accept(this);
         ConstInt one = new ConstInt(1, 32);
         Binary inst;
-        Register tmp = new Register(new IntType(32), "suffix_tmp");
+        Register tmp = new Register(Root.i32T, "suffix_tmp");
         it.setOperand(resolvePointer(currentBlock, it.src().operand()));
 
         if (it.opCode() == 0) inst = new Binary(it.operand(), one, tmp, add, currentBlock);
@@ -703,10 +716,10 @@ public class IRBuilder implements ASTVisitor {
         it.callee().accept(this);
         funcDecl calleeFunc = (funcDecl)it.callee().type();
         if (calleeFunc.name().equals("size")) {
-            it.setOperand(new Register(new IntType(32), "array_size"));
+            it.setOperand(new Register(Root.i32T, "array_size"));
             assert it.callee().operand().type() instanceof Pointer;
-            Register metaPtr = new Register(new IntType(32), "metadataPtr"),
-                     BCPtr = new Register(new IntType(32), "bitCastPtr");
+            Register metaPtr = new Register(Root.i32T, "metadataPtr"),
+                     BCPtr = new Register(Root.i32T, "bitCastPtr");
             currentBlock.addInst(new BitCast(it.callee().operand(), BCPtr, currentBlock));
             currentBlock.addInst(new Binary(BCPtr, new ConstInt(4, 32), metaPtr, sub, currentBlock));
             currentBlock.addInst(new Load((Register)it.operand(), metaPtr, currentBlock));
@@ -754,7 +767,7 @@ public class IRBuilder implements ASTVisitor {
             it.setOperand(new Register(irRoot.getIRType(it.type(), true), "new_result"));
             arrayMalloc(0, it, (Register)it.operand());
         } else {    //the result is a pointer to a class
-            Register mallocTmp = new Register(new Pointer(new IntType(8), false), "mallocTmp");
+            Register mallocTmp = new Register(Root.stringT, "mallocTmp");
             it.setOperand(new Register(new Pointer(irRoot.getIRType(it.type(), true), false),
                                         "new_class_ptr"));
             currentBlock.addInst(new Malloc(
@@ -816,10 +829,10 @@ public class IRBuilder implements ASTVisitor {
         String name = currentFunction.name() +"." + symbolCtr++;
         String realValue = it.value().substring(1, it.value().length() - 1);
         irRoot.addConstString(name, realValue);
-        it.setOperand(new Register(new Pointer(new IntType(8), false), "resolved_"+name));
-        currentBlock.addInst(new GetElementPtr(new ArrayType(realValue.length() + 1, new IntType(8)),
-                irRoot.getConstString(realValue), new ConstInt(0, 32),
-                null, (Register)it.operand(), currentBlock));
+        it.setOperand(new Register(Root.stringT, "resolved_"+name));
+        currentBlock.addInst(new GetElementPtr(new ArrayType(realValue.length() + 1, Root.charT),
+                irRoot.getConstString(name), new ConstInt(0, 32),
+                new ConstInt(0, 32), (Register)it.operand(), currentBlock));
     }
 
     private void arrayMalloc(int nowDim, newExpr it, Register result) {
@@ -829,11 +842,11 @@ public class IRBuilder implements ASTVisitor {
 
         Operand currentNum = resolvePointer(currentBlock, it.exprs().get(nowDim).operand());
         ConstInt typeWidth = new ConstInt(((Pointer)result.type()).pointTo().size(), 32);
-        Register PureWidth = new Register(new IntType(32), "pureWidth"),
-                 metaWidth = new Register(new IntType(32), "metaWidth");
-        Register allocPtr = new Register(new Pointer(new IntType(8), false), "allocPtr"),
-                 allocBitCast = new Register(new Pointer(new IntType(32), false), "allocBitCast"),
-                 allocOffset = new Register(new Pointer(new IntType(32), false), "offsetHead");
+        Register PureWidth = new Register(Root.i32T, "pureWidth"),
+                 metaWidth = new Register(Root.i32T, "metaWidth");
+        Register allocPtr = new Register(Root.stringT, "allocPtr"),
+                 allocBitCast = new Register(new Pointer(Root.i32T, false), "allocBitCast"),
+                 allocOffset = new Register(new Pointer(Root.i32T, false), "offsetHead");
 
         currentBlock.addInst(new Binary(currentNum, typeWidth, PureWidth, mul, currentBlock));
         currentBlock.addInst(new Binary(PureWidth, new ConstInt(32, 32), metaWidth, add, currentBlock));
@@ -852,8 +865,8 @@ public class IRBuilder implements ASTVisitor {
                     destBlock = new IRBlock("ArrayDestBlock");
             assert pointTo instanceof Pointer;
             Register ptr = new Register(pointTo, "pointer"),
-                     counter = new Register(new IntType(32), "counter"),
-                     counterTmp = new Register(new IntType(32), "counterTmp"),
+                     counter = new Register(Root.i32T, "counter"),
+                     counterTmp = new Register(Root.i32T, "counterTmp"),
                      branchJudge = new Register(new BoolType(), "branchJudge");
             ArrayList<Operand> values = new ArrayList<>();
             ArrayList<IRBlock> blocks = new ArrayList<>();
@@ -864,7 +877,7 @@ public class IRBuilder implements ASTVisitor {
             currentBlock.addTerminator(new Jump(incrBlock, currentBlock));
 
             currentBlock = bodyBlock;
-            currentBlock.addInst(new GetElementPtr(new IntType(32), allocBitCast,
+            currentBlock.addInst(new GetElementPtr(Root.i32T, allocBitCast,
                                                     counter, null, ptr, currentBlock));
             arrayMalloc(nowDim + 1, it, ptr);
             currentBlock.addInst(new Binary(counter, new ConstInt(1, 32),

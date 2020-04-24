@@ -24,7 +24,7 @@ public class IType extends RISCInst {
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        if (src instanceof VirtualReg) ret.add(src);
+        ret.add(src);
         return ret;
     }
 
@@ -35,7 +35,7 @@ public class IType extends RISCInst {
 
     @Override
     public void stackLengthAdd(int stackLength) {
-        if (imm instanceof SLImm) imm = new Imm(stackLength + imm.value);
+        if (imm instanceof SLImm) imm = new Imm(stackLength * (((SLImm)imm).reverse ? -1 : 1) + imm.value);
     }
 
     @Override

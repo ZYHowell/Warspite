@@ -35,9 +35,10 @@ public class Call extends Inst{
         if (dest() != null) {
             ret.append(dest().toString());
             ret.append(" = ");
+            ret.append("call ");
             ret.append(dest().type().toString());
             ret.append(" ");
-        }
+        } else ret.append("call void ");
         ret.append("@");
         ret.append(callee.name());
         if (params.size() == 0) ret.append("(");

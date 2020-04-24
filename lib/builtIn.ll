@@ -70,16 +70,185 @@ entry:
   ret i32 %1
 }
 
-; Function Attrs: nofree nounwind uwtable
-define dso_local noalias i8* @g_toString(i32 %i) local_unnamed_addr #0 {
+; Function Attrs: nounwind uwtable
+define dso_local noalias i8* @g_toString(i32 %i) local_unnamed_addr #3 {
 entry:
-  %call = tail call noalias dereferenceable_or_null(1000) i8* @malloc(i64 1000) #9
-  %call1 = tail call i32 (i8*, i8*, ...) @sprintf(i8* nonnull dereferenceable(1) %call, i8* nonnull dereferenceable(1) getelementptr inbounds ([3 x i8], [3 x i8]* @.str.2, i64 0, i64 0), i32 %i) #9
-  ret i8* %call
-}
+  %digits = alloca [10 x i16], align 16
+  %cmp = icmp eq i32 %i, 0
+  br i1 %cmp, label %if.then, label %if.end
 
-; Function Attrs: nofree nounwind
-declare dso_local i32 @sprintf(i8* noalias nocapture, i8* nocapture readonly, ...) local_unnamed_addr #1
+if.then:                                          ; preds = %entry
+  %call = tail call noalias dereferenceable_or_null(2) i8* @malloc(i64 2) #9
+  store i8 48, i8* %call, align 1, !tbaa !6
+  %arrayidx1 = getelementptr inbounds i8, i8* %call, i64 1
+  store i8 0, i8* %arrayidx1, align 1, !tbaa !6
+  br label %return
+
+if.end:                                           ; preds = %entry
+  %0 = bitcast [10 x i16]* %digits to i8*
+  call void @llvm.lifetime.start.p0i8(i64 20, i8* nonnull %0) #9
+  %i.lobit = lshr i32 %i, 31
+  %tobool = icmp slt i32 %i, 0
+  %sub = sub nsw i32 0, %i
+  %spec.select = select i1 %tobool, i32 %sub, i32 %i
+  %cmp678 = icmp eq i32 %spec.select, 0
+  br i1 %cmp678, label %while.end, label %while.body
+
+while.body:                                       ; preds = %if.end, %while.body
+  %len.080 = phi i16 [ %inc, %while.body ], [ 0, %if.end ]
+  %i.addr.179 = phi i32 [ %div74, %while.body ], [ %spec.select, %if.end ]
+  %rem73 = urem i32 %i.addr.179, 10
+  %conv8 = trunc i32 %rem73 to i16
+  %inc = add i16 %len.080, 1
+  %idxprom = sext i16 %len.080 to i64
+  %arrayidx9 = getelementptr inbounds [10 x i16], [10 x i16]* %digits, i64 0, i64 %idxprom
+  store i16 %conv8, i16* %arrayidx9, align 2, !tbaa !7
+  %div74 = udiv i32 %i.addr.179, 10
+  %1 = icmp ult i32 %i.addr.179, 10
+  br i1 %1, label %while.end, label %while.body
+
+while.end:                                        ; preds = %while.body, %if.end
+  %len.0.lcssa = phi i16 [ 0, %if.end ], [ %inc, %while.body ]
+  %conv11 = sext i16 %len.0.lcssa to i32
+  %add = add nsw i32 %i.lobit, %conv11
+  %add13 = add nsw i32 %add, 1
+  %conv14 = sext i32 %add13 to i64
+  %call15 = tail call noalias i8* @malloc(i64 %conv14) #9
+  br i1 %tobool, label %if.then17, label %if.end19
+
+if.then17:                                        ; preds = %while.end
+  store i8 45, i8* %call15, align 1, !tbaa !6
+  br label %if.end19
+
+if.end19:                                         ; preds = %if.then17, %while.end
+  %cmp2375 = icmp sgt i16 %len.0.lcssa, 0
+  br i1 %cmp2375, label %while.body25.preheader, label %while.end41
+
+while.body25.preheader:                           ; preds = %if.end19
+  %2 = zext i32 %i.lobit to i64
+  %wide.trip.count = zext i16 %len.0.lcssa to i64
+  %min.iters.check = icmp ult i16 %len.0.lcssa, 16
+  br i1 %min.iters.check, label %while.body25.preheader92, label %vector.scevcheck
+
+vector.scevcheck:                                 ; preds = %while.body25.preheader
+  %3 = add nsw i64 %wide.trip.count, -1
+  %4 = trunc i64 %3 to i32
+  %5 = xor i32 %4, -1
+  %6 = add i32 %5, %conv11
+  %7 = icmp sge i32 %6, %conv11
+  %8 = icmp ugt i64 %3, 4294967295
+  %9 = or i1 %7, %8
+  br i1 %9, label %while.body25.preheader92, label %vector.ph
+
+vector.ph:                                        ; preds = %vector.scevcheck
+  %n.vec = and i64 %wide.trip.count, 65520
+  %ind.end = trunc i64 %n.vec to i32
+  br label %vector.body
+
+vector.body:                                      ; preds = %vector.body, %vector.ph
+  %index = phi i64 [ 0, %vector.ph ], [ %index.next, %vector.body ]
+  %offset.idx = trunc i64 %index to i32
+  %10 = xor i32 %offset.idx, -1
+  %11 = add nsw i32 %10, %conv11
+  %12 = sext i32 %11 to i64
+  %13 = getelementptr inbounds [10 x i16], [10 x i16]* %digits, i64 0, i64 %12
+  %14 = getelementptr inbounds i16, i16* %13, i64 -7
+  %15 = bitcast i16* %14 to <8 x i16>*
+  %wide.load = load <8 x i16>, <8 x i16>* %15, align 2, !tbaa !7
+  %reverse = shufflevector <8 x i16> %wide.load, <8 x i16> undef, <8 x i32> <i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1, i32 0>
+  %16 = getelementptr inbounds i16, i16* %13, i64 -15
+  %17 = bitcast i16* %16 to <8 x i16>*
+  %wide.load90 = load <8 x i16>, <8 x i16>* %17, align 2, !tbaa !7
+  %reverse91 = shufflevector <8 x i16> %wide.load90, <8 x i16> undef, <8 x i32> <i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1, i32 0>
+  %18 = trunc <8 x i16> %reverse to <8 x i8>
+  %19 = trunc <8 x i16> %reverse91 to <8 x i8>
+  %20 = add <8 x i8> %18, <i8 48, i8 48, i8 48, i8 48, i8 48, i8 48, i8 48, i8 48>
+  %21 = add <8 x i8> %19, <i8 48, i8 48, i8 48, i8 48, i8 48, i8 48, i8 48, i8 48>
+  %22 = or i64 %index, %2
+  %23 = getelementptr inbounds i8, i8* %call15, i64 %22
+  %24 = bitcast i8* %23 to <8 x i8>*
+  store <8 x i8> %20, <8 x i8>* %24, align 1, !tbaa !6
+  %25 = getelementptr inbounds i8, i8* %23, i64 8
+  %26 = bitcast i8* %25 to <8 x i8>*
+  store <8 x i8> %21, <8 x i8>* %26, align 1, !tbaa !6
+  %index.next = add i64 %index, 16
+  %27 = icmp eq i64 %index.next, %n.vec
+  br i1 %27, label %middle.block, label %vector.body, !llvm.loop !9
+
+middle.block:                                     ; preds = %vector.body
+  %cmp.n = icmp eq i64 %n.vec, %wide.trip.count
+  br i1 %cmp.n, label %while.end41, label %while.body25.preheader92
+
+while.body25.preheader92:                         ; preds = %middle.block, %vector.scevcheck, %while.body25.preheader
+  %indvars.iv82.ph = phi i32 [ 0, %vector.scevcheck ], [ 0, %while.body25.preheader ], [ %ind.end, %middle.block ]
+  %indvars.iv.ph = phi i64 [ 0, %vector.scevcheck ], [ 0, %while.body25.preheader ], [ %n.vec, %middle.block ]
+  %28 = xor i64 %indvars.iv.ph, -1
+  %xtraiter = and i64 %wide.trip.count, 1
+  %lcmp.mod = icmp eq i64 %xtraiter, 0
+  br i1 %lcmp.mod, label %while.body25.prol.loopexit, label %while.body25.prol
+
+while.body25.prol:                                ; preds = %while.body25.preheader92
+  %29 = xor i32 %indvars.iv82.ph, -1
+  %sub29.prol = add nsw i32 %29, %conv11
+  %idxprom30.prol = sext i32 %sub29.prol to i64
+  %arrayidx31.prol = getelementptr inbounds [10 x i16], [10 x i16]* %digits, i64 0, i64 %idxprom30.prol
+  %30 = load i16, i16* %arrayidx31.prol, align 2, !tbaa !7
+  %conv32.prol = trunc i16 %30 to i8
+  %add33.prol = add i8 %conv32.prol, 48
+  %31 = or i64 %indvars.iv.ph, %2
+  %arrayidx39.prol = getelementptr inbounds i8, i8* %call15, i64 %31
+  store i8 %add33.prol, i8* %arrayidx39.prol, align 1, !tbaa !6
+  %indvars.iv.next.prol = or i64 %indvars.iv.ph, 1
+  %indvars.iv.next83.prol = add nuw nsw i32 %indvars.iv82.ph, 1
+  br label %while.body25.prol.loopexit
+
+while.body25.prol.loopexit:                       ; preds = %while.body25.preheader92, %while.body25.prol
+  %indvars.iv82.unr = phi i32 [ %indvars.iv82.ph, %while.body25.preheader92 ], [ %indvars.iv.next83.prol, %while.body25.prol ]
+  %indvars.iv.unr = phi i64 [ %indvars.iv.ph, %while.body25.preheader92 ], [ %indvars.iv.next.prol, %while.body25.prol ]
+  %32 = sub nsw i64 0, %wide.trip.count
+  %33 = icmp eq i64 %28, %32
+  br i1 %33, label %while.end41, label %while.body25
+
+while.body25:                                     ; preds = %while.body25.prol.loopexit, %while.body25
+  %indvars.iv82 = phi i32 [ %indvars.iv.next83.1, %while.body25 ], [ %indvars.iv82.unr, %while.body25.prol.loopexit ]
+  %indvars.iv = phi i64 [ %indvars.iv.next.1, %while.body25 ], [ %indvars.iv.unr, %while.body25.prol.loopexit ]
+  %34 = xor i32 %indvars.iv82, -1
+  %sub29 = add nsw i32 %34, %conv11
+  %idxprom30 = sext i32 %sub29 to i64
+  %arrayidx31 = getelementptr inbounds [10 x i16], [10 x i16]* %digits, i64 0, i64 %idxprom30
+  %35 = load i16, i16* %arrayidx31, align 2, !tbaa !7
+  %conv32 = trunc i16 %35 to i8
+  %add33 = add i8 %conv32, 48
+  %36 = add nuw nsw i64 %indvars.iv, %2
+  %arrayidx39 = getelementptr inbounds i8, i8* %call15, i64 %36
+  store i8 %add33, i8* %arrayidx39, align 1, !tbaa !6
+  %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
+  %37 = sub i32 -2, %indvars.iv82
+  %sub29.1 = add nsw i32 %37, %conv11
+  %idxprom30.1 = sext i32 %sub29.1 to i64
+  %arrayidx31.1 = getelementptr inbounds [10 x i16], [10 x i16]* %digits, i64 0, i64 %idxprom30.1
+  %38 = load i16, i16* %arrayidx31.1, align 2, !tbaa !7
+  %conv32.1 = trunc i16 %38 to i8
+  %add33.1 = add i8 %conv32.1, 48
+  %39 = add nuw nsw i64 %indvars.iv.next, %2
+  %arrayidx39.1 = getelementptr inbounds i8, i8* %call15, i64 %39
+  store i8 %add33.1, i8* %arrayidx39.1, align 1, !tbaa !6
+  %indvars.iv.next.1 = add nuw nsw i64 %indvars.iv, 2
+  %indvars.iv.next83.1 = add nuw nsw i32 %indvars.iv82, 2
+  %exitcond.1 = icmp eq i64 %indvars.iv.next.1, %wide.trip.count
+  br i1 %exitcond.1, label %while.end41, label %while.body25, !llvm.loop !11
+
+while.end41:                                      ; preds = %while.body25.prol.loopexit, %while.body25, %middle.block, %if.end19
+  %idxprom45 = sext i32 %add to i64
+  %arrayidx46 = getelementptr inbounds i8, i8* %call15, i64 %idxprom45
+  store i8 0, i8* %arrayidx46, align 1, !tbaa !6
+  call void @llvm.lifetime.end.p0i8(i64 20, i8* nonnull %0) #9
+  br label %return
+
+return:                                           ; preds = %while.end41, %if.then
+  %retval.0 = phi i8* [ %call, %if.then ], [ %call15, %while.end41 ]
+  ret i8* %retval.0
+}
 
 ; Function Attrs: nounwind readonly uwtable
 define dso_local i32 @l_string_length(i8* nocapture readonly %s) local_unnamed_addr #4 {
@@ -230,3 +399,8 @@ attributes #10 = { nounwind readonly }
 !4 = !{!"omnipotent char", !5, i64 0}
 !5 = !{!"Simple C/C++ TBAA"}
 !6 = !{!4, !4, i64 0}
+!7 = !{!8, !8, i64 0}
+!8 = !{!"short", !4, i64 0}
+!9 = distinct !{!9, !10}
+!10 = !{!"llvm.loop.isvectorized", i32 1}
+!11 = distinct !{!11, !10}

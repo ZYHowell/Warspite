@@ -57,7 +57,7 @@ Or, maybe move the global CSE to LIR.
 3. Advanced Compiler Design and Implementation, Steven.S.Muchnick;
 4. Witnessing Control Flow Graph Optimizations, Dario Casula;
 
-**天灭Java，Rust保平安**
+**天灭Java**
 
 2月16日，Java有时候传引用有时候传值的设定让人费解
 
@@ -74,3 +74,7 @@ while (!queue.isEmpty());
 ```
 
 3月29日，IDEA给markdown里的Java代码片段查错
+
+4月23日，assert a instanceof VReg;不会报错，if (!(a instanceof VReg)) out.println("wsm")会输出：assert演我
+
+4月24日，单线程代码，IDEA在run时产生null Pointer Exception，在debug时正常运行，跑出了多线程的既视感

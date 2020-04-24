@@ -48,6 +48,6 @@ public class St extends RISCInst{
     @Override
     public String toString() {
         return "s" + ((size == 1) ? "b" : ((size == 4) ? "w" : "h")) + " " + value + ", "
-                + offset.value + "(" + address + ")";
+                + offset + "(" + address + ")";
     }
 }

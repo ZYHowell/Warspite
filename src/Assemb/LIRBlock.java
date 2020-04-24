@@ -8,8 +8,8 @@ import java.util.List;
 
 public class LIRBlock {
 
-    private ArrayList<LIRBlock> precursors = new ArrayList<>();
-    private ArrayList<LIRBlock> successors = new ArrayList<>();
+    public ArrayList<LIRBlock> precursors = new ArrayList<>();
+    public ArrayList<LIRBlock> successors = new ArrayList<>();
     private List<RISCInst> instructions = new LinkedList<>();
     public int loopDepth;
     public String name;
@@ -25,12 +25,7 @@ public class LIRBlock {
     public List<RISCInst> instructions() {
         return instructions;
     }
-    public ArrayList<LIRBlock> successors() {
-        return successors;
-    }
-    public ArrayList<LIRBlock> precursors() {
-        return precursors;
-    }
+
     @Override
     public String toString() {
         return name;

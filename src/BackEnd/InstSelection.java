@@ -32,6 +32,7 @@ public class InstSelection {
     private HashMap<Function, LFn> fnMap = new HashMap<>();
     private HashMap<IRBlock, LIRBlock> blockMap = new HashMap<>();
     private HashMap<Operand, Reg> regMap = new HashMap<>();
+    private int cnt;    //to consider: remove this
 
     private LFn currentLFn;
     private LIRBlock currentBlock;
@@ -43,7 +44,7 @@ public class InstSelection {
         LIRBlock block = currentBlock;
         if (src instanceof Register || src instanceof Param) {
             if (!regMap.containsKey(src)) regMap.put(src,
-                    new VirtualReg(src.type().size() / 8));
+                    new VirtualReg(src.type().size() / 8, cnt++));
             return regMap.get(src);
         } else if (src instanceof GlobalReg || src instanceof ConstString) {
             if (!regMap.containsKey(src)) {
@@ -60,16 +61,16 @@ public class InstSelection {
                 return reg;
             } else return regMap.get(src);
         } else if (src instanceof ConstInt) {
-            VirtualReg reg = new VirtualReg(4);
+            VirtualReg reg = new VirtualReg(4, cnt++);
             block.addInst(new Li(new Imm(((ConstInt) src).value()), reg, block));
             return reg;
         }
         else if (src instanceof ConstBool) {
-            VirtualReg reg = new VirtualReg(1);
+            VirtualReg reg = new VirtualReg(1, cnt++);
             block.addInst(new Li(new Imm(((ConstBool) src).value() ? 1 : 0), reg, block));
             return reg;
         } else {
-            VirtualReg reg = new VirtualReg(1);
+            VirtualReg reg = new VirtualReg(1, cnt++);
             block.addInst(new Li(new Imm(0), reg, block));
             return reg;
         }
@@ -172,8 +173,11 @@ public class InstSelection {
         else if (inst instanceof Call) {
             //move first eight params into a0-a7
             Call ca = (Call) inst;
-            for (int i = 0;i < Integer.min(8, ca.params().size());++i)
-                block.addInst(new Mv(RegM2L(ca.params().get(i)), lRoot.getPhyReg(i + 10), block));
+            for (int i = 0;i < Integer.min(8, ca.params().size());++i){
+                Reg reg = RegM2L(ca.params().get(i));
+                if (reg instanceof GReg) block.addInst(new La((GReg) reg, lRoot.getPhyReg(i + 10), block));
+                else block.addInst(new Mv(reg, lRoot.getPhyReg(i + 10), block));
+            }
             //store extra params
             int paramOff = 0;
             for (int i = 8;i < ca.params().size();++i) {
@@ -184,7 +188,7 @@ public class InstSelection {
             }
             if (paramOff > currentLFn.paramOffset) currentLFn.paramOffset = paramOff;
             //add function call
-            block.addInst(new Cal(fnMap.get(ca.callee()), block));
+            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(ca.callee()), block));
             if (inst.dest() != null)
                 block.addInst(new Mv(lRoot.getPhyReg(10), RegM2L(inst.dest()), block));
         }
@@ -200,22 +204,22 @@ public class InstSelection {
                     genSltLIR(cm.src2(), cm.src1(), RegM2L(cm.dest()));
                     break;
                 case sle:
-                    VirtualReg sleTmp = new VirtualReg(4);
+                    VirtualReg sleTmp = new VirtualReg(4, cnt++);
                     genSltLIR(cm.src2(), cm.src1(), sleTmp);
                     block.addInst(new IType(sleTmp, new Imm(1), xor, RegM2L(cm.dest()), block));
                     break;
                 case sge:
-                    VirtualReg sgeTmp = new VirtualReg(4);
+                    VirtualReg sgeTmp = new VirtualReg(4, cnt++);
                     genSltLIR(cm.src1(), cm.src2(), sgeTmp);
                     block.addInst(new IType(sgeTmp, new Imm(1), xor, RegM2L(cm.dest()), block));
                     break;
                 case eq:
-                    VirtualReg eqTmp = new VirtualReg(4);
+                    VirtualReg eqTmp = new VirtualReg(4, cnt++);
                     genBinaryLIR(cm.src1(), cm.src2(), eqTmp, Binary.BinaryOpCat.xor, true);
                     block.addInst(new Sz(eqTmp, eq, RegM2L(cm.dest()), block));
                     break;
                 case ne:
-                    VirtualReg neTmp = new VirtualReg(4);
+                    VirtualReg neTmp = new VirtualReg(4, cnt++);
                     genBinaryLIR(cm.src1(), cm.src2(), neTmp, Binary.BinaryOpCat.xor, true);
                     block.addInst(new Sz(neTmp, ne, RegM2L(cm.dest()), block));
                     break;
@@ -224,20 +228,20 @@ public class InstSelection {
         else if (inst instanceof GetElementPtr) {
             GetElementPtr gep = (GetElementPtr) inst;
             //get the array offset(arrOff * typeSize)
-            VirtualReg destMul = new VirtualReg(4);
+            VirtualReg destMul = new VirtualReg(4, cnt++);
             Reg destIdx;
             int typeSize = gep.type().size() / 8;
             if (gep.arrayOffset() instanceof ConstInt) {
                 int arrIndex = ((ConstInt) gep.arrayOffset()).value();
                 if (arrIndex != 0) {
-                    destIdx = new VirtualReg(4);
+                    destIdx = new VirtualReg(4, cnt++);
                     genBinaryLIR(gep.ptr(), new ConstInt(arrIndex * typeSize, 32), destIdx,
                             Binary.BinaryOpCat.add, true);
                 } else destIdx = RegM2L(gep.ptr());
             } else {
                 genBinaryLIR(gep.arrayOffset(), new ConstInt(typeSize, 32), destMul,
                         Binary.BinaryOpCat.mul, true);
-                destIdx = new VirtualReg(4);
+                destIdx = new VirtualReg(4, cnt++);
                 block.addInst(new RType(RegM2L(gep.ptr()), destMul, add, destIdx, block));
             }
             //get the element offset(eleOff)
@@ -249,7 +253,7 @@ public class InstSelection {
                 else {
                     assert gep.type() instanceof ClassType;
                     value = ((ClassType) gep.type()).getEleOff(value) / 8;
-                    destPtr = new VirtualReg(4);
+                    destPtr = new VirtualReg(4, cnt++);
                     if (inBounds(value)) block.addInst(new IType(destIdx, new Imm(value), add,
                             destPtr, block));
                     else block.addInst(new RType(destIdx, RegM2L(new ConstInt(value, 32)), add,
@@ -270,7 +274,7 @@ public class InstSelection {
         }
         else if (inst instanceof Malloc) {
             block.addInst(new Mv(RegM2L(((Malloc) inst).length()), lRoot.getPhyReg(10), block));
-            block.addInst(new Cal(fnMap.get(irRoot.getBuiltinFunction("g_Malloc")), block));
+            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(irRoot.getBuiltinFunction("g_Malloc")), block));
             block.addInst(new Mv(lRoot.getPhyReg(10), RegM2L(inst.dest()), block));
         }
         else if (inst instanceof Move) {
@@ -290,13 +294,15 @@ public class InstSelection {
             Operand value = ((Store) inst).value(), address = ((Store) inst).address();
             Reg addressReg = RegM2L(address);
             if (addressReg instanceof GReg) {
-                VirtualReg tmp = new VirtualReg(4);
+                VirtualReg tmp = new VirtualReg(4, cnt++);
                 Relocation rel = new Relocation((GReg) addressReg, true);
-                block.addInst(new auipc(rel, tmp, block));
-                block.addInst(new St(tmp, RegM2L(value), rel, value.type().size(), block));
+                Reg valueReg = RegM2L(value);
+                block.addInst(new lui(rel, tmp, block));
+                block.addInst(new St(tmp, valueReg, new Relocation((GReg) addressReg, false),
+                        value.type().size() / 8, block));
             }
             else block.addInst(new St(RegM2L(address), RegM2L(value), new Imm(0),
-                    value.type().size(), block));
+                    value.type().size() / 8, block));
         }
         else if (inst instanceof Zext) {
             if (regMap.containsKey(inst.dest()))
@@ -308,17 +314,27 @@ public class InstSelection {
     private void copyBlock(IRBlock origin, LIRBlock block) {
         currentBlock = block;
         origin.instructions().forEach(this::genLIR);
+        origin.successors().forEach(suc -> {
+            block.successors.add(blockMap.get(suc));
+            blockMap.get(suc).precursors.add(block);
+        });
     }
     private void runForFn(Function fn) {
         LFn lFn = fnMap.get(fn);
         currentLFn = lFn;
+        cnt = 0;
         LIRBlock entryBlock = lFn.entryBlock(), exitBlock = lFn.exitBlock();
         ArrayList<VirtualReg> calleeSaveMap = new ArrayList<>();
+        SLImm stackL = new SLImm(0);
+        stackL.reverse = true;
+        entryBlock.addInst(new IType(lRoot.getPhyReg(2), stackL, add, lRoot.getPhyReg(2), entryBlock));
         lRoot.calleeSave().forEach(reg -> {
-            VirtualReg map = new VirtualReg(4);
+            VirtualReg map = new VirtualReg(4, cnt++);
             calleeSaveMap.add(map);
             entryBlock.addInst(new Mv(reg, map, entryBlock));
         });
+        VirtualReg map = new VirtualReg(4, cnt++);
+        entryBlock.addInst(new Mv(lRoot.getPhyReg(1), map, entryBlock));
         for (int i = 0;i < Integer.min(8, fn.params().size());++i) {
             entryBlock.addInst(new Mv(lRoot.getPhyReg(10 + i), lFn.params().get(i), entryBlock));
         }
@@ -335,6 +351,9 @@ public class InstSelection {
         });
         for (int i = 0;i < lRoot.calleeSave().size();++i)
             exitBlock.addInst(new Mv(calleeSaveMap.get(i), lRoot.calleeSave().get(i), entryBlock));
+        exitBlock.addInst(new Mv(map, lRoot.getPhyReg(1), exitBlock));
+        exitBlock.addInst(new IType(lRoot.getPhyReg(2), new SLImm(0), add,
+                lRoot.getPhyReg(2), exitBlock));
         exitBlock.addInst(new Ret(exitBlock));
     }
     public LRoot run() {

@@ -10,7 +10,7 @@ public abstract class Reg extends LOperand {
     public PhyReg color;
     public Imm stackOffset = null;
 
-    public HashSet<Mv> moveInst = new HashSet<>();
+    public HashSet<Mv> moveList = new HashSet<>();
     public Reg() {
         super();
         if (this instanceof PhyReg) color = (PhyReg)this;
@@ -18,7 +18,7 @@ public abstract class Reg extends LOperand {
     }
 
     public void init() {
-        moveInst.clear();
+        moveList.clear();
         weight = 0;
     }
 }

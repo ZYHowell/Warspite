@@ -36,7 +36,7 @@ public class RegAlloc {
 
     public RegAlloc(LRoot root) {
         this.root = root;
-        preColored = root.phyRegs();
+        preColored = new HashSet<>(root.phyRegs());
     }
 
     private HashSet<Reg> adjacent(Reg n) {
@@ -46,29 +46,31 @@ public class RegAlloc {
         return ret;
     }
     private HashSet<Reg> adjacent(Reg a, Reg b) {
-        HashSet<Reg> ret = adjacent(a);
-        ret.addAll(adjacent(b));
+        HashSet<Reg> ret = currentDAG.adjacent(a);
+        ret.addAll(currentDAG.adjacent(b));
+        ret.removeAll(selectStack);
+        ret.removeAll(coalescedNodes);
         return ret;
     }
     private HashSet<Mv> nodeMoves(Reg n) {
         HashSet<Mv> ret = new HashSet<>(workListMv);
         ret.addAll(activeMoves);
-        ret.retainAll(n.moveInst);
+        ret.retainAll(n.moveList);
         return ret;
     }
     private boolean moveRelated(Reg n) {
         return !nodeMoves(n).isEmpty();
     }
-    private void decrementDegree(Reg n) {
-        int d = n.degree;
-        --n.degree;
+    private void decrementDegree(Reg m) {
+        int d = m.degree;
+        --m.degree;
         if (d == K) {
-            HashSet<Reg> nodes = new HashSet<>(adjacent(n));
-            nodes.add(n);
+            HashSet<Reg> nodes = adjacent(m);
+            nodes.add(m);
             enableMoves(nodes);
-            spillWorkList.remove(n);
-            if (moveRelated(n)) freezeWorkList.remove(n);
-            else simplifyWorkList.remove(n);
+            spillWorkList.remove(m);
+            if (moveRelated(m)) freezeWorkList.add(m);
+            else simplifyWorkList.add(m);
         }
     }
     private void enableMoves(HashSet<Reg> nodes) {
@@ -105,7 +107,7 @@ public class RegAlloc {
         else spillWorkList.remove(v);
         coalescedNodes.add(v);
         v.alias = u;
-        u.moveInst.addAll(v.moveInst);
+        u.moveList.addAll(v.moveList);
         enableMoves(new HashSet<>(Collections.singletonList(v)));
         adjacent(v).forEach(t -> {
             currentDAG.addEdge(t, u);
@@ -123,7 +125,7 @@ public class RegAlloc {
             else v = getAlias(y);
             activeMoves.remove(mv);
             frozenMoves.add(mv);
-            if (nodeMoves(v).isEmpty() && v.degree < K) {
+            if (freezeWorkList.contains(v) && nodeMoves(v).isEmpty()) {
                 freezeWorkList.remove(v);
                 simplifyWorkList.add(v);
             }
@@ -207,7 +209,7 @@ public class RegAlloc {
         HashSet<Reg> newTemps = new HashSet<>();
         spilledNodes.forEach(v -> {
             assert v instanceof VirtualReg;
-            v.stackOffset = new SLImm(-1 * stackLength); // if stackOffset is 0, it is actually store 4(sp)
+            v.stackOffset = new SLImm(-1 * stackLength - 4); // if stackOffset is 0, it is actually store 4(sp)
             stackLength += 4;
         });
         currentFn.blocks().forEach(block -> {
@@ -217,7 +219,7 @@ public class RegAlloc {
                 for (Reg reg : inst.uses()) {
                     if (reg.stackOffset != null) {
                         if (inst.dest() == reg) {
-                            VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size());
+                            VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), -1);
                             spillIntroduce.add(tmp);
                             inst.replaceUse(reg, tmp);
                             inst.replaceDest(reg, tmp);
@@ -234,7 +236,7 @@ public class RegAlloc {
                                 iter.remove();
                                 iter.add(new Ld(root.getPhyReg(2), inst.dest(), reg.stackOffset, ((VirtualReg)reg).size(), block));
                             } else {
-                                VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size());
+                                VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), -1);
                                 spillIntroduce.add(tmp);
                                 iter.previous();
                                 iter.add(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
@@ -250,7 +252,7 @@ public class RegAlloc {
                         iter.remove();
                         iter.add(new St(root.getPhyReg(2), ((Mv) inst).origin(), dest.stackOffset, dest.size(), block));
                     } else {
-                        VirtualReg tmp = new VirtualReg(dest.size());
+                        VirtualReg tmp = new VirtualReg(dest.size(), -1);
                         spillIntroduce.add(tmp);
                         inst.replaceDest(dest, tmp);
                         iter.add(new St(root.getPhyReg(2), tmp, dest.stackOffset, dest.size(), block));
@@ -268,11 +270,14 @@ public class RegAlloc {
         coloredNodes.clear();
         coalescedNodes.clear();
     }
-    private void runForFn(LFn fn) {
-        //initWorkList
+    private void runForFn(LFn fn){
+        //makeWorkList
         new LivenessAnal(root, fn).runForFn();
         workListMv = fn.workListMv();
-        currentDAG = fn.dag();
+        currentDAG = currentFn.dag();
+        spillWorkList.clear();
+        freezeWorkList.clear();
+        simplifyWorkList.clear();
         currentDAG.initCollect = false;
         currentDAG.initial().forEach(node -> {
             if (node.degree >= K) spillWorkList.add(node);
@@ -292,6 +297,9 @@ public class RegAlloc {
         if (!spilledNodes.isEmpty()) {
             rewrite();
             runForFn(fn);
+        } else {
+            coloredNodes.clear();
+            coalescedNodes.clear();
         }
     }
     private void useDefCollect(LFn fn) {
@@ -307,7 +315,8 @@ public class RegAlloc {
     private void subtleModify() {
         currentFn.blocks().forEach(block -> block.instructions().forEach(inst -> inst.stackLengthAdd(stackLength)));
         currentFn.blocks().forEach(block -> block.instructions().removeIf(inst ->
-                inst instanceof Mv && ((Mv) inst).origin().color == inst.dest().color));
+                inst instanceof Mv && (((Mv) inst).origin().color == inst.dest().color))
+        );
     }
 
     public void run() {
@@ -317,6 +326,7 @@ public class RegAlloc {
             currentFn = fn;
             runForFn(fn);
             stackLength += fn.paramOffset;
+            if (stackLength % 16 != 0) stackLength = (stackLength / 16 + 1) * 16;
             subtleModify();
         });
     }

@@ -6,17 +6,17 @@ import Assemb.LOperand.Reg;
 
 import java.util.HashSet;
 
-public class auipc extends RISCInst{
+public class lui extends RISCInst{
 
     private Imm address;    //only used in store global->auipc
-    public auipc(Imm address, Reg dest, LIRBlock block) {
+    public lui(Imm address, Reg dest, LIRBlock block) {
         super(dest, block);
         this.address = address;
     }
 
     @Override
     public HashSet<Reg> uses() {
-        return null;
+        return new HashSet<>();
     }
 
     @Override
@@ -27,6 +27,6 @@ public class auipc extends RISCInst{
 
     @Override
     public String toString() {
-        return "auipc " + dest() + ", " + address;
+        return "lui " + dest() + ", " + address;
     }
 }

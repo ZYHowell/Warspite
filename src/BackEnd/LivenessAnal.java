@@ -31,8 +31,10 @@ public class LivenessAnal {
 
     public void init(LIRBlock block) {
         block.instructions().forEach(inst -> {
-            inst.uses().forEach(reg -> reg.moveInst.clear());
-            if (inst.dest() != null) inst.dest().moveInst.clear();
+            if (inst.dest() != null) {
+                inst.dest().moveList.clear();
+                --inst.dest().degree;
+            }
         });
     }
     public void runForBlockA(LIRBlock block) {
@@ -50,7 +52,7 @@ public class LivenessAnal {
     public void LiveIO(LIRBlock block) {
         visited.add(block);
         HashSet<Reg> liveOut = new HashSet<>();
-        block.successors().forEach(suc -> liveOut.addAll(blockLiveOut.get(suc)));
+        block.successors.forEach(suc -> liveOut.addAll(blockLiveIn.get(suc)));
         HashSet<Reg> liveIn = new HashSet<>(liveOut);
         liveIn.addAll(blockUses.get(block));
         liveIn.removeAll(blockDefs.get(block));
@@ -58,9 +60,9 @@ public class LivenessAnal {
         liveIn.removeAll(blockLiveIn.get(block));
         if (!liveIn.isEmpty()) {
             blockLiveIn.get(block).addAll(liveIn);
-            visited.removeAll(block.precursors());
+            visited.removeAll(block.precursors);
         }
-        block.precursors().forEach(pre -> {
+        block.precursors.forEach(pre -> {
             if (!visited.contains(pre)) LiveIO(pre);
         });
     }
@@ -72,13 +74,17 @@ public class LivenessAnal {
             if (inst instanceof Mv) {
                 currentLive.removeAll(inst.uses());
                 HashSet<Reg> mvAbout = inst.uses();
-                mvAbout.add(inst.dest());
-                mvAbout.forEach(reg -> reg.moveInst.add((Mv) inst));
+                mvAbout.add(inst.dest());   //def of move is only the inst.dest()
+                mvAbout.forEach(reg -> reg.moveList.add((Mv) inst));
                 workInstMv.add((Mv) inst);
             }
             HashSet<Reg> defs = new HashSet<>();
             if (inst.dest() != null) defs.add(inst.dest());
-            if (inst instanceof Cal) defs.addAll(irRoot.callerSave());
+            if (inst instanceof Cal) {
+                defs.addAll(irRoot.callerSave());
+                defs.add(irRoot.getPhyReg(6));
+            }
+            currentLive.addAll(defs);
             defs.forEach(def -> currentLive.forEach(reg -> dag.addEdge(reg, def)));
             
             currentLive.removeAll(defs);

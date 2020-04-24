@@ -22,14 +22,11 @@ public class Ld extends RISCInst {
     public int size() {
         return size;
     }
-    public Imm offset() {
-        return offset;
-    }
 
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        ret.add(address);
+        if (!(address instanceof GReg)) ret.add(address);
         return ret;
     }
 
@@ -46,6 +43,6 @@ public class Ld extends RISCInst {
     @Override
     public String toString() {
         return "l" + ((size == 1) ? "b" : ((size == 4) ? "w" : "h")) + " " + dest() + ", "
-                + ((address instanceof GReg) ? address : (offset.value + "(" + address + ")"));
+                + ((address instanceof GReg) ? address : (offset + "(" + address + ")"));
     }
 }

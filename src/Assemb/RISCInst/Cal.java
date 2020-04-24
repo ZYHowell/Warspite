@@ -2,16 +2,19 @@ package Assemb.RISCInst;
 
 import Assemb.LFn;
 import Assemb.LIRBlock;
+import Assemb.LOperand.PhyReg;
 import Assemb.LOperand.Reg;
 
 import java.util.HashSet;
 
 public class Cal extends RISCInst{
     private LFn callee;
+    private PhyReg x6;
 
-    public Cal(LFn callee, LIRBlock block) {
-        super(null, block);
+    public Cal(PhyReg x6, LFn callee, LIRBlock block) {
+        super(x6, block);
         this.callee = callee;
+        this.x6 = x6;
     }
 
     public LFn callee() {
@@ -20,7 +23,9 @@ public class Cal extends RISCInst{
 
     @Override
     public HashSet<Reg> uses() {
-        return new HashSet<>();
+        HashSet<Reg> ret = new HashSet<>();
+        ret.add(x6);
+        return ret;
     }
 
     @Override

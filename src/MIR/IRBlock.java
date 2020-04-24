@@ -86,6 +86,7 @@ public class IRBlock {
             removeSuccessor(((Branch)currentTerm).trueDest());
             removeSuccessor(((Branch)currentTerm).falseDest());
         }
+        instructions.remove(instructions.size() - 1);
     }
     public void addPhi(Phi inst) {
         PhiInst.put(inst.dest(), inst);

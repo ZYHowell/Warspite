@@ -21,6 +21,12 @@ public class Mem2Reg extends Pass{
         this.irRoot = irRoot;
     }
 
+    private Operand finalReplace(HashMap<Operand, Operand> replaceMap, Operand replaced) {
+        Operand tmp = replaced;
+        while (replaceMap.containsKey(tmp)) tmp = replaceMap.get(tmp);
+        return tmp;
+    }
+
     private void runForFn(Function fn) {
     //only a normal minimal SSA
         HashSet<Register> allocVars = fn.allocVars();
@@ -29,6 +35,7 @@ public class Mem2Reg extends Pass{
         HashMap<IRBlock, HashSet<Load>> allocLoads = new HashMap<>();
         HashMap<IRBlock, HashMap<Register, Phi>> allocPhiMap = new HashMap<>();
         HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new HashMap<>();
+        HashMap<Operand, Operand> replaceMap = new HashMap<>();
 
         new DomGen(fn, false).runForFn();
 
@@ -47,7 +54,7 @@ public class Mem2Reg extends Pass{
                     if (address instanceof Register && (allocVars.contains(address))) {
                         HashMap<Register, Operand> blockLiveOut = allocStores.get(inst.block());
                         if (blockLiveOut.containsKey(address)) {
-                            inst.dest().replaceAllUseWith(blockLiveOut.get(address));
+                            replaceMap.put(inst.dest(), blockLiveOut.get(address));
                             iter.remove();
                             inst.removeSelf(false);
                         } //in the same block, no need to insert phi
@@ -127,12 +134,13 @@ public class Mem2Reg extends Pass{
                             } else currentBlock = currentBlock.iDom();
                     }
                     //the replaced one can only from an ancestor of the currentBlock or itself
-                    reg.replaceAllUseWith(replace);
+                    replaceMap.put(reg, finalReplace(replaceMap, replace));
                     load.removeSelf(true);
                     //this one is safe since it is not in iterating all instructions in the block
                 });
             }
         });
+        replaceMap.forEach((reg, rep) -> ((Register)reg).replaceAllUseWith(rep));
 
         fn.blocks().forEach(block -> block.instructions().removeIf(inst -> inst instanceof Alloc));
     }

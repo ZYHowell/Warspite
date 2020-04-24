@@ -4,9 +4,8 @@ import Assemb.LFn;
 import Assemb.LIRBlock;
 import Assemb.LOperand.GReg;
 import Assemb.LRoot;
-import MIR.Function;
-import MIR.IRBlock;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -14,9 +13,10 @@ import java.util.Queue;
 public class AsmPrinter {
 
     private LRoot root;
-    int funcCnt = 0;
-    public AsmPrinter(LRoot root) {
+    PrintStream out;
+    public AsmPrinter(LRoot root, PrintStream out) {
         this.root = root;
+        this.out = out;
     }
 
     private ArrayList<LIRBlock> visitList = new ArrayList<>();
@@ -28,7 +28,7 @@ public class AsmPrinter {
         while (!blocks.isEmpty()) {
             LIRBlock check = blocks.poll();
             check.name ="." + fn.name() + "_b." + blockCnt++;
-            check.successors().forEach(block -> {
+            check.successors.forEach(block -> {
                 if (block != null && !visitList.contains(block)) {
                     blocks.add(block);
                     visitList.add(block);
@@ -38,41 +38,42 @@ public class AsmPrinter {
     }
 
     private void runForBlock(LIRBlock block) {
-        System.out.println(block.name + ": ");
-        block.instructions().forEach(inst -> System.out.println("\t" + inst.toString()));
+        out.println(block.name + ": ");
+        block.instructions().forEach(inst -> out.println("\t" + inst.toString()));
     }
 
     private void runForFn(LFn fn) {
+        out.println("\t.globl\t" + fn.name());
+        out.println("\t.p2align\t1");
+        out.println("\t.type\t" + fn.name() +",@function");
+        out.println(fn.name() + ":");
+        visitList.clear();
         collectWithRename(fn);
-        System.out.println("\t.globl\t" + fn.name());
-        System.out.println("\t.p2align\t1");
-        System.out.println("\t.type\t" + fn.name() +",@function");
-        System.out.println(fn.name() + ":");
-        fn.blocks().forEach(this::runForBlock);
-        System.out.println("\t.size\t" + fn.name() + ", " + ".-" + fn.name() + "\n");
+        visitList.forEach(this::runForBlock);
+        out.println("\t.size\t" + fn.name() + ", " + ".-" + fn.name() + "\n");
     }
 
     private void runForGlb(GReg reg) {
-        System.out.println("\t.type\t" + reg.name + ",@object");
-        System.out.println("\t.section\t.bss");
-        System.out.println("\t.globl\t" + reg.name);
-        System.out.println("\t.p2align\t2");
-        System.out.println(reg.name + ":");
-        System.out.println(".L" + reg.name + "$local:");
-        System.out.println("\t.word\t0");
-        System.out.println("\t.size\t" + reg.name + ", 4\n");
+        out.println("\t.type\t" + reg.name + ",@object");
+        out.println("\t.section\t.bss");
+        out.println("\t.globl\t" + reg.name);
+        out.println("\t.p2align\t2");
+        out.println(reg.name + ":");
+        out.println(".L" + reg.name + "$local:");
+        out.println("\t.word\t0");
+        out.println("\t.size\t" + reg.name + ", 4\n");
     }
 
     private void runForString(GReg reg, String value) {
-        System.out.println("\t.type\t" + reg.name + ",@object");
-        System.out.println("\t.section\t.rodata");
-        System.out.println(reg.name + ":");
-        System.out.println("\t.asciz\t\"" + value + "\"");
-        System.out.println("\t.size\t" + reg.name + ", " + (value.length() + 1) + "\n");
+        out.println("\t.type\t" + reg.name + ",@object");
+        out.println("\t.section\t.rodata");
+        out.println(reg.name + ":");
+        out.println("\t.asciz\t\"" + value + "\"");
+        out.println("\t.size\t" + reg.name + ", " + (value.length() + 1) + "\n");
     }
 
     public void run() {
-        System.out.println("\t.text");
+        out.println("\t.text");
         root.functions().forEach(this::runForFn);
         root.globalRegs.forEach(this::runForGlb);
         root.strings.forEach(this::runForString);

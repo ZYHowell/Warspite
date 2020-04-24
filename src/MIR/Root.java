@@ -2,6 +2,7 @@ package MIR;
 
 import MIR.IRoperand.ConstString;
 import MIR.IRoperand.GlobalReg;
+import MIR.IRoperand.Param;
 import MIR.IRtype.*;
 import Util.symbol.Type;
 import Util.symbol.arrayType;
@@ -17,46 +18,84 @@ public class Root {
     private HashMap<String, ConstString> ConstStrings = new HashMap<>();
     private ArrayList<GlobalReg> globalVar = new ArrayList<>();
     private HashMap<String, ClassType> types = new HashMap<>();
+    public static IRBaseType stringT = new Pointer(new IntType(8), false),
+                             voidT = new VoidType(), i32T = new IntType(32),
+                             charT = new IntType(8), boolT = new BoolType();
 
     public Root() {
         Function printFunc = new Function("g_print");
+        printFunc.setRetType(voidT);
+        printFunc.addParam(new Param(stringT, "s"));
         builtinFunctions.put("g_print", printFunc);
         Function printlnFunc = new Function("g_println");
+        printlnFunc.setRetType(voidT);
+        printlnFunc.addParam(new Param(stringT, "s"));
         builtinFunctions.put("g_println", printlnFunc);
         Function printIntFunc = new Function("g_printInt");
+        printIntFunc.setRetType(voidT);
+        printIntFunc.addParam(new Param(i32T, "v"));
         builtinFunctions.put("g_printInt", printIntFunc);
         Function printlnIntFunc = new Function("g_printlnInt");
+        printlnIntFunc.setRetType(voidT);
+        printlnIntFunc.addParam(new Param(i32T, "v"));
         builtinFunctions.put("g_printlnInt", printlnIntFunc);
         Function getStringFunc = new Function("g_getString");
+        getStringFunc.setRetType(stringT);
         builtinFunctions.put("g_getString", getStringFunc);
         Function getIntFunc = new Function("g_getInt");
+        getIntFunc.setRetType(i32T);
         builtinFunctions.put("g_getInt", getIntFunc);
         //above: has side effect(I/O)
         Function toStringFunc = new Function("g_toString");
+        toStringFunc.setRetType(stringT);
+        toStringFunc.addParam(new Param(i32T, "i"));
         toStringFunc.setSideEffect(false);
         builtinFunctions.put("g_toString", toStringFunc);
         Function stringAdd = new Function("g_stringAdd");
+        stringAdd.setRetType(stringT);
+        stringAdd.addParam(new Param(stringT, "a"));
+        stringAdd.addParam(new Param(stringT, "b"));
         stringAdd.setSideEffect(false);
         builtinFunctions.put("g_stringAdd", stringAdd);
         Function stringLT = new Function("g_stringLT");
+        stringLT.setRetType(boolT);
+        stringLT.addParam(new Param(stringT, "a"));
+        stringLT.addParam(new Param(stringT, "b"));
         stringLT.setSideEffect(false);
         builtinFunctions.put("g_stringLT", stringLT);
         Function stringGT = new Function("g_stringGT");
+        stringGT.setRetType(boolT);
+        stringGT.addParam(new Param(stringT, "a"));
+        stringGT.addParam(new Param(stringT, "b"));
         stringGT.setSideEffect(false);
         builtinFunctions.put("g_stringGT", stringGT);
         Function stringLE = new Function("g_stringLE");
+        stringLE.setRetType(boolT);
+        stringLE.addParam(new Param(stringT, "a"));
+        stringLE.addParam(new Param(stringT, "b"));
         stringLE.setSideEffect(false);
         builtinFunctions.put("g_stringLE", stringLE);
         Function stringGE = new Function("g_stringGE");
+        stringGE.setRetType(boolT);
+        stringGE.addParam(new Param(stringT, "a"));
+        stringGE.addParam(new Param(stringT, "b"));
         stringGE.setSideEffect(false);
         builtinFunctions.put("g_stringGE", stringGE);
         Function stringEQ = new Function("g_stringEQ");
+        stringEQ.setRetType(boolT);
+        stringEQ.addParam(new Param(stringT, "a"));
+        stringEQ.addParam(new Param(stringT, "b"));
         stringEQ.setSideEffect(false);
         builtinFunctions.put("g_stringEQ", stringEQ);
         Function stringNE = new Function("g_stringNE");
+        stringNE.setRetType(boolT);
+        stringNE.addParam(new Param(stringT, "a"));
+        stringNE.addParam(new Param(stringT, "b"));
         stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
         Function malloc = new Function("g_Malloc");
+        malloc.setRetType(stringT);
+        malloc.addParam(new Param(i32T, "a"));
         malloc.setSideEffect(false);
         builtinFunctions.put("g_Malloc", malloc);
         Function init = new Function("__init");
@@ -102,8 +141,8 @@ public class Root {
         return globalVar;
     }
     public void addConstString(String name, String value) {
-        if (!ConstStrings.containsKey(value))
-            ConstStrings.put(value, new ConstString(name, value));
+        if (!ConstStrings.containsKey(name))
+            ConstStrings.put(name, new ConstString(name, value));
     }
     public ConstString getConstString(String value) {
         return ConstStrings.get(value);

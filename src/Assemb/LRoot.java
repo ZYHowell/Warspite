@@ -3,7 +3,6 @@ package Assemb;
 import Assemb.LOperand.GReg;
 import Assemb.LOperand.PhyReg;
 import Assemb.LOperand.Reg;
-import MIR.IRoperand.Register;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -3,9 +3,11 @@ package Assemb.LOperand;
 public class VirtualReg extends Reg {
 
     private int size;
-    public VirtualReg(int size) {
+    public String name;
+    public VirtualReg(int size, int name) {
         super();
         this.size = size;
+        this.name = name + "%";
     }
 
     public int size() {
@@ -14,7 +16,7 @@ public class VirtualReg extends Reg {
 
     @Override
     public String toString() {
-        if (color == null) return this.hashCode() + "";
+        if (color == null) return name + "(" + hashCode() + ")";
         return color.toString();
     }
 }

@@ -41,6 +41,6 @@ public class GlobalReg extends Operand {
 
     @Override
     public String toString() {
-        return "%" + name;
+        return "@" + name;
     }
 }

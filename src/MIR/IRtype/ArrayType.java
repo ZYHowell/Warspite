@@ -17,7 +17,7 @@ public class ArrayType extends IRBaseType {
 
     @Override
     public String toString() {
-        return "[ " + num + " * " + type.toString() + " ]";
+        return "[ " + num + " x " + type.toString() + " ]";
     }
 
     @Override

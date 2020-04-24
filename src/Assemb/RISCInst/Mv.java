@@ -35,7 +35,6 @@ public class Mv extends RISCInst{
 
     @Override
     public String toString() {
-        if (origin instanceof GReg) return "li " + dest() + ", " + origin;
         return "addi " + dest() + ", " + origin + ", 0";
     }
 }

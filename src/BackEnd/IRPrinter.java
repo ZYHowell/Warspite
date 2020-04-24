@@ -4,8 +4,10 @@ import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRoperand.Param;
 import MIR.IRoperand.Register;
+import MIR.IRtype.Pointer;
 import MIR.Root;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -16,9 +18,11 @@ public class IRPrinter {
     private int symbolCnt, blockCnt;
     private boolean bNC;
     private ArrayList<IRBlock> visitList = new ArrayList<>();
+    private PrintStream out;
 
-    public IRPrinter(boolean bNC) {
+    public IRPrinter(boolean bNC, PrintStream out) {
         this.bNC = bNC;
+        this.out = out;
     }
 
     private void renameBlock(IRBlock block) {
@@ -28,9 +32,9 @@ public class IRPrinter {
         });
     }
     private void printBlock(IRBlock block) {
-        System.out.println("%" + block.name() + ":");
-        block.phiInst().forEach((reg, phi) -> System.out.println("\t" + phi.toString()));
-        block.instructions().forEach(inst -> System.out.println("\t" + inst.toString()));
+        out.println(block.name() + ":");
+        block.phiInst().forEach((reg, phi) -> out.println("\t" + phi.toString()));
+        block.instructions().forEach(inst -> out.println("\t" + inst.toString()));
     }
 
     private void collectWithRename(Function fn) {
@@ -49,45 +53,57 @@ public class IRPrinter {
             });
         }
     }
-    public void printFn(String name, Function fn) {
-        symbolCnt = blockCnt = 0;
-        System.out.print("define " + fn.retType().toString() + " @" + fn.name() + "(");
+    private String fnHead(Function fn, boolean isBuiltIn) {
+        StringBuilder ret = new StringBuilder(isBuiltIn ? "declare " : "define ");
+        ret.append(fn.retType()).append(" @").append(fn.name()).append("(");
         int size = fn.params().size();
         if (fn.getClassPtr() != null) {
             Register classPtr = fn.getClassPtr();
             classPtr.setName("" + symbolCnt++);
-            System.out.print(classPtr.type().toString() + " " + classPtr.toString() + (size > 0 ? ", " : ""));
+            ret.append(classPtr.type().toString()).append(" ")
+                    .append(classPtr.toString()).append(size > 0 ? ", " : "");
         }
         for (int i = 0;i < size;++i) {
             Param param = fn.params().get(i);
             param.setName("" + symbolCnt++);
-            System.out.print(param.type().toString() + " " + param.toString() +
-                    (i == size - 1 ? ")\n" : ", "));
+            ret.append(param.type().toString()).append(" ")
+                    .append(param.toString()).append(i == size - 1 ? ")" : ", ");
         }
-        if (size == 0) System.out.println(")");
+        if (size == 0) ret.append(")");
+        if (!isBuiltIn) ret.append("{");
+        return ret.toString();
+    }
+    private void printFn(String name, Function fn) {
+        symbolCnt = blockCnt = 0;
+        out.println(fnHead(fn, false));
         visitList.clear();
 
         collectWithRename(fn);
 
         visitList.forEach(this::renameBlock);
         visitList.forEach(this::printBlock);
+        out.println("}");
     }
 
     public void run(Root irRoot) {
+        irRoot.builtinFunctions().forEach((name, fn) -> {
+            symbolCnt = 0;
+            out.println(fnHead(fn, true));
+        });
         irRoot.types().forEach((name, type) -> {
-            System.out.print("%struct." + name + " = " + "type {");
+            out.print("%struct." + name + " = " + "type {");
             int size = type.members().size();
             for (int i = 0; i < size;++i) {
-                System.out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
+                out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
             }
         });
         irRoot.globalVar().forEach(gVar ->
-            System.out.println("@" + gVar.name() + " = global " + gVar.type().toString() +
+            out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
                     "zeroinitializer, align " + gVar.type().size() / 8)
         );
-        irRoot.constStrings().forEach((name, constString) -> System.out.println(
+        irRoot.constStrings().forEach((name, constString) -> out.println(
                 "@" + name + " = private unnamed_addr constant "
-                + "[" + (constString.value().length() + 1) + " * i8] c" + "\"" + constString.value() + "\\00\", align 1"));
+                + "[" + (constString.value().length() + 1) + " x i8] c" + "\"" + constString.value() + "\\00\", align 1"));
         irRoot.functions().forEach(this::printFn);
     }
 }

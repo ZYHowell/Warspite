@@ -33,6 +33,6 @@ public class Li extends RISCInst {
 
     @Override
     public String toString() {
-        return "li " + dest() + ", " + value.value;
+        return "li " + dest() + ", " + value;
     }
 }
