@@ -5,10 +5,12 @@ import MIR.IRBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class DomGen {
     private Function fn;
     private boolean blockCollected;
+
     public DomGen(Function fn, boolean blockCollected) {
         this.fn = fn;
         this.blockCollected = blockCollected;
@@ -19,9 +21,10 @@ public class DomGen {
     private ArrayList<IRBlock> DFSIndex = new ArrayList<>();
     private HashMap<IRBlock, Integer> dfsOrder = new HashMap<>();
     private HashMap<IRBlock, IRBlock> sDom = new HashMap<>(),
-                                      union = new HashMap<>(),
-                                      minVer = new HashMap<>(),
-                                      dfsFather = new HashMap<>();
+            union = new HashMap<>(),
+            minVer = new HashMap<>(),
+            dfsFather = new HashMap<>();
+
     private void DFS(IRBlock it) {
         if (dfsOrder.containsKey(it)) return;
         it.clearDomInfo();
@@ -31,10 +34,13 @@ public class DomGen {
         union.put(it, it);
         minVer.put(it, it);
         it.successors().forEach(son -> {
-            DFS(son);
-            dfsFather.put(son, it);
+            if (!dfsOrder.containsKey(son)){
+                DFS(son);
+                dfsFather.put(son, it);
+            }
         });
     }
+
     private void DFSOrderGen(IRBlock entranceBlock) {
         tot = 0;
         DFSIndex.add(null); //1-base DFS order here, so...
@@ -42,17 +48,13 @@ public class DomGen {
         dfsFather.put(entranceBlock, null);
     }
 
-    private IRBlock FindUnionRoot(IRBlock it) {
-        if (union.get(it) == it) return it;
-        IRBlock ret = FindUnionRoot(union.get(it));
-        if (dfsOrder.get(sDom.get(minVer.get(union.get(it)))) <
-                dfsOrder.get(sDom.get(minVer.get(it))))
-            minVer.put(it, minVer.get(union.get(it)));
-        union.put(it, ret);
-        return ret;
-    }
     private IRBlock eval(IRBlock it) {
-        FindUnionRoot(it);
+        if (union.get(it) != union.get(union.get(it))) {
+            if (dfsOrder.get(sDom.get(minVer.get(it))) >
+                    dfsOrder.get(sDom.get(eval(union.get(it)))))
+                minVer.put(it, eval(union.get(it)));
+            union.put(it, union.get(union.get(it)));
+        }
         return minVer.get(it);
     }
 
@@ -65,27 +67,27 @@ public class DomGen {
 
         DFSOrderGen(entranceBlock);
 
-        for (int i = 0;i <= tot;++i) bucket.add(new ArrayList<>());
+        for (int i = 0; i <= tot; ++i) bucket.add(new ArrayList<>());
 
-        for (int i = tot;i > 1;--i) {
+        for (int i = tot; i > 1; --i) {
             tmp = DFSIndex.get(i);
-            for (IRBlock pre : tmp.precursors()){
-                IRBlock evalBlock = eval(pre);
+            for (IRBlock pre : tmp.precursors()) {
+                IRBlock evalBlock = eval(pre);  //to check
                 if (dfsOrder.get(sDom.get(tmp)) > dfsOrder.get(sDom.get(evalBlock)))
                     sDom.put(tmp, sDom.get(evalBlock));
             }
             bucket.get(dfsOrder.get(sDom.get(tmp))).add(tmp);
-            IRBlock tmpFather = dfsFather.get(tmp);
-            union.put(tmp, tmpFather);
-            for (IRBlock buk : bucket.get(dfsOrder.get(tmpFather))) {
+            IRBlock x = dfsFather.get(tmp);
+            union.put(tmp, x);
+            for (IRBlock buk : bucket.get(dfsOrder.get(x))) {
                 IRBlock u = eval(buk);
-                buk.setIDom(sDom.get(u) == sDom.get(buk) ? tmpFather : u);
+                buk.setIDom(dfsOrder.get(sDom.get(u)) < dfsOrder.get(x) ? u : x);
             }
-            bucket.get(dfsOrder.get(tmpFather)).clear();
+            bucket.get(dfsOrder.get(x)).clear();
         }
-        for (int i = 2;i <= tot;++i) {
+        for (int i = 2; i <= tot; ++i) {
             tmp = DFSIndex.get(i);
-            if (tmp.iDom() != DFSIndex.get(dfsOrder.get(sDom.get(tmp))))
+            if (tmp.iDom() != sDom.get(tmp))
                 tmp.setIDom(tmp.iDom().iDom());
         }
 
@@ -96,7 +98,7 @@ public class DomGen {
 
         //in any order is ok, but since I have DFSIndex to collect all blocks...
         int size = DFSIndex.size();
-        for (int i = 1;i < size;++i) {
+        for (int i = 1; i < size; ++i) {
             IRBlock block = DFSIndex.get(i);
             if (block.precursors().size() >= 2) {
                 for (IRBlock runner : block.precursors()) {

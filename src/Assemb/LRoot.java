@@ -21,7 +21,7 @@ public class LRoot {
     private HashSet<LFn> functions = new HashSet<>(), builtinFunctions = new HashSet<>();
     private ArrayList<PhyReg> phyRegs = new ArrayList<>();
     private ArrayList<PhyReg> callerSaveRegs = new ArrayList<>(), calleeSaveRegs = new ArrayList<>();
-    private HashSet<PhyReg> assignableRegs = new HashSet<>();
+    private ArrayList<PhyReg> assignableRegs = new ArrayList<>();
     public HashMap<GReg, String> strings = new HashMap<>();
     public HashSet<GReg> globalRegs = new HashSet<>();
 
@@ -35,6 +35,8 @@ public class LRoot {
         }
         assignableRegs.addAll(callerSaveRegs);
         assignableRegs.addAll(calleeSaveRegs);
+        assignableRegs.remove(0);
+        assignableRegs.add(phyRegs.get(1)); //let ra be the last to assign
     }
 
     public void addBuiltinFunction(LFn fn) {
@@ -46,8 +48,8 @@ public class LRoot {
     public HashSet<Reg> phyRegs() {
         return new HashSet<>(phyRegs);
     }
-    public HashSet<PhyReg> assignableRegs() {
-        return new HashSet<>(assignableRegs);
+    public ArrayList<PhyReg> assignableRegs() {
+        return new ArrayList<>(assignableRegs);
     }
     public ArrayList<PhyReg> callerSave() {
         return callerSaveRegs;

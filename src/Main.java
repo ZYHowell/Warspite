@@ -18,7 +18,7 @@ import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        boolean doCodeGen = false, doOptimization = false, inTest = false;
+        boolean doCodeGen = false, doOptimization = false;//, inTest = false;
         String name = null;
 
         if (args.length > 0) {
@@ -26,7 +26,7 @@ public class Main {
                 switch (arg) {
                     case "-opt": doOptimization = true;
                     case "-codegen": doCodeGen = true;break;
-                    case "-test": inTest = true;break;
+                    //case "-test": inTest = true;break;
                     default: break;
                 }
                 if (arg.length() > 5 && arg.substring(0, 5).equals("-dir=")){
@@ -36,7 +36,7 @@ public class Main {
                 }
             }
         }
-        PrintStream pst = inTest ? (System.out) : new PrintStream("out.s");
+        //PrintStream pst = new PrintStream("output.s");
         PrintStream IRPst = new PrintStream("out.ll");
         if (name == null) name = "test.mx";
         InputStream input = new FileInputStream(name);
@@ -62,15 +62,17 @@ public class Main {
 
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
+                //new IRPrinter(false, IRPst).run(irRoot);
                 new Mem2Reg(irRoot).run();
                 //optim order: inline-(ADCE-SCCP-CFGSimplify)
                 if (doOptimization) new Optimization(irRoot).run();
-
-                new PhiResolve(irRoot).run();
                 new IRPrinter(false, IRPst).run(irRoot);
+                new PhiResolve(irRoot).run();
+
                 LRoot lRoot = new InstSelection(irRoot).run();
+                new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
                 new RegAlloc(lRoot).run();
-                new AsmPrinter(lRoot, pst).run();
+                new AsmPrinter(lRoot, System.out).run();
             }
         } catch (error er) {
             System.err.println(er.toString());

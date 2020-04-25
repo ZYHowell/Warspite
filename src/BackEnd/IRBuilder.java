@@ -221,8 +221,9 @@ public class IRBuilder implements ASTVisitor {
         }
         IRBlock entryBlock = currentFunction.entryBlock();
         currentFunction.allocVars().forEach(var ->{
-            if (var.type() instanceof Pointer)
+            if (((Pointer)var.type()).pointTo() instanceof Pointer)
                 entryBlock.instructions().add(0, new Store(var, new Null(), entryBlock));
+            else entryBlock.instructions().add(0, new Store(var, new ConstInt(65536, 32), entryBlock));
         });
 
         returnList.clear();
@@ -689,6 +690,7 @@ public class IRBuilder implements ASTVisitor {
                 break;
             }
         }
+        branchAdd(it);
     }
 
     @Override
@@ -715,13 +717,16 @@ public class IRBuilder implements ASTVisitor {
     public void visit(funCallExpr it) {
         it.callee().accept(this);
         funcDecl calleeFunc = (funcDecl)it.callee().type();
-        if (calleeFunc.name().equals("size")) {
+        if (calleeFunc.FuncName.equals("size")) {
             it.setOperand(new Register(Root.i32T, "array_size"));
-            assert it.callee().operand().type() instanceof Pointer;
-            Register metaPtr = new Register(Root.i32T, "metadataPtr"),
-                     BCPtr = new Register(Root.i32T, "bitCastPtr");
-            currentBlock.addInst(new BitCast(it.callee().operand(), BCPtr, currentBlock));
-            currentBlock.addInst(new Binary(BCPtr, new ConstInt(4, 32), metaPtr, sub, currentBlock));
+            Operand opr = resolvePointer(currentBlock, it.callee().operand());
+            assert opr.type() instanceof Pointer;
+            Register metaPtr = new Register(new Pointer(Root.i32T, false), "metadataPtr"),
+                     BCPtr = new Register(Root.i32T, "bitCastPtr"),
+                     binaryTmp = new Register(Root.i32T, "sizeTmp");
+            currentBlock.addInst(new BitCast(opr, BCPtr, currentBlock));
+            currentBlock.addInst(new Binary(BCPtr, new ConstInt(4, 32), binaryTmp, sub, currentBlock));
+            currentBlock.addInst(new BitCast(binaryTmp, metaPtr, currentBlock));
             currentBlock.addInst(new Load((Register)it.operand(), metaPtr, currentBlock));
         } else {
             if (!it.type().isVoid())
@@ -841,7 +846,7 @@ public class IRBuilder implements ASTVisitor {
         IRBaseType pointTo = ((Pointer)result.type()).pointTo();
 
         Operand currentNum = resolvePointer(currentBlock, it.exprs().get(nowDim).operand());
-        ConstInt typeWidth = new ConstInt(((Pointer)result.type()).pointTo().size(), 32);
+        ConstInt typeWidth = new ConstInt(((Pointer)result.type()).pointTo().size() / 8, 32);
         Register PureWidth = new Register(Root.i32T, "pureWidth"),
                  metaWidth = new Register(Root.i32T, "metaWidth");
         Register allocPtr = new Register(Root.stringT, "allocPtr"),
@@ -849,14 +854,16 @@ public class IRBuilder implements ASTVisitor {
                  allocOffset = new Register(new Pointer(Root.i32T, false), "offsetHead");
 
         currentBlock.addInst(new Binary(currentNum, typeWidth, PureWidth, mul, currentBlock));
-        currentBlock.addInst(new Binary(PureWidth, new ConstInt(32, 32), metaWidth, add, currentBlock));
+        currentBlock.addInst(new Binary(PureWidth, new ConstInt(4, 32), metaWidth, add, currentBlock));
         currentBlock.addInst(new Malloc(metaWidth, allocPtr, currentBlock));
         currentBlock.addInst(new BitCast(allocPtr, allocBitCast, currentBlock));
         currentBlock.addInst(new Store(allocBitCast, currentNum, currentBlock));
         if (pointTo instanceof IntType && pointTo.size() == 32) {
-            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), result, add, currentBlock));
+            currentBlock.addInst(new GetElementPtr(Root.i32T, allocBitCast, new ConstInt(1, 32),
+                    null, result, currentBlock));
         } else {
-            currentBlock.addInst(new Binary(allocBitCast, new ConstInt(4, 32), allocOffset, add, currentBlock));
+            currentBlock.addInst(new GetElementPtr(Root.i32T, allocBitCast, new ConstInt(1, 32),
+                    null, allocOffset, currentBlock));
             currentBlock.addInst(new BitCast(allocOffset, result, currentBlock));
         }
         if (nowDim < it.exprs().size() - 1){

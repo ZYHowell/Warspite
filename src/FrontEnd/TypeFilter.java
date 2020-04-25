@@ -58,8 +58,10 @@ public class TypeFilter implements ASTVisitor {
         varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), true, false);
         if (param.type().isVoid())
             throw new semanticError("type of a parameter is void", it.pos());
-        if (currentScope instanceof functionScope)
+        if (currentScope instanceof functionScope){
+            it.setEntity(param);
             ((functionScope)currentScope).addParam(param, it.pos());
+        }
         else throw new internalError("type filter visit vardef not a param", it.pos());
     }
 

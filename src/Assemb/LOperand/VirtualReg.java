@@ -16,7 +16,7 @@ public class VirtualReg extends Reg {
 
     @Override
     public String toString() {
-        if (color == null) return name + "(" + hashCode() + ")";
+        if (color == null) return name;
         return color.toString();
     }
 }

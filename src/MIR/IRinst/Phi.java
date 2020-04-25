@@ -50,11 +50,8 @@ public class Phi extends Inst {
         StringBuilder ret = new StringBuilder(dest().toString() + " = phi " + dest().type().toString() + " ");
         for (int i = 0;i < values.size();i++) {
             if (i > 0) ret.append(", ");
-            ret.append("[ ");
-            ret.append(values.get(i).toString());
-            ret.append(", ");
-            ret.append(blocks.get(i).name());
-            ret.append(" ]");
+            ret.append("[ ").append(values.get(i).toString());
+            ret.append(", ").append("%").append(blocks.get(i).name()).append(" ]");
         }
         return ret.toString();
     }

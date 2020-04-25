@@ -87,10 +87,11 @@ public class InstSelection {
     private void genBinaryLIR(Operand src1, Operand src2, Reg dest, Binary.BinaryOpCat op, boolean commutable) {
         LIRBlock block = currentBlock;
         CalCategory opCode = null;
+        boolean noIType = false;
         switch(op) {
-            case mul: opCode = mul;break;
-            case sdiv: opCode = div;break;
-            case srem: opCode = rem;break;
+            case mul: opCode = mul;noIType = true;break;
+            case sdiv: opCode = div;noIType = true;break;
+            case srem: opCode = rem;noIType = true;break;
             case shl: opCode = sll;break;
             case ashr: opCode = sra;break;
             case and: opCode = and;break;
@@ -99,16 +100,21 @@ public class InstSelection {
             case sub: opCode = sub;break;
             case add: opCode = add;break;
         }
-        if (src1 instanceof ConstInt && commutable &&
-                inBounds(((ConstInt)src1).value())){
-            block.addInst(new IType(RegM2L(src2), new Imm(((ConstInt)src1).value()),
-                    opCode, dest, block));
-            return;
-        }
-        else if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value())){
-            block.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
-                    opCode,  dest, block));
-            return;
+        if (!noIType){
+            if (src1 instanceof ConstInt && commutable &&
+                    inBounds(((ConstInt)src1).value())){
+                block.addInst(new IType(RegM2L(src2), new Imm(((ConstInt)src1).value()),
+                        opCode, dest, block));
+                return;
+            }
+            else if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value())){
+                if (opCode != sub)
+                block.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
+                        opCode,  dest, block));
+                else block.addInst(new IType(RegM2L(src1), new Imm(-1 * ((ConstInt)src2).value()),
+                        add,  dest, block));
+                return;
+            }
         }
         block.addInst(new RType(RegM2L(src1), RegM2L(src2), opCode, dest, block));
     }
@@ -274,7 +280,7 @@ public class InstSelection {
         }
         else if (inst instanceof Malloc) {
             block.addInst(new Mv(RegM2L(((Malloc) inst).length()), lRoot.getPhyReg(10), block));
-            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(irRoot.getBuiltinFunction("g_Malloc")), block));
+            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(irRoot.getBuiltinFunction("malloc")), block));
             block.addInst(new Mv(lRoot.getPhyReg(10), RegM2L(inst.dest()), block));
         }
         else if (inst instanceof Move) {

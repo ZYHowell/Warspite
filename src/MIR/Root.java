@@ -93,11 +93,11 @@ public class Root {
         stringNE.addParam(new Param(stringT, "b"));
         stringNE.setSideEffect(false);
         builtinFunctions.put("g_stringNE", stringNE);
-        Function malloc = new Function("g_Malloc");
+        Function malloc = new Function("malloc");
         malloc.setRetType(stringT);
         malloc.addParam(new Param(i32T, "a"));
         malloc.setSideEffect(false);
-        builtinFunctions.put("g_Malloc", malloc);
+        builtinFunctions.put("malloc", malloc);
         Function init = new Function("__init");
         init.setSideEffect(true);
         init.setExitBlock(init.entryBlock());

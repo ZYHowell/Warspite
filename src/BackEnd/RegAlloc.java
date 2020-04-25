@@ -191,7 +191,7 @@ public class RegAlloc {
     private void assignColors() {
         while (!selectStack.isEmpty()) {
             Reg n = selectStack.pop();
-            HashSet<PhyReg> okColors = root.assignableRegs();
+            ArrayList<PhyReg> okColors = root.assignableRegs();
             HashSet<Reg> colored = new HashSet<>(coloredNodes);
             colored.addAll(preColored);
             currentDAG.adjacent(n).forEach(w -> {
@@ -200,7 +200,7 @@ public class RegAlloc {
             if (okColors.isEmpty()) spilledNodes.add(n);
             else {
                 coloredNodes.add(n);
-                n.color = okColors.iterator().next();
+                n.color = okColors.get(0);
             }
         }
         coalescedNodes.forEach(n -> n.color = getAlias(n).color);
@@ -208,10 +208,12 @@ public class RegAlloc {
     private void rewrite() {
         HashSet<Reg> newTemps = new HashSet<>();
         spilledNodes.forEach(v -> {
-            assert v instanceof VirtualReg;
             v.stackOffset = new SLImm(-1 * stackLength - 4); // if stackOffset is 0, it is actually store 4(sp)
             stackLength += 4;
         });
+        currentFn.blocks().forEach(block -> block.instructions().forEach(inst -> {
+            if (inst.dest() != null && inst.dest() instanceof VirtualReg) getAlias(inst.dest());
+        }));
         currentFn.blocks().forEach(block -> {
             for (ListIterator<RISCInst> iter = block.instructions().listIterator(); iter.hasNext();) {
                 RISCInst inst = iter.next();
@@ -233,7 +235,7 @@ public class RegAlloc {
                         }
                         else {
                             if (inst instanceof Mv && ((Mv)inst).origin() == reg && inst.dest().stackOffset == null) {
-                                iter.remove();
+                                iter.remove();  //safe for only one reg
                                 iter.add(new Ld(root.getPhyReg(2), inst.dest(), reg.stackOffset, ((VirtualReg)reg).size(), block));
                             } else {
                                 VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), -1);
@@ -241,6 +243,8 @@ public class RegAlloc {
                                 iter.previous();
                                 iter.add(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
                                 inst.replaceUse(reg, tmp);
+                                iter.next();
+                                newTemps.add(tmp);
                             }
                         }
                     }
@@ -250,12 +254,14 @@ public class RegAlloc {
                     if (inst instanceof Mv && ((Mv) inst).origin() instanceof VirtualReg
                             && ((Mv) inst).origin().stackOffset == null) {
                         iter.remove();
+                        //safe since doing only once, and notice two iterator remove in different condition(origin.sOff==null)
                         iter.add(new St(root.getPhyReg(2), ((Mv) inst).origin(), dest.stackOffset, dest.size(), block));
                     } else {
                         VirtualReg tmp = new VirtualReg(dest.size(), -1);
                         spillIntroduce.add(tmp);
                         inst.replaceDest(dest, tmp);
                         iter.add(new St(root.getPhyReg(2), tmp, dest.stackOffset, dest.size(), block));
+                        newTemps.add(tmp);
                     }
                 }
                 if (addAfter) iter.next();  //jump through the store

@@ -20,3 +20,4 @@ IgnoreLexer.java~
 /test.mx
 /out.s
 /out.ll
+/debug.s

@@ -10,7 +10,7 @@ import MIR.Function;
 
 public class funcDecl extends BaseType {
 
-    private String FuncName;
+    public String FuncName;
     private Type type;
     private funDef defNode;
     private functionScope localScope;

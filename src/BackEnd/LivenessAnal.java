@@ -41,8 +41,10 @@ public class LivenessAnal {
         HashSet<Reg> uses = new HashSet<>();
         HashSet<Reg> defs = new HashSet<>();
         block.instructions().forEach(inst -> {
+            inst.uses().forEach(use -> {
+                if (!defs.contains(use)) uses.add(use);
+            });
             if (inst.dest() != null) defs.add(inst.dest());
-            uses.addAll(inst.uses());
         });
         blockUses.put(block, uses);
         blockDefs.put(block, defs);
@@ -54,8 +56,8 @@ public class LivenessAnal {
         HashSet<Reg> liveOut = new HashSet<>();
         block.successors.forEach(suc -> liveOut.addAll(blockLiveIn.get(suc)));
         HashSet<Reg> liveIn = new HashSet<>(liveOut);
-        liveIn.addAll(blockUses.get(block));
         liveIn.removeAll(blockDefs.get(block));
+        liveIn.addAll(blockUses.get(block));
         blockLiveOut.get(block).addAll(liveOut);
         liveIn.removeAll(blockLiveIn.get(block));
         if (!liveIn.isEmpty()) {
