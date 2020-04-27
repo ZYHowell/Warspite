@@ -2,9 +2,7 @@ package MIR;
 
 import MIR.IRoperand.Param;
 import MIR.IRoperand.Register;
-import MIR.IRtype.ClassType;
 import MIR.IRtype.IRBaseType;
-import MIR.IRtype.Pointer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,7 +10,7 @@ import java.util.HashSet;
 public class Function {
 
     private String name;
-    private Register classPtr;  //this is very ugly! classPtr is better to be param[0]
+    private Param classPtr;  //this is very ugly! classPtr is better to be param[0]
     private IRBaseType retType;
     private ArrayList<Param> parameters = new ArrayList<>();
     private IRBlock entryBlock = new IRBlock("entry"),
@@ -56,10 +54,11 @@ public class Function {
     public IRBaseType retType() {
         return retType;
     }
-    public void setClassPtr(Register classPtr) {
+    public void setClassPtr(Param classPtr) {
         this.classPtr = classPtr;
+        parameters.add(classPtr);
     }
-    public Register getClassPtr() {
+    public Param getClassPtr() {
         return classPtr;
     }
     public void addParam(Param parameter){

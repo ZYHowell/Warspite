@@ -18,14 +18,14 @@ import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        boolean doCodeGen = false, doOptimization = false;//, inTest = false;
+        boolean doCodeGen = true, doOptimization = false;//, inTest = false;
         String name = null;
 
         if (args.length > 0) {
             for (String arg : args) {
                 switch (arg) {
-                    case "-opt": doOptimization = true;
-                    case "-codegen": doCodeGen = true;break;
+                    case "-opt": doOptimization = true;break;
+                    case "-semantic": doCodeGen = false;break;
                     //case "-test": inTest = true;break;
                     default: break;
                 }
@@ -36,7 +36,7 @@ public class Main {
                 }
             }
         }
-        //PrintStream pst = new PrintStream("output.s");
+        PrintStream pst = new PrintStream("output.s");
         PrintStream IRPst = new PrintStream("out.ll");
         if (name == null) name = "test.mx";
         InputStream input = new FileInputStream(name);
@@ -72,7 +72,7 @@ public class Main {
                 LRoot lRoot = new InstSelection(irRoot).run();
                 new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
                 new RegAlloc(lRoot).run();
-                new AsmPrinter(lRoot, System.out).run();
+                new AsmPrinter(lRoot, pst).run();
             }
         } catch (error er) {
             System.err.println(er.toString());

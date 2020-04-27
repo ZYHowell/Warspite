@@ -75,6 +75,9 @@ public class IRBlock {
     public boolean terminated() {
         return terminated;
     }
+    public boolean returnTerminated() {
+        return terminated && terminator() instanceof Return;
+    }
     public void removeTerminator() {
         if (!terminated) return;
         terminated = false;

@@ -1,8 +1,10 @@
 package MIR.IRinst;
 
 import MIR.IRBlock;
+import MIR.IRoperand.Null;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import MIR.IRtype.Pointer;
 import Util.MIRMirror;
 
 import java.util.HashSet;
@@ -31,7 +33,9 @@ public class Store extends Inst{
 
     @Override
     public String toString() {
-        return "store " + value.type().toString() + " " + value.toString() + ", " +
+        String vs = value.type().toString();
+        if (value instanceof Null) vs = ((Pointer)address.type()).pointTo().toString();
+        return "store " + vs + " " + value.toString() + ", " +
                 address.type().toString() + " " + address.toString() +
                 ", align " + value.type().size() / 8;
     }

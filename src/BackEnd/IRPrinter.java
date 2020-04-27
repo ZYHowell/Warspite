@@ -57,12 +57,6 @@ public class IRPrinter {
         StringBuilder ret = new StringBuilder(isBuiltIn ? "declare " : "define ");
         ret.append(fn.retType()).append(" @").append(fn.name()).append("(");
         int size = fn.params().size();
-        if (fn.getClassPtr() != null) {
-            Register classPtr = fn.getClassPtr();
-            classPtr.setName("" + symbolCnt++);
-            ret.append(classPtr.type().toString()).append(" ")
-                    .append(classPtr.toString()).append(size > 0 ? ", " : "");
-        }
         for (int i = 0;i < size;++i) {
             Param param = fn.params().get(i);
             param.setName("" + symbolCnt++);
@@ -99,11 +93,11 @@ public class IRPrinter {
         });
         irRoot.globalVar().forEach(gVar ->
             out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
-                    "zeroinitializer, align " + gVar.type().size() / 8)
+                    " zeroinitializer, align " + gVar.type().size() / 8)
         );
         irRoot.constStrings().forEach((name, constString) -> out.println(
                 "@" + name + " = private unnamed_addr constant "
-                + "[" + (constString.value().length() + 1) + " x i8] c" + "\"" + constString.value() + "\\00\", align 1"));
+                + "[" + constString.value().length() + " x i8] c" + "\"" + constString.irValue() + "\", align 1"));
         irRoot.functions().forEach(this::printFn);
     }
 }

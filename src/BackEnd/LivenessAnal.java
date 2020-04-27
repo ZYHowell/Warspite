@@ -33,7 +33,7 @@ public class LivenessAnal {
         block.instructions().forEach(inst -> {
             if (inst.dest() != null) {
                 inst.dest().moveList.clear();
-                --inst.dest().degree;
+                inst.dest().degree = 0;
             }
         });
     }

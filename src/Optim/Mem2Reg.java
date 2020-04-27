@@ -140,7 +140,7 @@ public class Mem2Reg extends Pass{
                 });
             }
         });
-        replaceMap.forEach((reg, rep) -> ((Register)reg).replaceAllUseWith(rep));
+        replaceMap.forEach((reg, rep) -> ((Register)reg).replaceAllUseWith(finalReplace(replaceMap, rep)));
 
         fn.blocks().forEach(block -> block.instructions().removeIf(inst -> inst instanceof Alloc));
     }

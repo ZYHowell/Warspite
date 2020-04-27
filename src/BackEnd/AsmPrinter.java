@@ -68,8 +68,13 @@ public class AsmPrinter {
         out.println("\t.type\t" + reg.name + ",@object");
         out.println("\t.section\t.rodata");
         out.println(reg.name + ":");
-        out.println("\t.asciz\t\"" + value + "\"");
-        out.println("\t.size\t" + reg.name + ", " + (value.length() + 1) + "\n");
+        String str = value.replace("\\", "\\\\");
+        str = str.replace("\n", "\\n");
+        str = str.replace("\0", "");
+        str = str.replace("\t", "\\t");
+        str = str.replace("\"", "\\\"");
+        out.println("\t.asciz\t\"" + str + "\"");
+        out.println("\t.size\t" + reg.name + ", " + value.length() + "\n");
     }
 
     public void run() {

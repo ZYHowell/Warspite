@@ -13,13 +13,21 @@ public class ConstString extends Operand {
     private String value;
 
     public ConstString(String name, String value) {
-        super(new Pointer(new ArrayType(value.length() + 1, new IntType(8)), true));
+        super(new Pointer(new ArrayType(value.length(), new IntType(8)), true));
         this.name = name;
         this.value = value;
     }
 
     public String value() {
         return value;
+    }
+    public String irValue() {
+        String ret = value.replace("\\", "\\5C");
+        ret = ret.replace("\n", "\\0A");
+        ret = ret.replace("\0", "\\00");
+        ret = ret.replace("\t", "\\09");
+        ret = ret.replace("\"", "\\22");
+        return ret;
     }
 
     @Override

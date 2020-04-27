@@ -50,10 +50,6 @@ public class FunctionInline extends Pass{
         Function callee = inst.callee();
         IRBlock currentBlock = inst.block();
 
-        if (callee.getClassPtr() != null) {
-            mirrorOpr.put(callee.getClassPtr(), inst.params().get(0));
-            inst.params().remove(0);
-        }
         int paramSize = inst.params().size();
         for (int i = 0;i < paramSize;++i) {
             Operand callParam = inst.params().get(i),

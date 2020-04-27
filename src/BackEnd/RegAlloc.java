@@ -278,12 +278,12 @@ public class RegAlloc {
     }
     private void runForFn(LFn fn){
         //makeWorkList
-        new LivenessAnal(root, fn).runForFn();
-        workListMv = fn.workListMv();
-        currentDAG = currentFn.dag();
         spillWorkList.clear();
         freezeWorkList.clear();
         simplifyWorkList.clear();
+        new LivenessAnal(root, fn).runForFn();
+        workListMv = fn.workListMv();
+        currentDAG = currentFn.dag();
         currentDAG.initCollect = false;
         currentDAG.initial().forEach(node -> {
             if (node.degree >= K) spillWorkList.add(node);

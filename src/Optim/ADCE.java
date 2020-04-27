@@ -69,7 +69,6 @@ public class ADCE extends Pass {
         //collect "outer" address of each function
         outerOp.addAll(irRoot.globalVar());
         irRoot.functions().forEach((name, fn) -> {
-            if (fn.getClassPtr() != null) outerOp.add(fn.getClassPtr());
             outerOp.addAll(fn.params());
             fn.setSideEffect(false);
         });
