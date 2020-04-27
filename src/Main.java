@@ -66,11 +66,11 @@ public class Main {
                 new Mem2Reg(irRoot).run();
                 //optim order: inline-(ADCE-SCCP-CFGSimplify)
                 if (doOptimization) new Optimization(irRoot).run();
-                new IRPrinter(false, IRPst).run(irRoot);
+                // new IRPrinter(false, IRPst).run(irRoot);
                 new PhiResolve(irRoot).run();
 
                 LRoot lRoot = new InstSelection(irRoot).run();
-                new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
+                // new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
                 new RegAlloc(lRoot).run();
                 new AsmPrinter(lRoot, pst).run();
             }
