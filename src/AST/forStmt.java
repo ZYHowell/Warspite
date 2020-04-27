@@ -6,7 +6,7 @@ import Util.position;
 public class forStmt extends stmtNode{
     private exprNode condition, incr, init;
     private stmtNode body;
-    private IRBlock condBlock, destBlock;
+    private IRBlock incrBlock, destBlock;
 
     public forStmt(exprNode init, exprNode incr, exprNode condition, stmtNode body, position pos) {
         super(pos);
@@ -28,11 +28,11 @@ public class forStmt extends stmtNode{
     public stmtNode body() {
         return body;
     }
-    public IRBlock condBlock() {
-        return condBlock;
+    public IRBlock incrBlock() {
+        return incrBlock;
     }
-    public void setCondBlock(IRBlock condBlock) {
-        this.condBlock = condBlock;
+    public void setIncrBlock(IRBlock incrBlock) {
+        this.incrBlock = incrBlock;
     }
     public IRBlock destBlock() {
         return destBlock;

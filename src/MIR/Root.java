@@ -163,15 +163,15 @@ public class Root {
             //consider int[][] f(); it returns int**, so not resolvable.
             return tmp;
         }
-        else if (type.isInt()) return new IntType(32);
+        else if (type.isInt()) return Root.i32T;
         else if (type.isBool()) {
-            if (isMemSet) return new IntType(8);
+            if (isMemSet) return Root.charT;
             return new BoolType();
         }
         else if (type.isVoid()) return new VoidType();
         else if (type.isClass()) {
             String name = ((classType)type).name();
-            if (name.equals("string")) return new Pointer(new IntType(8), false);
+            if (name.equals("string")) return Root.stringT;
             else return new Pointer(getType(name), false);
         }
         else if (type.isNull()) return new VoidType();
