@@ -1,0 +1,21 @@
+//test for optim, lost copy problem and swap problem
+int main() {
+    int x, y, i;
+    x = 1;
+    for (i = 0; i < 10; ++i) {
+        y = x;
+        x = x + 1;
+    }
+    printInt(y);
+    //lost copy
+    x = 1;
+    y = 2;
+    int tmp;
+    for (i = 0; i < 2; ++i) {
+        tmp = x;
+        x = y;
+        y = tmp;
+    }
+    printInt(x, y);
+    //swap
+}

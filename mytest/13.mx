@@ -1,0 +1,26 @@
+//this one can be recognized by PRE but not CSE
+int cnt;
+
+int f(int i, int j) {
+    ++cnt;
+    return i * j;
+}
+
+int main() {
+    int i, a, b, c;
+    for (i = 0;i < 100000;++i) {
+        if (i < 100) {
+            a = f(i, 1);
+            b = f(i, 2);
+            c = a + b;
+            printInt(c);
+        } else {
+            a = f(i, 2);
+            b = f(i, 3);
+            c = a + b;
+            printInt(c);
+        }
+        c = a + b;
+        printInt(c);
+    }
+}
