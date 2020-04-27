@@ -1,6 +1,4 @@
 	.text
-	.attribute	4, 16
-	.attribute	5, "rv32i2p0_m2p0"
 	.file	"builtIn.c"
 	.globl	g_print                 # -- Begin function g_print
 	.p2align	2
