@@ -72,7 +72,7 @@ public class Main {
                 LRoot lRoot = new InstSelection(irRoot).run();
                 //new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
                 new RegAlloc(lRoot).run();
-                new AsmPrinter(lRoot, System.out).run();
+                new AsmPrinter(lRoot, pst).run();
             }
         } catch (error er) {
             System.err.println(er.toString());
