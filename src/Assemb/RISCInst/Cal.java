@@ -4,17 +4,18 @@ import Assemb.LFn;
 import Assemb.LIRBlock;
 import Assemb.LOperand.PhyReg;
 import Assemb.LOperand.Reg;
+import Assemb.LRoot;
 
 import java.util.HashSet;
 
 public class Cal extends RISCInst{
     private LFn callee;
-    private PhyReg x6;
+    private LRoot root;
 
-    public Cal(PhyReg x6, LFn callee, LIRBlock block) {
-        super(x6, block);
+    public Cal(LRoot root, LFn callee, LIRBlock block) {
+        super(null, block);
         this.callee = callee;
-        this.x6 = x6;
+        this.root = root;
     }
 
     public LFn callee() {
@@ -24,8 +25,13 @@ public class Cal extends RISCInst{
     @Override
     public HashSet<Reg> uses() {
         HashSet<Reg> ret = new HashSet<>();
-        ret.add(x6);
+        for (int i = 0;i < Integer.min(callee.params().size(), 8);++i)
+            ret.add(root.getPhyReg(10 + i));
         return ret;
+    }
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(root.callerSave());
     }
 
     @Override

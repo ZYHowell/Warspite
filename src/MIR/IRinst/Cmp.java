@@ -81,7 +81,7 @@ public class Cmp extends Inst{
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return true;
     }
 

@@ -10,11 +10,10 @@ public class LFn {
 
     private HashSet<LIRBlock> blocks = new HashSet<>();
     private ArrayList<Reg> params = new ArrayList<>();
-    private LIRBlock entryBlock, exitBlock;
+    public LIRBlock entryBlock, exitBlock;
     public int paramOffset = 0;
+    public int cnt;
     private String name;
-    private DAG dag = new DAG();
-    private HashSet<Mv> workListMv = new HashSet<>();
 
     public LFn(String name, LIRBlock entryBlock, LIRBlock exitBlock) {
         this.entryBlock = entryBlock;
@@ -24,12 +23,6 @@ public class LFn {
 
     public String name() {
         return name;
-    }
-    public DAG dag() {
-        return dag;
-    }
-    public HashSet<Mv> workListMv() {
-        return workListMv;
     }
     public void addPara(Reg para){
         params.add(para);

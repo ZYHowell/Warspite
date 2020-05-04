@@ -82,14 +82,15 @@ public class GetElementPtr extends Inst{
     @Override
     public boolean sameMeaning(Inst inst) {
         if (inst instanceof GetElementPtr) {
-            GetElementPtr instr = (GetElementPtr) inst;
-            return instr.ptr().equals(ptr) && instr.arrayOffset().equals(arrayOffset)
-                    && instr.elementOffset().equals(elementOffset);
+            GetElementPtr gep = (GetElementPtr) inst;
+            return gep.ptr().equals(ptr) && gep.arrayOffset().equals(arrayOffset)
+                    && ((elementOffset == null && gep.elementOffset() == null) ||
+                        (elementOffset != null && elementOffset.equals(gep.elementOffset())));
         } else return false;
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return true;
     }
 }

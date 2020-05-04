@@ -14,9 +14,9 @@ public class SCCP extends Pass {
 
     private Root irRoot;
     private HashMap<Operand, Operand> constMap = new HashMap<>();
-    private HashSet<Operand> uncertainOpr = new HashSet<>();
-    private HashSet<IRBlock> visited;
-    private boolean change;
+    private HashSet<IRBlock> visited = new HashSet<>();
+    private boolean change, changeFn;
+    private Function currentFn;
 
     public SCCP(Root irRoot) {
         super();
@@ -41,8 +41,14 @@ public class SCCP extends Pass {
                 int destValue = 0;
                 switch(inst.opCode()) {
                     case mul: destValue = value1 * value2; break;
-                    case sdiv: destValue = value1 / value2; break;
-                    case srem: destValue = value1 % value2; break;
+                    case sdiv: {
+                        if (value2 == 0) return false;
+                        destValue = value1 / value2; break;
+                    }
+                    case srem: {
+                        if (value2 == 0) return false;
+                        destValue = value1 % value2; break;
+                    }
                     case shl: destValue = value1 << value2;break;
                     case ashr:destValue = value1 >> value2;break;
                     case sub:destValue = value1 - value2;break;
@@ -113,7 +119,7 @@ public class SCCP extends Pass {
             replace = new ConstInt(value, inst.dest().type().size());
         } else {
             assert inst.dest().type() instanceof BoolType;
-            replace = new ConstBool(value == 1);
+            replace = new ConstBool(value != 0);
         }
         inst.dest().replaceAllUseWith(replace);
         return true;
@@ -164,7 +170,7 @@ public class SCCP extends Pass {
 
     private void visit(IRBlock block) {
         visited.add(block);
-        if (block.precursors().size() == 0) {
+        if (block.precursors().size() == 0 && block != currentFn.entryBlock()) {
             block.removeTerminator();   //unreachable block, wait to be removed
             block.addTerminator(new Jump(block, block));
             return;
@@ -175,12 +181,11 @@ public class SCCP extends Pass {
             if (phiCheck(phi)) {
                 iter.remove();
                 phi.removeSelf(false);
-                change = true;
+                changeFn = true;
             }
         }
-        for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
-            Inst inst = iter.next();
-            if (!iter.hasNext() && inst instanceof Branch) {
+        for (Inst inst = block.headInst; inst != null; inst = inst.next) {
+            if (inst == block.tailInst && inst instanceof Branch) {
                 if (isConst(((Branch) inst).condition())) {
                     Operand src = ((Branch) inst).condition();
                     assert src instanceof ConstBool;
@@ -189,31 +194,41 @@ public class SCCP extends Pass {
                         block.addTerminator(new Jump(((Branch) inst).trueDest(), block));
                     else
                         block.addTerminator(new Jump(((Branch) inst).falseDest(), block));
+                    changeFn = true;
                     break;
                 }
             }
             if ((inst instanceof Binary && binaryCheck((Binary) inst)) ||
                 (inst instanceof Cmp && cmpCheck((Cmp) inst)) ||
                 (inst instanceof Zext && zextCheck((Zext) inst))) {
-                iter.remove();
-                inst.removeSelf(false);
+                inst.removeSelf(true);
+                changeFn = true;
             }
         }
 
         block.successors().forEach(suc -> {
-            if (!visited.contains(suc))
-                visit(suc);
+            if (!visited.contains(suc)) visit(suc);
         });
     }
     private void runForFn(Function fn) {
-        visited = new HashSet<>();
-        visit(fn.entryBlock());
+        currentFn = fn;
+        do {
+            visited.clear();
+            changeFn = false;
+            visit(fn.entryBlock());
+            fn.blocks().forEach(block -> {
+                if (block.precursors().size() == 0 && block != currentFn.entryBlock()) {
+                    block.removeTerminator();   //unreachable block, wait to be removed
+                    block.addTerminator(new Jump(block, block));
+                    changeFn = true;
+                }
+            });
+            change = change || changeFn;
+        } while(changeFn);
     }
     @Override
     public boolean run() {
         constMap = new HashMap<>();
-        uncertainOpr.addAll(irRoot.globalVar());
-        irRoot.functions().forEach((name, fn) -> uncertainOpr.addAll(fn.params()));
         change = false;
 
         irRoot.functions().forEach((name, fn) -> runForFn(fn));

@@ -2,6 +2,7 @@ package BackEnd;
 
 import MIR.Function;
 import MIR.IRBlock;
+import MIR.IRinst.Inst;
 import MIR.IRoperand.Param;
 import MIR.IRoperand.Register;
 import MIR.IRtype.Pointer;
@@ -16,25 +17,34 @@ import java.util.Queue;
 public class IRPrinter {
 
     private int symbolCnt, blockCnt;
-    private boolean bNC;
     private ArrayList<IRBlock> visitList = new ArrayList<>();
     private PrintStream out;
+    private boolean rename;
 
-    public IRPrinter(boolean bNC, PrintStream out) {
-        this.bNC = bNC;
+    public IRPrinter(PrintStream out, boolean rename) {
         this.out = out;
+        this.rename = rename;
     }
 
     private void renameBlock(IRBlock block) {
+        if (!rename) return;
         block.phiInst().forEach((reg, phi) -> reg.setName("" + symbolCnt++));
-        block.instructions().forEach(inst -> {
+        for (Inst inst = block.headInst; inst != null; inst = inst.next){
             if (inst.dest() != null) inst.dest().setName("" + symbolCnt++);
-        });
+        }
     }
-    private void printBlock(IRBlock block) {
+    public void printBlock(IRBlock block) {
         out.println(block.name() + ":");
+        out.print(";precursors: ");
+        block.precursors().forEach(pre -> out.print(pre.name() + " "));
+        out.print("\n;successors: ");
+        block.successors().forEach(suc -> out.print(suc.name() + " "));
+        out.print("\n;head: " + block.headInst);
+        out.print("\n;tail: " + block.tailInst);
+        out.print("\n");
         block.phiInst().forEach((reg, phi) -> out.println("\t" + phi.toString()));
-        block.instructions().forEach(inst -> out.println("\t" + inst.toString()));
+        for (Inst inst = block.headInst; inst != null; inst = inst.next)
+            out.println("\t" + inst.toString());
     }
 
     private void collectWithRename(Function fn) {
@@ -43,12 +53,11 @@ public class IRPrinter {
         visitList.add(fn.entryBlock());
         while (!blocks.isEmpty()) {
             IRBlock check = blocks.poll();
-            check.setName("b." + blockCnt++);
+            if (rename) check.setName("b." + blockCnt++);
             check.successors().forEach(block -> {
                 if (block != null && !visitList.contains(block)) {
                     blocks.add(block);
                     visitList.add(block);
-                    if (bNC) fn.blocks().add(block);
                 }
             });
         }
@@ -59,7 +68,7 @@ public class IRPrinter {
         int size = fn.params().size();
         for (int i = 0;i < size;++i) {
             Param param = fn.params().get(i);
-            param.setName("" + symbolCnt++);
+            if (rename) param.setName("" + symbolCnt++);
             ret.append(param.type().toString()).append(" ")
                     .append(param.toString()).append(i == size - 1 ? ")" : ", ");
         }
@@ -74,30 +83,30 @@ public class IRPrinter {
 
         collectWithRename(fn);
 
-        visitList.forEach(this::renameBlock);
+        if (rename) visitList.forEach(this::renameBlock);
         visitList.forEach(this::printBlock);
         out.println("}");
     }
 
     public void run(Root irRoot) {
-        irRoot.builtinFunctions().forEach((name, fn) -> {
-            symbolCnt = 0;
-            out.println(fnHead(fn, true));
-        });
-        irRoot.types().forEach((name, type) -> {
-            out.print("%struct." + name + " = " + "type {");
-            int size = type.members().size();
-            for (int i = 0; i < size;++i) {
-                out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
-            }
-        });
-        irRoot.globalVar().forEach(gVar ->
-            out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
-                    " zeroinitializer, align " + gVar.type().size() / 8)
-        );
-        irRoot.constStrings().forEach((name, constString) -> out.println(
-                "@" + name + " = private unnamed_addr constant "
-                + "[" + constString.value().length() + " x i8] c" + "\"" + constString.irValue() + "\", align 1"));
+//        irRoot.builtinFunctions().forEach((name, fn) -> {
+//            symbolCnt = 0;
+//            out.println(fnHead(fn, true));
+//        });
+//        irRoot.types().forEach((name, type) -> {
+//            out.print("%struct." + name + " = " + "type {");
+//            int size = type.members().size();
+//            for (int i = 0; i < size;++i) {
+//                out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
+//            }
+//        });
+//        irRoot.globalVar().forEach(gVar ->
+//            out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
+//                    " zeroinitializer, align " + gVar.type().size() / 8)
+//        );
+//        irRoot.constStrings().forEach((name, constString) -> out.println(
+//                "@" + name + " = private unnamed_addr constant "
+//                + "[" + constString.value().length() + " x i8] c" + "\"" + constString.irValue() + "\", align 1"));
         irRoot.functions().forEach(this::printFn);
     }
 }

@@ -32,7 +32,7 @@ public class InstSelection {
     private HashMap<Function, LFn> fnMap = new HashMap<>();
     private HashMap<IRBlock, LIRBlock> blockMap = new HashMap<>();
     private HashMap<Operand, Reg> regMap = new HashMap<>();
-    private int cnt;    //to consider: remove this
+    private int cnt;
 
     private LFn currentLFn;
     private LIRBlock currentBlock;
@@ -84,6 +84,17 @@ public class InstSelection {
         return false;
     }
 
+    private boolean canBeImm(Operand src) {
+        return src instanceof ConstInt && inBounds(((ConstInt) src).value());
+    }
+    private int reduction(int n) {
+        int ret = 0;
+        while(n > 1) {
+            if (n % 2 == 0) {n /= 2;++ret;}
+            else return -1;
+        }
+        return ret;
+    }
     private void genBinaryLIR(Operand src1, Operand src2, Reg dest, Binary.BinaryOpCat op, boolean commutable) {
         LIRBlock block = currentBlock;
         CalCategory opCode = null;
@@ -101,19 +112,35 @@ public class InstSelection {
             case add: opCode = add;break;
         }
         if (!noIType){
-            if (src1 instanceof ConstInt && commutable &&
-                    inBounds(((ConstInt)src1).value())){
+            if (commutable && canBeImm(src1)){
                 block.addInst(new IType(RegM2L(src2), new Imm(((ConstInt)src1).value()),
                         opCode, dest, block));
                 return;
             }
-            else if (src2 instanceof ConstInt && inBounds(((ConstInt)src2).value())){
+            else if (canBeImm(src2)){
                 if (opCode != sub)
                 block.addInst(new IType(RegM2L(src1), new Imm(((ConstInt)src2).value()),
                         opCode,  dest, block));
                 else block.addInst(new IType(RegM2L(src1), new Imm(-1 * ((ConstInt)src2).value()),
                         add,  dest, block));
                 return;
+            }
+        } else {
+            if (opCode == mul) {
+                if (canBeImm(src1)) {
+                    int ret = reduction(((ConstInt) src1).value());
+                    if (ret != -1) {
+                        block.addInst(new IType(RegM2L(src2), new Imm(ret), sll, dest, block));
+                        return;
+                    }
+                }
+                else if (canBeImm(src2)) {
+                    int ret = reduction(((ConstInt) src2).value());
+                    if (ret != -1) {
+                        block.addInst(new IType(RegM2L(src1), new Imm(ret), sll, dest, block));
+                        return;
+                    }
+                }
             }
         }
         block.addInst(new RType(RegM2L(src1), RegM2L(src2), opCode, dest, block));
@@ -135,10 +162,7 @@ public class InstSelection {
         else if (inst instanceof BitCast) {
             Reg reg = RegM2L(((BitCast) inst).origin());
             if (reg instanceof GReg) block.addInst(new La((GReg) reg, RegM2L(inst.dest()), block));
-            else {
-                if (regMap.containsKey(inst.dest())) block.addInst(new Mv(reg, regMap.get(inst.dest()), block));
-                else regMap.put(inst.dest(), RegM2L(((BitCast) inst).origin()));
-            }
+            else block.addInst(new Mv(reg, RegM2L(inst.dest()), block));
         }
         else if (inst instanceof Branch) {
             Branch br = (Branch) inst;
@@ -185,6 +209,7 @@ public class InstSelection {
             for (int i = 0;i < Integer.min(8, ca.params().size());++i){
                 Reg reg = RegM2L(ca.params().get(i));
                 if (reg instanceof GReg) block.addInst(new La((GReg) reg, lRoot.getPhyReg(i + 10), block));
+                //actually no need since parameter cannot be global var
                 else block.addInst(new Mv(reg, lRoot.getPhyReg(i + 10), block));
             }
             //store extra params
@@ -197,7 +222,7 @@ public class InstSelection {
             }
             if (paramOff > currentLFn.paramOffset) currentLFn.paramOffset = paramOff;
             //add function call
-            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(ca.callee()), block));
+            block.addInst(new Cal(lRoot, fnMap.get(ca.callee()), block));
             if (inst.dest() != null)
                 block.addInst(new Mv(lRoot.getPhyReg(10), RegM2L(inst.dest()), block));
         }
@@ -237,20 +262,23 @@ public class InstSelection {
         else if (inst instanceof GetElementPtr) {
             GetElementPtr gep = (GetElementPtr) inst;
             //get the array offset(arrOff * typeSize)
-            VirtualReg destMul = new VirtualReg(4, cnt++);
-            Reg destIdx;
+            VirtualReg destMul;
+            Reg destIdx = new VirtualReg(4, cnt++);
             int typeSize = gep.type().size() / 8;
             if (gep.arrayOffset() instanceof ConstInt) {
                 int arrIndex = ((ConstInt) gep.arrayOffset()).value();
                 if (arrIndex != 0) {
-                    destIdx = new VirtualReg(4, cnt++);
                     genBinaryLIR(gep.ptr(), new ConstInt(arrIndex * typeSize, 32), destIdx,
                             Binary.BinaryOpCat.add, true);
-                } else destIdx = RegM2L(gep.ptr());
+                } else {
+                    Reg origin = RegM2L(gep.ptr());
+                    if (origin instanceof GReg) block.addInst(new La((GReg) origin, destIdx, block));
+                    else block.addInst(new Mv(RegM2L(gep.ptr()), destIdx, block));
+                }
             } else {
+                destMul = new VirtualReg(4, cnt++);
                 genBinaryLIR(gep.arrayOffset(), new ConstInt(typeSize, 32), destMul,
                         Binary.BinaryOpCat.mul, true);
-                destIdx = new VirtualReg(4, cnt++);
                 block.addInst(new RType(RegM2L(gep.ptr()), destMul, add, destIdx, block));
             }
             //get the element offset(eleOff)
@@ -269,12 +297,10 @@ public class InstSelection {
                             destPtr, block));
                 }
             }
-            if (destPtr instanceof GReg)
-                block.addInst(new La((GReg)destPtr, RegM2L(gep.dest()), block));
-            else {
-                if (regMap.containsKey(gep.dest())) block.addInst(new Mv(destPtr, regMap.get(gep.dest()), block));
-                else regMap.put(gep.dest(), destPtr);
-            }
+
+            if (regMap.containsKey(gep.dest()))
+                block.addInst(new Mv(destPtr, regMap.get(gep.dest()), block));
+            else regMap.put(gep.dest(), destPtr);   //this is good since destPtr must be a useless temp
         }
         else if (inst instanceof Jump) {
             block.addInst(new Jp(blockMap.get(((Jump) inst).destBlock()), block));
@@ -286,7 +312,7 @@ public class InstSelection {
         }
         else if (inst instanceof Malloc) {
             block.addInst(new Mv(RegM2L(((Malloc) inst).length()), lRoot.getPhyReg(10), block));
-            block.addInst(new Cal(lRoot.getPhyReg(6), fnMap.get(irRoot.getBuiltinFunction("malloc")), block));
+            block.addInst(new Cal(lRoot, fnMap.get(irRoot.getBuiltinFunction("malloc")), block));
             block.addInst(new Mv(lRoot.getPhyReg(10), RegM2L(inst.dest()), block));
         }
         else if (inst instanceof Move) {
@@ -302,7 +328,7 @@ public class InstSelection {
             if (value != null) {
                 Reg reg = RegM2L(value);
                 if (reg instanceof GReg) block.addInst(new La((GReg)reg, lRoot.getPhyReg(10), block));
-                else block.addInst(new Mv(RegM2L(value), lRoot.getPhyReg(10), block));
+                else block.addInst(new Mv(reg, lRoot.getPhyReg(10), block));
             }
             // block.addInst(new Ret(block));
         }
@@ -323,16 +349,13 @@ public class InstSelection {
         else if (inst instanceof Zext) {
             Reg reg = RegM2L(((Zext)inst).origin());
             if (reg instanceof GReg) block.addInst(new La((GReg) reg, RegM2L(inst.dest()), block));
-            else {
-                if (regMap.containsKey(inst.dest())) block.addInst(new Mv(reg, regMap.get(inst.dest()), block));
-                else regMap.put(inst.dest(), RegM2L(((Zext)inst).origin()));
-            }
+            else block.addInst(new Mv(reg, RegM2L(inst.dest()), block));
         }
     }
 
     private void copyBlock(IRBlock origin, LIRBlock block) {
         currentBlock = block;
-        origin.instructions().forEach(this::genLIR);
+        for(Inst inst = origin.headInst; inst != null; inst = inst.next) genLIR(inst);
         origin.successors().forEach(suc -> {
             block.successors.add(blockMap.get(suc));
             blockMap.get(suc).precursors.add(block);
@@ -367,17 +390,20 @@ public class InstSelection {
                     new SLImm(paraOffset), fn.params().get(i).type().size() / 8, entryBlock));
             paraOffset += fn.params().get(i).type().size() / 8;
         }
+
         fn.blocks().forEach(block -> {
             LIRBlock lBlock = blockMap.get(block);
             copyBlock(block, lBlock);
             lFn.addBlock(lBlock);
         });
+
         for (int i = 0;i < lRoot.calleeSave().size();++i)
-            exitBlock.addInst(new Mv(calleeSaveMap.get(i), lRoot.calleeSave().get(i), entryBlock));
+            exitBlock.addInst(new Mv(calleeSaveMap.get(i), lRoot.calleeSave().get(i), exitBlock));
         exitBlock.addInst(new Mv(map, lRoot.getPhyReg(1), exitBlock));
         exitBlock.addInst(new IType(lRoot.getPhyReg(2), new SLImm(0), add,
                 lRoot.getPhyReg(2), exitBlock));
-        exitBlock.addInst(new Ret(exitBlock));
+        exitBlock.addInst(new Ret(lRoot, exitBlock));
+        lFn.cnt = cnt;
     }
     public LRoot run() {
         irRoot.builtinFunctions().forEach((name, fn) -> {

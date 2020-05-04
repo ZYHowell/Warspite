@@ -17,9 +17,16 @@ public class Jp extends RISCInst{
     public LIRBlock destBlock() {
         return destBlock;
     }
+    public void replaceDest(LIRBlock origin, LIRBlock dest) {
+        if (destBlock == origin) destBlock = dest;
+    }
 
     @Override
     public HashSet<Reg> uses() {
+        return new HashSet<>();
+    }
+    @Override
+    public HashSet<Reg> defs() {
         return new HashSet<>();
     }
 

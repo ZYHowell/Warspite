@@ -32,7 +32,7 @@ public class ConstString extends Operand {
 
     @Override
     public HashSet<Inst> uses() {
-        return null;
+        return new HashSet<>();
     }
 
     @Override public void addUse(Inst inst) {}

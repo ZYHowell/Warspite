@@ -6,6 +6,7 @@ import Assemb.LOperand.Imm;
 import Assemb.LOperand.Reg;
 import Assemb.LOperand.SLImm;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Ld extends RISCInst {
@@ -29,7 +30,10 @@ public class Ld extends RISCInst {
         if (!(address instanceof GReg)) ret.add(address);
         return ret;
     }
-
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(Collections.singletonList(dest()));
+    }
     @Override
     public void replaceUse(Reg origin, Reg replaced) {
         if (address == origin) address = replaced;

@@ -15,7 +15,7 @@ public class Root {
 
     private HashMap<String, Function> builtinFunctions = new HashMap<>();
     private HashMap<String, Function> functions = new HashMap<>();
-    private HashMap<String, ConstString> ConstStrings = new HashMap<>();
+    private HashMap<String, ConstString> ConstStrings = new HashMap<>(), stringValueMap = new HashMap<>();
     private ArrayList<GlobalReg> globalVar = new ArrayList<>();
     private HashMap<String, ClassType> types = new HashMap<>();
     public static IRBaseType stringT = new Pointer(new IntType(8), false),
@@ -141,11 +141,17 @@ public class Root {
         return globalVar;
     }
     public void addConstString(String name, String value) {
-        if (!ConstStrings.containsKey(name))
-            ConstStrings.put(name, new ConstString(name, value));
+        if (!ConstStrings.containsKey(name)){
+            ConstString str = new ConstString(name, value);
+            ConstStrings.put(name, str);
+            stringValueMap.put(value, str);
+        }
     }
-    public ConstString getConstString(String value) {
-        return ConstStrings.get(value);
+    public ConstString getStringByValue(String value) {
+        return stringValueMap.getOrDefault(value, null);
+    }
+    public ConstString getConstString(String name) {
+        return ConstStrings.get(name);
     }
     public HashMap<String, ConstString> constStrings() {
         return ConstStrings;

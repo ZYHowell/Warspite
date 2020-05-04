@@ -4,6 +4,7 @@ import Assemb.LIRBlock;
 import Assemb.LOperand.GReg;
 import Assemb.LOperand.Reg;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Mv extends RISCInst{
@@ -26,6 +27,11 @@ public class Mv extends RISCInst{
     }
 
     @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(Collections.singletonList(dest()));
+    }
+
+    @Override
     public void replaceUse(Reg origin, Reg replaced) {
         if (this.origin == origin) this.origin = replaced;
     }
@@ -35,6 +41,6 @@ public class Mv extends RISCInst{
 
     @Override
     public String toString() {
-        return "addi " + dest() + ", " + origin + ", 0";
+        return "mv " + dest() + ", " + origin;
     }
 }

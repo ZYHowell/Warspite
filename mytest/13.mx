@@ -3,6 +3,7 @@ int cnt;
 
 int f(int i, int j) {
     ++cnt;
+    if (cnt % 2 == 0) return f(i, j);
     return i * j;
 }
 

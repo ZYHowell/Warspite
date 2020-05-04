@@ -20,7 +20,7 @@ public class ConstBool extends Operand{
 
     @Override
     public HashSet<Inst> uses() {
-        return null;
+        return new HashSet<>();
     }
 
     @Override

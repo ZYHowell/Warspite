@@ -1,5 +1,6 @@
 import AST.rootNode;
 import Assemb.LRoot;
+import Assemb.RISCInst.RISCInst;
 import BackEnd.*;
 import FrontEnd.*;
 import Optim.*;
@@ -18,13 +19,13 @@ import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        boolean doCodeGen = true, doOptimization = false;//, inTest = false;
+        boolean doCodeGen = true, doOptimization = true;//, inTest = false;
         String name = null;
 
         if (args.length > 0) {
             for (String arg : args) {
                 switch (arg) {
-                    case "-opt": doOptimization = true;break;
+                    case "-O0": doOptimization = false;break;
                     case "-semantic": doCodeGen = false;break;
                     //case "-test": inTest = true;break;
                     default: break;
@@ -37,6 +38,7 @@ public class Main {
             }
         }
         PrintStream pst = new PrintStream("output.s");
+        //to consider: notice this in committing, and remember to implement the jump replacement after reg alloc
         PrintStream IRPst = new PrintStream("out.ll");
         if (name == null) name = "test.mx";
         InputStream input = new FileInputStream(name);
@@ -62,17 +64,16 @@ public class Main {
 
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
-                //new IRPrinter(false, IRPst).run(irRoot);
                 new Mem2Reg(irRoot).run();
-                //optim order: inline-(ADCE-SCCP-CFGSimplify)
+                //to consider:check optimizations
                 if (doOptimization) new Optimization(irRoot).run();
-                //new IRPrinter(false, IRPst).run(irRoot);
+                new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
                 new PhiResolve(irRoot).run();
 
                 LRoot lRoot = new InstSelection(irRoot).run();
-                //new AsmPrinter(lRoot, new PrintStream("debug.s")).run();
+                //new AsmPrinter(lRoot, new PrintStream("debug.s"), false).run();
                 new RegAlloc(lRoot).run();
-                new AsmPrinter(lRoot, pst).run();
+                new AsmPrinter(lRoot, System.out, true).run();
             }
         } catch (error er) {
             System.err.println(er.toString());

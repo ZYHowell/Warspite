@@ -44,9 +44,10 @@ public class CFGSimplification extends Pass {
     }
     private boolean removeBB(Function fn) {
         HashSet<IRBlock> removedCollection = new HashSet<>();
-        boolean newChange;
+        boolean newChange, changed = false;
         do {
             newChange = false;
+            removedCollection.clear();
             for (IRBlock block : fn.blocks()) {
                 if (!block.terminated()) {
                     newChange = true;
@@ -64,35 +65,35 @@ public class CFGSimplification extends Pass {
                             block.addTerminator(new Jump(((Branch) terminator).trueDest(), block));
                         else
                             block.addTerminator(new Jump(((Branch) terminator).falseDest(), block));
-                    } else if (((Branch) terminator).trueDest() ==
-                               ((Branch) terminator).falseDest()) {
+                    } else if (((Branch) terminator).trueDest() == ((Branch) terminator).falseDest()) {
                         block.removeTerminator();
                         block.addTerminator(new Jump(((Branch) terminator).trueDest(), block));
                     }
                 }
-                if (canRemove(block)) {
+                if (canRemove(block) && block != fn.entryBlock()) {
                     newChange = true;
                     removedCollection.add(block);
                     block.removeTerminator();
                 }
             }
+            fn.blocks().removeAll(removedCollection);
+            changed = changed || newChange;
         } while(newChange);
-        fn.blocks().removeAll(removedCollection);
-        return !removedCollection.isEmpty();
+        return changed;
     }
-    private boolean mergeBB_1(Function fn) {
-        HashSet<IRBlock> mergeSet = new HashSet<>();
-        fn.blocks().forEach(block -> {
-            if (block.instructions().size() == 1 && block.terminator() instanceof Jump)
-                mergeSet.add(block);
-        });
-        mergeSet.forEach(merged -> {
-            IRBlock jumpDest = ((Jump) merged.terminator()).destBlock();
-            jumpDest.mergeEmptyBlock(merged);
-        });
-        fn.blocks().removeAll(mergeSet);
-        return !mergeSet.isEmpty();
-    }
+//    private boolean mergeBB_1(Function fn) {
+//        HashSet<IRBlock> mergeSet = new HashSet<>();
+//        fn.blocks().forEach(block -> {
+//            if (block.instructions().size() == 1 && block.terminator() instanceof Jump)
+//                mergeSet.add(block);
+//        });
+//        mergeSet.forEach(merged -> {
+//            IRBlock jumpDest = ((Jump) merged.terminator()).destBlock();
+//            jumpDest.mergeEmptyBlock(merged);
+//        });
+//        fn.blocks().removeAll(mergeSet);
+//        return !mergeSet.isEmpty();
+//    }
     private boolean mergeBB_2(Function fn) {    //T1 trans, or called straightening
         HashSet<IRBlock> mergeSet = new HashSet<>();
         fn.blocks().forEach(block -> {
@@ -103,21 +104,22 @@ public class CFGSimplification extends Pass {
             IRBlock pre = block.precursors().get(0);
             pre.removeTerminator();
             pre.mergeBlock(block);
+            if (fn.exitBlock() == block) fn.setExitBlock(pre);
         });
         fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
     }
-    private void InstModify(Function fn) {
-        //modify instructions. hard to judge
-        //to consider: add this?
-    }
+//    private void InstModify(Function fn) {
+//        //modify instructions. hard to judge
+//        //to consider: add this?
+//    }
 
     private void simplify(Function fn) {
         boolean newChange;
         boolean changed = false;
         do {
             newChange = removeBB(fn);
-            newChange = mergeBB_1(fn) || newChange;
+            //newChange = mergeBB_1(fn) || newChange;
             newChange = mergeBB_2(fn) || newChange;
             if (newChange) {
                 change = true;

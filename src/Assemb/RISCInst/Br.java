@@ -24,6 +24,9 @@ public class Br extends RISCInst{
     public LIRBlock destBlock() {
         return destBlock;
     }
+    public void replaceDest(LIRBlock origin, LIRBlock dest) {
+        if (destBlock == origin) destBlock = dest;
+    }
     public BrCategory opCode() {
          return opCode;
     }
@@ -34,6 +37,10 @@ public class Br extends RISCInst{
         ret.add(src1);
         ret.add(src2);
         return ret;
+    }
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>();
     }
 
     @Override

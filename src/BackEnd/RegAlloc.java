@@ -1,25 +1,34 @@
 package BackEnd;
 
 import Assemb.*;
-import Assemb.LOperand.PhyReg;
-import Assemb.LOperand.Reg;
-import Assemb.LOperand.SLImm;
-import Assemb.LOperand.VirtualReg;
-import Assemb.RISCInst.Ld;
-import Assemb.RISCInst.Mv;
-import Assemb.RISCInst.RISCInst;
-import Assemb.RISCInst.St;
+import Assemb.LOperand.*;
+import Assemb.RISCInst.*;
+import Util.error.internalError;
+import Util.position;
 
 import java.util.*;
 
 public class RegAlloc {
+    private static class edge {
+        Reg u, v;
+        public edge(Reg u, Reg v){
+            this.u = u;
+            this.v = v;
+        }
+        @Override
+        public boolean equals(Object o) {
+            return (o instanceof edge && ((edge)o).u == u && ((edge)o).v == v);
+        }
+        @Override
+        public int hashCode() {
+            return u.toString().hashCode() ^ v.toString().hashCode();
+        }
+    }
 
-    private static int K = 28;
     private HashSet<Reg> preColored;
     private LRoot root;
-    private DAG currentDAG;
     private LFn currentFn;
-    private HashSet<Mv> workListMv,
+    private HashSet<Mv> workListMoves = new HashSet<>(),
                         activeMoves = new HashSet<>(),
                         coalescedMoves = new HashSet<>(),
                         constrainedMoves = new HashSet<>(),
@@ -30,30 +39,123 @@ public class RegAlloc {
                          spilledNodes = new HashSet<>(),
                          coloredNodes = new HashSet<>(),
                          coalescedNodes = new HashSet<>(),
-                         spillIntroduce = new HashSet<>();
+                         spillIntroduce = new HashSet<>(),
+                         initial = new HashSet<>();
+    private HashSet<edge> adjSet = new HashSet<>();
     private Stack<Reg> selectStack = new Stack<>();
     private int stackLength = 0;
+    private int K;
+
+    private static int inf = 1147483640;
 
     public RegAlloc(LRoot root) {
         this.root = root;
         preColored = new HashSet<>(root.phyRegs());
+        K = root.assignableRegs().size();
     }
 
+    private void useDefCollect(LFn fn) {
+        fn.blocks().forEach(block ->{
+            double weight = Math.pow(10, block.loopDepth);
+            for (RISCInst inst = block.head; inst != null; inst = inst.next) {
+                inst.uses().forEach(reg -> reg.weight += weight);
+                if (inst.dest() != null) inst.dest().weight += weight;
+            }
+        });
+    }
+
+    private void init() {
+        initial.clear();
+        simplifyWorkList.clear();
+        freezeWorkList.clear();
+        spillWorkList.clear();
+        spilledNodes.clear();
+        coalescedNodes.clear();
+        coloredNodes.clear();
+        selectStack.clear();
+
+        coalescedMoves.clear();
+        constrainedMoves.clear();
+        frozenMoves.clear();
+        activeMoves.clear();
+        workListMoves.clear();
+
+        adjSet.clear();
+        currentFn.blocks().forEach(block -> {
+            for (RISCInst inst = block.head; inst != null; inst = inst.next){
+                initial.addAll(inst.defs());
+                initial.addAll(inst.defs());
+            }
+        });
+        initial.removeAll(preColored);
+        initial.forEach(reg -> {
+            reg.weight = 0;
+            reg.alias = null;
+            reg.color = null;
+            reg.degree = 0;
+            reg.adjList.clear();
+            reg.moveList.clear();
+        });
+
+        preColored.forEach(reg -> {
+            reg.degree = inf;
+            reg.color = (PhyReg)reg;
+            reg.alias = null;
+            reg.adjList.clear();
+            reg.moveList.clear();
+        });
+        useDefCollect(currentFn);
+    }
+    private void build() {
+        currentFn.blocks().forEach(block -> {
+            HashSet<Reg> currentLive = new HashSet<>(block.liveOut);
+            for (RISCInst inst = block.tail; inst != null; inst = inst.previous) {
+                if (inst instanceof Mv) {
+                    currentLive.removeAll(inst.uses());
+                    HashSet<Reg> mvAbout = inst.uses();
+                    mvAbout.addAll(inst.defs());   //def of move is only the inst.dest()
+                    for (Reg reg : mvAbout) reg.moveList.add((Mv) inst);
+                    workListMoves.add((Mv) inst);
+                }
+                HashSet<Reg> defs = inst.defs();
+                currentLive.add(root.getPhyReg(0));
+                currentLive.addAll(defs);
+                defs.forEach(def -> currentLive.forEach(reg -> addEdge(reg, def)));
+
+                currentLive.removeAll(defs);
+                currentLive.addAll(inst.uses());
+            }
+        });
+    }
+
+    private void addEdge(Reg u, Reg v) {
+        if (u != v && !adjSet.contains(new edge(u, v))){
+            adjSet.add(new edge(u, v));
+            adjSet.add(new edge(v, u));
+            if (!(preColored.contains(u))) {
+                u.adjList.add(v);
+                ++u.degree;
+            }
+            if (!(preColored.contains(v))) {
+                v.adjList.add(u);
+                ++v.degree;
+            }
+        }
+    }
     private HashSet<Reg> adjacent(Reg n) {
-        HashSet<Reg> ret = currentDAG.adjacent(n);
+        HashSet<Reg> ret = new HashSet<>(n.adjList);
         ret.removeAll(selectStack);
         ret.removeAll(coalescedNodes);
         return ret;
     }
-    private HashSet<Reg> adjacent(Reg a, Reg b) {
-        HashSet<Reg> ret = currentDAG.adjacent(a);
-        ret.addAll(currentDAG.adjacent(b));
-        ret.removeAll(selectStack);
-        ret.removeAll(coalescedNodes);
+    private HashSet<Reg> adjacent(Reg u, Reg v) {
+        HashSet<Reg> ret = new HashSet<>(adjacent(u));
+        ret.addAll(adjacent(v));
         return ret;
     }
+
     private HashSet<Mv> nodeMoves(Reg n) {
-        HashSet<Mv> ret = new HashSet<>(workListMv);
+        HashSet<Mv> ret = new HashSet<>(workListMoves);
         ret.addAll(activeMoves);
         ret.retainAll(n.moveList);
         return ret;
@@ -61,11 +163,17 @@ public class RegAlloc {
     private boolean moveRelated(Reg n) {
         return !nodeMoves(n).isEmpty();
     }
+    private void simplify() {
+        Reg node = simplifyWorkList.iterator().next();
+        simplifyWorkList.remove(node);
+        selectStack.push(node);
+        adjacent(node).forEach(this::decrementDegree);
+    }
     private void decrementDegree(Reg m) {
         int d = m.degree;
-        --m.degree;
+        m.degree--;
         if (d == K) {
-            HashSet<Reg> nodes = adjacent(m);
+            HashSet<Reg> nodes = new HashSet<>(adjacent(m));
             nodes.add(m);
             enableMoves(nodes);
             spillWorkList.remove(m);
@@ -78,9 +186,38 @@ public class RegAlloc {
         nodes.forEach(node -> nodeMoves(node).forEach(move -> {
             if (activeMoves.contains(move)) {
                 activeMoves.remove(move);
-                workListMv.add(move);
+                workListMoves.add(move);
             }
         }));
+    }
+    private void coalesce() {
+        Mv move = workListMoves.iterator().next();
+        Reg x, y, u, v;
+        x = getAlias(move.dest());
+        y = getAlias(move.origin());
+        if (preColored.contains(y)) {
+            u = y;
+            v = x;
+        }else {
+            u = x;
+            v = y;
+        }
+        workListMoves.remove(move);
+        if (u == v) {
+            coalescedMoves.add(move);
+            addWorkList(u);
+        } else if (preColored.contains(v) || adjSet.contains(new edge(u, v))) {
+            constrainedMoves.add(move);
+            addWorkList(u);
+            addWorkList(v);
+        } else {
+            if ((preColored.contains(u) && checkOK(u, v)) ||
+                (!preColored.contains(u) && conservative(adjacent(u, v)))) {
+                coalescedMoves.add(move);
+                combine(u, v);
+                addWorkList(u);
+            } else activeMoves.add(move);
+        }
     }
     private void addWorkList(Reg node) {
         if (!preColored.contains(node) && !moveRelated(node) && node.degree < K) {
@@ -88,18 +225,27 @@ public class RegAlloc {
             simplifyWorkList.add(node);
         }
     }
-    private boolean ok(Reg a, Reg b) {
-        return a.degree < K || preColored.contains(a) || currentDAG.connected(a, b);
+    private boolean ok(Reg t, Reg r) {
+        return t.degree < K || preColored.contains(t) || adjSet.contains(new edge(t, r));
     }
     private boolean checkOK(Reg u, Reg v) {
-        for (Reg t : adjacent(v)) if (!ok(t, u)) return false;
-        return true;
+        boolean ret = true;
+        for (Reg t : adjacent(v)) ret &= ok(t, u);
+        return ret;
     }
     private boolean conservative(HashSet<Reg> nodes) {
-        return (int) nodes.stream().filter(n -> n.degree >= K).count() < K;
+        int count = 0;
+        for (Reg node : nodes) {
+            if (node.degree >= K) ++count;
+        }
+        return count < K;
     }
     private Reg getAlias(Reg n) {
-        if (coalescedNodes.contains(n)) return getAlias(n.alias);
+        if (coalescedNodes.contains(n)) {
+            Reg alias = getAlias(n.alias);
+            n.alias = alias;
+            return alias;
+        }
         else return n;
     }
     private void combine(Reg u, Reg v) {
@@ -108,9 +254,10 @@ public class RegAlloc {
         coalescedNodes.add(v);
         v.alias = u;
         u.moveList.addAll(v.moveList);
-        enableMoves(new HashSet<>(Collections.singletonList(v)));
+        HashSet<Reg> tmp = new HashSet<>();tmp.add(v);
+        enableMoves(tmp);
         adjacent(v).forEach(t -> {
-            currentDAG.addEdge(t, u);
+            addEdge(t, u);
             decrementDegree(t);
         });
         if (u.degree >= K && freezeWorkList.contains(u)) {
@@ -125,45 +272,11 @@ public class RegAlloc {
             else v = getAlias(y);
             activeMoves.remove(mv);
             frozenMoves.add(mv);
-            if (freezeWorkList.contains(v) && nodeMoves(v).isEmpty()) {
+            if (v.degree < K && nodeMoves(v).isEmpty()) {
                 freezeWorkList.remove(v);
                 simplifyWorkList.add(v);
             }
         });
-    }
-
-    private void simplify() {
-        Reg node = simplifyWorkList.iterator().next();
-        simplifyWorkList.remove(node);
-        selectStack.push(node);
-        adjacent(node).forEach(this::decrementDegree);
-    }
-    private void coalesce() {
-        Mv move = workListMv.iterator().next();
-        Reg x, y, u, v;
-        x = getAlias(move.dest());
-        y = getAlias(move.origin());
-        if (preColored.contains(y)) {
-            u = y;
-            v = x;
-        }else {
-            u = x;
-            v = y;
-        }
-        workListMv.remove(move);
-        if (u == v) {
-            coalescedMoves.add(move);
-            addWorkList(u);
-        } else if (preColored.contains(v) || currentDAG.connected(u, v)) {
-            constrainedMoves.add(move);
-            addWorkList(u);
-            addWorkList(v);
-        } else if ((preColored.contains(u) && checkOK(u, v)) ||
-                   (!preColored.contains(u) && conservative(adjacent(u,v)))) {
-            coalescedMoves.add(move);
-            combine(u, v);
-            addWorkList(u);
-        } else activeMoves.add(move);
     }
     private void freeze() {
         Reg u = freezeWorkList.iterator().next();
@@ -172,15 +285,22 @@ public class RegAlloc {
         freezeMoves(u);
     }
     private Reg getSpill() {
-        int min = -1;
-        Reg ret = null;
-        for (Reg reg : spillWorkList) {
-            if ((min == -1 || reg.weight / reg.degree < min) && !spillIntroduce.contains(reg)) {
-                ret = reg;
-                min = reg.weight / reg.degree;
+        Reg min = null;
+        double minCost = 0;
+        Iterator<Reg> iter = spillWorkList.iterator();
+        while(iter.hasNext()) {
+            min = iter.next();
+            minCost = min.weight / min.degree;
+            if (!spillIntroduce.contains(min)) break;
+        }
+        while(iter.hasNext()) {
+            Reg reg = iter.next();
+            if (!spillIntroduce.contains(reg) && (reg.weight / reg.degree < minCost)) {
+                min = reg;
+                minCost = reg.weight / reg.degree;
             }
         }
-        return ret;
+        return min;
     }
     private void selectSpill() {
         Reg m = getSpill();
@@ -191,10 +311,10 @@ public class RegAlloc {
     private void assignColors() {
         while (!selectStack.isEmpty()) {
             Reg n = selectStack.pop();
-            ArrayList<PhyReg> okColors = root.assignableRegs();
+            ArrayList<PhyReg> okColors = new ArrayList<>(root.assignableRegs());
             HashSet<Reg> colored = new HashSet<>(coloredNodes);
             colored.addAll(preColored);
-            currentDAG.adjacent(n).forEach(w -> {
+            n.adjList.forEach(w -> {
                 if (colored.contains(getAlias(w))) okColors.remove(getAlias(w).color);
             });
             if (okColors.isEmpty()) spilledNodes.add(n);
@@ -211,122 +331,159 @@ public class RegAlloc {
             v.stackOffset = new SLImm(-1 * stackLength - 4); // if stackOffset is 0, it is actually store 4(sp)
             stackLength += 4;
         });
-        currentFn.blocks().forEach(block -> block.instructions().forEach(inst -> {
-            if (inst.dest() != null && inst.dest() instanceof VirtualReg) getAlias(inst.dest());
-        }));
         currentFn.blocks().forEach(block -> {
-            for (ListIterator<RISCInst> iter = block.instructions().listIterator(); iter.hasNext();) {
-                RISCInst inst = iter.next();
-                boolean addAfter = false;
+            for (RISCInst inst = block.head; inst != null; inst = inst.next)
+                if (inst.dest() != null && inst.dest() instanceof VirtualReg)
+                    getAlias(inst.dest());
+        });
+        currentFn.blocks().forEach(block -> {
+            for (RISCInst inst = block.head; inst != null; inst = inst.next) {
                 for (Reg reg : inst.uses()) {
                     if (reg.stackOffset != null) {
-                        if (inst.dest() == reg) {
-                            VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), -1);
+                        if (inst.defs().contains(reg)) {
+                            VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), ++currentFn.cnt);
                             spillIntroduce.add(tmp);
                             inst.replaceUse(reg, tmp);
                             inst.replaceDest(reg, tmp);
-                            iter.previous();
-                            iter.add(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
-                            iter.next();
-                            iter.add(new St(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
-                            iter.previous();    //go back to the inst, now ld->inst -(iter)-> st
-                            addAfter = true;
+                            inst.addPre(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
+                            inst.addPost(new St(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
                             newTemps.add(tmp);
                         }
                         else {
-                            if (inst instanceof Mv && ((Mv)inst).origin() == reg && inst.dest().stackOffset == null) {
-                                iter.remove();  //safe for only one reg
-                                iter.add(new Ld(root.getPhyReg(2), inst.dest(), reg.stackOffset, ((VirtualReg)reg).size(), block));
+                            if (inst instanceof Mv && ((Mv)inst).origin() == reg && inst.dest().stackOffset == null) {//safe for only one reg
+                                RISCInst replace = new Ld(root.getPhyReg(2), inst.dest(), reg.stackOffset, ((VirtualReg)reg).size(), block);
+                                inst.replaceBy(replace);
+                                inst = replace;
                             } else {
-                                VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), -1);
+                                VirtualReg tmp = new VirtualReg(((VirtualReg) reg).size(), ++currentFn.cnt);
                                 spillIntroduce.add(tmp);
-                                iter.previous();
-                                iter.add(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
+                                inst.addPre(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
                                 inst.replaceUse(reg, tmp);
-                                iter.next();
                                 newTemps.add(tmp);
                             }
                         }
                     }
                 }
-                if (inst.dest() != null && inst.dest().stackOffset != null && !inst.uses().contains(inst.dest())) {
-                    VirtualReg dest = (VirtualReg)inst.dest();
-                    if (inst instanceof Mv && ((Mv) inst).origin() instanceof VirtualReg
-                            && ((Mv) inst).origin().stackOffset == null) {
-                        iter.remove();
-                        //safe since doing only once, and notice two iterator remove in different condition(origin.sOff==null)
-                        iter.add(new St(root.getPhyReg(2), ((Mv) inst).origin(), dest.stackOffset, dest.size(), block));
-                    } else {
-                        VirtualReg tmp = new VirtualReg(dest.size(), -1);
-                        spillIntroduce.add(tmp);
-                        inst.replaceDest(dest, tmp);
-                        iter.add(new St(root.getPhyReg(2), tmp, dest.stackOffset, dest.size(), block));
-                        newTemps.add(tmp);
+                for (Reg def : inst.defs()) {
+                    if (def.stackOffset != null) {
+                        if (!inst.uses().contains(def)) {
+                            if (inst instanceof Mv && ((Mv) inst).origin().stackOffset == null){
+                                RISCInst replace = new St(root.getPhyReg(2), ((Mv) inst).origin(), def.stackOffset, ((VirtualReg)def).size(), block);
+                                inst.replaceBy(replace);
+                                inst = replace;
+                            }
+                            else {
+                                VirtualReg tmp = new VirtualReg(((VirtualReg)def).size(), ++currentFn.cnt);
+                                spillIntroduce.add(tmp);
+                                inst.replaceDest(def, tmp);
+                                inst.addPost(new St(root.getPhyReg(2), tmp, def.stackOffset, ((VirtualReg)def).size(), block));
+                                newTemps.add(tmp);
+                            }
+                        }
                     }
                 }
-                if (addAfter) iter.next();  //jump through the store
             }
         });
         spillIntroduce.addAll(newTemps);
-        spilledNodes.clear();
-        currentDAG.initial().clear();
-        currentDAG.initial().addAll(coloredNodes);
-        currentDAG.initial().addAll(coalescedNodes);
-        currentDAG.initial().addAll(newTemps);
-        coloredNodes.clear();
-        coalescedNodes.clear();
+        initial.addAll(coloredNodes);
+        initial.addAll(coalescedNodes);
+        initial.addAll(newTemps);
     }
     private void runForFn(LFn fn){
         //makeWorkList
-        spillWorkList.clear();
-        freezeWorkList.clear();
-        simplifyWorkList.clear();
-        new LivenessAnal(root, fn).runForFn();
-        workListMv = fn.workListMv();
-        currentDAG = currentFn.dag();
-        currentDAG.initCollect = false;
-        currentDAG.initial().forEach(node -> {
-            if (node.degree >= K) spillWorkList.add(node);
-            else if (moveRelated(node)) freezeWorkList.add(node);
-            else simplifyWorkList.add(node);
-        });
-        //do simplify&spill
+        boolean done;
         do{
-            if (!simplifyWorkList.isEmpty()) simplify();
-            else if (!workListMv.isEmpty()) coalesce();
-            else if (!freezeWorkList.isEmpty()) freeze();
-            else if (!spillWorkList.isEmpty()) selectSpill();
-        }
-        while (!(freezeWorkList.isEmpty() && simplifyWorkList.isEmpty()
-                && spillWorkList.isEmpty() && workListMv.isEmpty()));
-        assignColors();
-        if (!spilledNodes.isEmpty()) {
-            rewrite();
-            runForFn(fn);
-        } else {
-            coloredNodes.clear();
-            coalescedNodes.clear();
-        }
-    }
-    private void useDefCollect(LFn fn) {
-        fn.blocks().forEach(block ->{
-            int weight = block.loopDepth == 0 ? 1 : 10 * block.loopDepth;
-            block.instructions().forEach(inst -> {
-                inst.uses().forEach(reg -> reg.weight += weight);
-                if (inst.dest() != null) inst.dest().weight += weight;
+            init();
+            new LivenessAnal(fn).runForFn();
+            build();
+            //make workList
+            initial.forEach(node -> {
+                if (node.degree >= K) spillWorkList.add(node);
+                else if (moveRelated(node)) freezeWorkList.add(node);
+                else simplifyWorkList.add(node);
             });
-        });
+            //do simplify&spill
+            do{
+                if (!simplifyWorkList.isEmpty()) simplify();
+                else if (!workListMoves.isEmpty()) coalesce();
+                else if (!freezeWorkList.isEmpty()) freeze();
+                else if (!spillWorkList.isEmpty()) selectSpill();
+            }
+            while (!(freezeWorkList.isEmpty() && simplifyWorkList.isEmpty()
+                    && spillWorkList.isEmpty() && workListMoves.isEmpty()));
+            assignColors();
+            if (!spilledNodes.isEmpty()) {
+                rewrite();
+                done = false;
+            } else done = true;
+        }
+        while(!done);
     }
 
     private void subtleModify() {
-        currentFn.blocks().forEach(block -> block.instructions().forEach(inst -> inst.stackLengthAdd(stackLength)));
-        currentFn.blocks().forEach(block -> block.instructions().removeIf(inst ->
-                inst instanceof Mv && (((Mv) inst).origin().color == inst.dest().color))
+        currentFn.blocks().forEach(block -> {
+            for (RISCInst inst = block.head; inst != null; inst = inst.next)
+                inst.stackLengthAdd(stackLength);
+        });
+        currentFn.blocks().forEach(block -> {
+            for (RISCInst inst = block.head; inst != null; inst = inst.next){
+                if (inst instanceof Mv && (((Mv) inst).origin().color == inst.dest().color))
+                    inst.removeSelf();
+            }
+        }
         );
+        HashSet<LIRBlock> canMix = new HashSet<>();
+        currentFn.blocks().forEach(block -> {
+            if (block.head instanceof Jp) canMix.add(block);
+        });
+        canMix.forEach(block -> {
+            LIRBlock suc = block;
+            do {
+                suc = ((Jp)suc.head).destBlock();
+            }
+            while (canMix.contains(suc));
+            for (LIRBlock pre : block.precursors) {
+                for (RISCInst inst = pre.head; inst != null; inst = inst.next) {
+                    if (inst instanceof Jp) ((Jp) inst).replaceDest(block, suc);
+                    else if (inst instanceof Br) ((Br) inst).replaceDest(block, suc);
+                    else if (inst instanceof Bz) ((Bz) inst).replaceDest(block, suc);
+                }
+                pre.successors.remove(block);
+                pre.successors.add(suc);
+            }
+            suc.precursors.remove(block);
+            suc.precursors.addAll(block.precursors);
+            if (currentFn.entryBlock == block) currentFn.entryBlock = suc;
+        });
+        currentFn.blocks().removeAll(canMix);
     }
-
+    private void reschedule() {
+//        HashSet<LIRBlock> visited = new HashSet<>();
+//        Queue<LIRBlock> queue = new LinkedList<>();
+//        queue.add(currentFn.entryBlock);
+//        do {
+//            LIRBlock currentBlock = queue.poll();
+//            visited.add(currentBlock);
+//            assert currentBlock != null;
+//            if (currentBlock.tail instanceof Jp) {
+//                assert currentBlock.next == null;
+//                Jp jp = (Jp) currentBlock.tail;
+//                if (!jp.destBlock().hasPrior) {
+//                    currentBlock.next = jp.destBlock();
+//                    jp.destBlock().hasPrior = true;
+////                    currentBlock.tail = jp.previous;
+////                    //jp cannot be the only instruction by the one in subtle modify
+////                    currentBlock.tail.next = null;
+////                    jp.previous = null;
+//                }
+//            }
+//            currentBlock.successors.forEach(suc -> {
+//                if (!visited.contains(suc)) queue.offer(suc);
+//            });
+//        }
+//        while(!queue.isEmpty());
+    }
     public void run() {
-        root.functions().forEach(this::useDefCollect);
         root.functions().forEach(fn -> {
             stackLength = 0;
             currentFn = fn;
@@ -334,6 +491,7 @@ public class RegAlloc {
             stackLength += fn.paramOffset;
             if (stackLength % 16 != 0) stackLength = (stackLength / 16 + 1) * 16;
             subtleModify();
+            reschedule();
         });
     }
 }

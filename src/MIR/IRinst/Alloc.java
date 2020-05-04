@@ -6,8 +6,6 @@ import MIR.IRoperand.Register;
 import MIR.IRtype.Pointer;
 import Util.MIRMirror;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class Alloc extends Inst {
@@ -41,7 +39,7 @@ public class Alloc extends Inst {
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return false;
     }
 

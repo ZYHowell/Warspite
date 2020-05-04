@@ -30,9 +30,10 @@ public class LoopDetector {
         if (!loopMap.containsKey(head)) {
             MIRLoop loop = new MIRLoop();
             loopMap.put(head, loop);
+            loopMap.get(head).addTail(tail);
             if (addPreHeader) addPreHeader(head, loop);
         }
-        loopMap.get(head).addTail(tail);
+        else loopMap.get(head).addTail(tail);
     }
     private void addPreHeader(IRBlock head, MIRLoop loop) {
         ArrayList<IRBlock> precursors = new ArrayList<>(head.precursors());
@@ -124,7 +125,7 @@ public class LoopDetector {
         if (!loop.children().isEmpty())
             loop.children().forEach(this::mergePreHead);
         IRBlock preHead = loop.preHead();
-        if (preHead.instructions().size() == 1){
+        if (preHead.tailInst == preHead.headInst && preHead != fn.entryBlock()){
             fn.blocks().remove(preHead);
             preHead.successors().get(0).mergeEmptyBlock(preHead);
         }

@@ -33,6 +33,10 @@ public class St extends RISCInst{
         ret.add(value);
         return ret;
     }
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>();
+    }
 
     @Override
     public void replaceUse(Reg origin, Reg replaced) {

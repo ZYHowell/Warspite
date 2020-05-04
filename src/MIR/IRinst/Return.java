@@ -32,12 +32,12 @@ public class Return extends Inst {
 
     @Override
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
-        destBlock.addInst(new Return(destBlock, mirror.opMir(value)));
+        destBlock.addTerminator(new Return(destBlock, value == null ? null : mirror.opMir(value)));
     }
     @Override
     public HashSet<Operand> uses() {
         HashSet<Operand> ret = new HashSet<>();
-        ret.add(value);
+        if (value != null) ret.add(value);
         return ret;
     }
 
@@ -47,7 +47,7 @@ public class Return extends Inst {
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return false;
     }
 

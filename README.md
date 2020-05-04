@@ -78,3 +78,7 @@ while (!queue.isEmpty());
 4月23日，assert a instanceof VReg;不会报错，if (!(a instanceof VReg)) out.println("wsm")会输出：assert演我
 
 4月24日，单线程代码，IDEA在run时产生null Pointer Exception，在debug时正常运行，跑出了多线程的既视感
+
+4月28日，单线程代码，IDEA在windows下build，可以通过所有测试，在Linux下使用脚本build，某些测试的输出结果会RE或WA
+
+4月30日，在Linux下，先new Print stream再将其传入时会出现bug导致传入的Print stream并没能成功输出

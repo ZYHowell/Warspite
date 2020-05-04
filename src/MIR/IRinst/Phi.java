@@ -71,11 +71,25 @@ public class Phi extends Inst {
 
     @Override
     public boolean sameMeaning(Inst inst) {
+        if (inst instanceof Phi) {
+            ArrayList<Operand> iValues = ((Phi) inst).values();
+            HashSet<Operand> iValueSet = new HashSet<>(iValues);
+            ArrayList<IRBlock> iBlocks = ((Phi) inst).blocks();
+            int size = values.size();
+            if (iValues.size() == size) {
+                for (int i = 0; i < size; i++) {
+                    Operand src = values.get(i);
+                    if (!iValueSet.contains(src) || iBlocks.get(iValues.indexOf(src)) != blocks.get(i))
+                        return false;
+                }
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return false;
     }
 

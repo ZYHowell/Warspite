@@ -13,6 +13,7 @@ import Util.symbol.funcDecl;
 import Util.symbol.varEntity;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -26,6 +27,11 @@ import static MIR.IRinst.Cmp.CmpOpCategory.*;
  */
 public class IRBuilder implements ASTVisitor {
 
+    private static class logicalPhi{
+        ArrayList<Operand> values = new ArrayList<>();
+        ArrayList<IRBlock> blocks = new ArrayList<>();
+    }
+
     private boolean isParam;
     private globalScope gScope;
     private Root irRoot;
@@ -34,7 +40,8 @@ public class IRBuilder implements ASTVisitor {
     private Function currentFunction = null;
     private IRBlock currentBlock = null;
     private int symbolCtr = 0;
-    ArrayList<Return> returnList = new ArrayList<>();
+    private ArrayList<Return> returnList = new ArrayList<>();
+    private HashMap<IRBlock, logicalPhi> logicalPhiMap = new HashMap<>();
 
     private void setBuiltinMethod(String name) {
         gScope.getMethod(name, beginning, false)
@@ -103,6 +110,16 @@ public class IRBuilder implements ASTVisitor {
             Operand tmp = resolvePointer(currentBlock, it.operand());
             assert tmp.type() instanceof BoolType;
             currentBlock.addTerminator(new Branch(tmp, it.thenBlock(), it.elseBlock(), currentBlock));
+            if (logicalPhiMap.containsKey(it.thenBlock())) {
+                logicalPhi phiInfo = logicalPhiMap.get(it.thenBlock());
+                phiInfo.values.add(new ConstBool(true));
+                phiInfo.blocks.add(currentBlock);
+            }
+            if (logicalPhiMap.containsKey(it.elseBlock())) {
+                logicalPhi phiInfo = logicalPhiMap.get(it.elseBlock());
+                phiInfo.values.add(new ConstBool(false));
+                phiInfo.blocks.add(currentBlock);
+            }
         }
     }
 
@@ -280,8 +297,8 @@ public class IRBuilder implements ASTVisitor {
         IRBlock entryBlock = currentFunction.entryBlock();
         currentFunction.allocVars().forEach(var ->{
             if (((Pointer)var.type()).pointTo() instanceof Pointer)
-                entryBlock.instructions().add(0, new Store(var, new Null(), entryBlock));
-            else entryBlock.instructions().add(0, new Store(var, new ConstInt(65536, 32), entryBlock));
+                entryBlock.addHeadInst(new Store(var, new Null(), entryBlock));
+            else entryBlock.addHeadInst(new Store(var, new ConstInt(65536, ((Pointer)var.type()).pointTo().size()), entryBlock));
         });
 
         returnList.clear();
@@ -616,27 +633,25 @@ public class IRBuilder implements ASTVisitor {
                     IRBlock condBlock = new IRBlock("AndCondBlock"),
                             destBlock = new IRBlock("AndDestBlock");
                     Operand opr;
-
-                    ArrayList<Operand> values = new ArrayList<>();
-                    ArrayList<IRBlock> blocks = new ArrayList<>();
+                    logicalPhi phiInfo = new logicalPhi();
+                    logicalPhiMap.put(destBlock, phiInfo);
 
                     it.setOperand(new Register(new BoolType(), "logicalAnd"));
-
+                    //to consider: add a pattern named "jump anyway block" for src2?
                     it.src1().setThenBlock(condBlock);
                     it.src1().setElseBlock(destBlock);
                     it.src1().accept(this);
-                    values.add(new ConstBool(false));
-                    blocks.add(currentBlock);
 
                     currentBlock = condBlock;
                     it.src2().accept(this);
                     opr = resolvePointer(currentBlock, it.src2().operand());
                     currentBlock.addTerminator(new Jump(destBlock, currentBlock));
-                    values.add(opr);
-                    blocks.add(currentBlock);
+                    phiInfo.values.add(opr);
+                    phiInfo.blocks.add(currentBlock);
 
                     currentBlock = destBlock;
-                    destBlock.addPhi(new Phi((Register)it.operand(), blocks, values, destBlock));
+                    destBlock.addPhi(new Phi((Register)it.operand(), new ArrayList<>(phiInfo.blocks),
+                            new ArrayList<>(phiInfo.values), destBlock));
                 }
                 break;
             }
@@ -656,26 +671,27 @@ public class IRBuilder implements ASTVisitor {
                             destBlock = new IRBlock("OrDestBlock");
                     Operand opr;
 
-                    ArrayList<Operand> values = new ArrayList<>();
-                    ArrayList<IRBlock> blocks = new ArrayList<>();
+                    logicalPhi phiInfo = new logicalPhi();
+                    logicalPhiMap.put(destBlock, phiInfo);
 
                     it.setOperand(new Register(new BoolType(), "logicalOr"));
 
                     it.src1().setThenBlock(destBlock);
                     it.src1().setElseBlock(condBlock);
                     it.src1().accept(this);
-                    values.add(new ConstBool(true));
-                    blocks.add(currentBlock);
+                    phiInfo.values.add(new ConstBool(true));
+                    phiInfo.blocks.add(currentBlock);
 
                     currentBlock = condBlock;
                     it.src2().accept(this);
                     opr = resolvePointer(currentBlock, it.src2().operand());
                     currentBlock.addTerminator(new Jump(destBlock, currentBlock));
-                    values.add(opr);
-                    blocks.add(currentBlock);
+                    phiInfo.values.add(opr);
+                    phiInfo.blocks.add(currentBlock);
 
                     currentBlock = destBlock;
-                    destBlock.addPhi(new Phi((Register)it.operand(), blocks, values, destBlock));
+                    destBlock.addPhi(new Phi((Register)it.operand(), new ArrayList<>(phiInfo.blocks),
+                            new ArrayList<>(phiInfo.values), destBlock));
                 }
                 break;
             }
@@ -714,12 +730,20 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(prefixExpr it) {
-        it.src().accept(this);
         IRBaseType type;
         if (it.opCode().ordinal() < 5) type = Root.i32T;
-        else type = new BoolType();
+        else type = Root.boolT;
         it.setOperand(new Register(type, "prefix_" + it.opCode().toString()));
 
+        if (type == Root.boolT) {
+            if (it.thenBlock() != null) {
+                it.src().setThenBlock(it.elseBlock());
+                it.src().setElseBlock(it.thenBlock());
+                it.src().accept(this);
+                return;
+            }
+        }
+        it.src().accept(this);
         Operand src = resolvePointer(currentBlock, it.src().operand());
         switch (it.opCode()) {
             case Positive: {
@@ -808,10 +832,11 @@ public class IRBuilder implements ASTVisitor {
                 params.add(resolvePointer(currentBlock, param.operand()));
             });
             currentBlock.addInst(new Call(calleeFunc.function(), params, (Register) it.operand(), currentBlock));
+            if (!(irRoot.isBuiltIn(calleeFunc.function().name())))
+                currentFunction.addCalleeFunction(calleeFunc.function());
         }
         if (it.operand() != null)
             branchAdd(it);
-        currentFunction.addCalleeFunction(calleeFunc.function());
     }
 
     @Override
@@ -906,13 +931,18 @@ public class IRBuilder implements ASTVisitor {
     }
     @Override
     public void visit(stringLiteral it) {
-        String name = currentFunction.name() +"." + symbolCtr++;
         String realValue = getSString(it.value().substring(1, it.value().length() - 1));
-        irRoot.addConstString(name, realValue);
-        it.setOperand(new Register(Root.stringT, "resolved_"+name));
+        ConstString str = irRoot.getStringByValue(realValue);
+        String name;
+        if (str == null) {
+            name = currentFunction.name() +"." + symbolCtr++;
+            irRoot.addConstString(name, realValue);
+            str = irRoot.getConstString(name);
+        } else name = str.name;
+        it.setOperand(new Register(Root.stringT, "resolved_" + name));
         currentBlock.addInst(new GetElementPtr(new ArrayType(realValue.length(), Root.charT),
-                irRoot.getConstString(name), new ConstInt(0, 32),
-                new ConstInt(0, 32), (Register)it.operand(), currentBlock));
+                str, new ConstInt(0, 32), new ConstInt(0, 32),
+                (Register)it.operand(), currentBlock));
     }
 
     private void arrayMalloc(int nowDim, newExpr it, Register result) {

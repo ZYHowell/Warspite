@@ -5,6 +5,7 @@ import Assemb.LOperand.Imm;
 import Assemb.LOperand.Reg;
 import Assemb.LOperand.SLImm;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Li extends RISCInst {
@@ -22,7 +23,10 @@ public class Li extends RISCInst {
     public HashSet<Reg> uses() {
         return new HashSet<>();
     }
-
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(Collections.singletonList(dest()));
+    }
     @Override
     public void replaceUse(Reg origin, Reg replaced) {}
 

@@ -31,8 +31,8 @@ public class Zext extends Inst{
 
     @Override
     public String toString() {
-        return dest().toString()  + " = zext " + originType().toString() + origin.toString() +
-                "to " + destType().toString();
+        return dest().toString()  + " = zext " + originType().toString() + " " + origin.toString() +
+                " to " + destType().toString();
     }
 
     @Override
@@ -56,7 +56,7 @@ public class Zext extends Inst{
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return true;
     }
 

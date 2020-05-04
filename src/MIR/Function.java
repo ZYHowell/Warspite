@@ -13,7 +13,7 @@ public class Function {
     private Param classPtr;  //this is very ugly! classPtr is better to be param[0]
     private IRBaseType retType;
     private ArrayList<Param> parameters = new ArrayList<>();
-    private IRBlock entryBlock = new IRBlock("entry"),
+    public IRBlock entryBlock = new IRBlock("entry"),
                     exitBlock;
     private HashSet<Function> callFunction = new HashSet<>();
     private HashSet<Register> allocaVar = new HashSet<>();

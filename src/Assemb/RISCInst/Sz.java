@@ -3,6 +3,7 @@ package Assemb.RISCInst;
 import Assemb.LIRBlock;
 import Assemb.LOperand.Reg;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Sz extends RISCInst{
@@ -30,6 +31,11 @@ public class Sz extends RISCInst{
 
     @Override
     public void stackLengthAdd(int stackLength) {}
+
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(Collections.singletonList(dest()));
+    }
 
     @Override
     public String toString() {

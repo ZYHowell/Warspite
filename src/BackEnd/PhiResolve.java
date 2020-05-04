@@ -7,6 +7,8 @@ import MIR.IRinst.Move;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.Root;
+import Util.error.internalError;
+import Util.position;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,6 +126,21 @@ public class PhiResolve {
             }
         }));
         copyMap.forEach(this::runForBlock);
+        //mix blocks
+        HashSet<IRBlock> canMix = new HashSet<>();
+        fn.blocks().forEach(block -> {
+            if (block.headInst instanceof Jump) canMix.add(block);
+        });
+        canMix.forEach(block -> {
+            IRBlock suc = block;
+            do {
+                suc = ((Jump) suc.terminator()).destBlock();
+            } while(canMix.contains(suc));
+            HashSet<IRBlock> precursors = new HashSet<>(block.precursors());
+            for (IRBlock pre : precursors) pre.replaceSuccessor(block, suc);
+            if (block == fn.entryBlock()) fn.entryBlock = suc;
+        });
+        fn.blocks().removeAll(canMix);
     }
 
     public void run() {

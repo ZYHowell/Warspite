@@ -1,8 +1,11 @@
 package Optim;
 
+import MIR.Function;
+import MIR.IRBlock;
 import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import MIR.IRtype.ArrayType;
 import MIR.IRtype.Pointer;
 import MIR.Root;
 import Util.MIRFnGraph;
@@ -34,7 +37,7 @@ import java.util.Map;
 public class ADCE extends Pass {
 
     private Root irRoot;
-    private boolean change, MoreLive;
+    private boolean change;
     private HashSet<Inst> liveCode = new HashSet<>();
     private HashSet<Operand> outerOp = new HashSet<>();
     private MIRFnGraph CallGraph;
@@ -42,34 +45,61 @@ public class ADCE extends Pass {
     public ADCE(Root irRoot) {
         super();
         this.irRoot = irRoot;
-        CallGraph = new MIRFnGraph(irRoot, true);
+        CallGraph = new MIRFnGraph(irRoot);
     }
 
     private void testOp(Operand op, HashSet<Operand> addedOp) {
         HashSet<Inst> uses = op.uses();
+        if (!(op.type() instanceof Pointer || op.type() instanceof ArrayType)){
+            if (op.defInst() != null) System.err.println(op.defInst().toString());
+            else System.err.println(op.toString());
+            throw new RuntimeException();
+        }
         if (uses != null) {
             uses.forEach(inst -> {
-                if (inst instanceof BitCast || inst instanceof GetElementPtr ||
-                        (inst instanceof Call && inst.dest().type() instanceof Pointer) ||
-                        (inst instanceof Load && inst.dest().type() instanceof Pointer) ||
-                        (inst instanceof Phi)) {
+                if (inst instanceof Store && ((Store) inst).value().type() instanceof Pointer) {
+                    Store st = (Store) inst;
+                    if (!addedOp.contains(st.address()) && !outerOp.contains(st.address())){
+                        addedOp.add(st.address());
+                        testOp(st.address(), addedOp);
+                    }
+                    if (!addedOp.contains(st.value()) && !outerOp.contains(st.value())){
+                        addedOp.add(st.value());
+                        testOp(st.value(), addedOp);
+                    }
+                } else if (inst instanceof BitCast || inst instanceof GetElementPtr ||
+                    (inst instanceof Call && inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) ||
+                    (inst instanceof Load && inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) ||
+                    (inst instanceof Phi)) {
                     if (!addedOp.contains(inst.dest()) && !outerOp.contains(inst.dest())){
                         addedOp.add(inst.dest());
                         testOp(inst.dest(), addedOp);
                     }
-                } else assert (inst instanceof Load || inst instanceof Call
-                    || (inst instanceof Binary && ((Binary)inst).opCode() == Binary.BinaryOpCat.sub));
+                } else if (!(inst instanceof Return || inst instanceof Load || inst instanceof Call || inst instanceof Store || inst instanceof Cmp)) {
+                    System.err.println(inst.toString());
+                    throw new RuntimeException();
+                }
                     //the last one is to get the size.
             });
         }
     }
+    private void setSideEffectTrue(Function fn) {
+        if (!fn.hasSideEffect()){
+            fn.setSideEffect(true);
+            CallGraph.callerOf(fn).forEach(this::setSideEffectTrue);
+        }
+    }
+
     private void initCollect() {
         CallGraph.build();
         outerOp.clear();
         //collect "outer" address of each function
         outerOp.addAll(irRoot.globalVar());
+        outerOp.addAll(irRoot.constStrings().values());
         irRoot.functions().forEach((name, fn) -> {
-            outerOp.addAll(fn.params());
+            fn.params().forEach(param -> {
+                if (param.type() instanceof Pointer || param.type() instanceof ArrayType) outerOp.add(param);
+            });
             fn.setSideEffect(false);
         });
 
@@ -77,24 +107,26 @@ public class ADCE extends Pass {
         outerOp.forEach(op -> testOp(op, added));
         outerOp.addAll(added);
         //collect I/O and side effect functions and outer stores and returns
-        irRoot.functions().forEach((name, fn) -> {
-            if (!fn.hasSideEffect())
-                fn.blocks().forEach(block -> block.instructions().forEach(inst -> {
+        irRoot.functions().forEach((name, fn) ->
+            fn.blocks().forEach(block -> {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next)
                     if (inst instanceof Call && ((Call)inst).callee().hasSideEffect()){
                         //this includes I/O
                         liveCode.add(inst);
                         fn.setSideEffect(true);
-                        CallGraph.callerOf(fn).forEach(func -> func.setSideEffect(true));
+                        CallGraph.callerOf(fn).forEach(this::setSideEffectTrue);
                     }
                     else if (inst instanceof Store && outerOp.contains(((Store)inst).address())){
                         liveCode.add(inst);
                         fn.setSideEffect(true);
-                        CallGraph.callerOf(fn).forEach(func -> func.setSideEffect(true));
-                    } else if (inst instanceof Return) {
+                        CallGraph.callerOf(fn).forEach(this::setSideEffectTrue);
+                    } else if (inst instanceof Return) liveCode.add(inst);
+            }));
+        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                    if (inst instanceof Call && ((Call)inst).callee().hasSideEffect())
                         liveCode.add(inst);
-                    }
-                }));
-        });
+        }));
     }
 
     private void tryAdd(Inst inst) {
@@ -103,7 +135,26 @@ public class ADCE extends Pass {
                 liveCode.add(opr.defInst());
                 tryAdd(opr.defInst());
             }
+            if (opr.type() instanceof Pointer || opr.type() instanceof ArrayType)
+                opr.uses().forEach(use -> {
+                    if ((use instanceof Store || use instanceof BitCast || use instanceof GetElementPtr ||
+                         use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))
+                            && !liveCode.contains(use)) {
+                        liveCode.add(use);
+                        tryAdd(use);
+                    }
+                });
         });
+        if (inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) {
+            inst.dest().uses().forEach(use -> {
+                if ((use instanceof Store || use instanceof BitCast || use instanceof GetElementPtr ||
+                        use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))
+                        && !liveCode.contains(use)) {
+                    liveCode.add(use);
+                    tryAdd(use);
+                }
+            });
+        }
         inst.block().precursors().forEach(pre -> {
             if (!liveCode.contains(pre.terminator())) {
                 liveCode.add(pre.terminator());
@@ -113,46 +164,41 @@ public class ADCE extends Pass {
     }
 
     private void collect() {
-        irRoot.functions().forEach((name, fn) -> {
-            MoreLive = true;
-            fn.blocks().forEach(block -> {
-                block.instructions().forEach(inst -> {
-                    if (liveCode.contains(inst)) tryAdd(inst);
-                });
-                block.phiInst().forEach(((reg, inst) -> {
-                    if (liveCode.contains(inst)) tryAdd(inst);
-                }));
-            });
-        });
+        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+            for (Inst inst = block.headInst; inst != null; inst = inst.next) {
+                if (liveCode.contains(inst)) tryAdd(inst);
+            }
+            block.phiInst().forEach(((reg, inst) -> {
+                if (liveCode.contains(inst)) tryAdd(inst);
+            }));
+        }));
     }
 
     public void clean() {
-        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
-            for (Iterator<Inst> iter = block.instructions().iterator();iter.hasNext();) {
-                Inst inst = iter.next();
-                if (!liveCode.contains(inst)) {
-                    change = true;
-                    if (inst.isTerminal()) {
-                        //this block is not effectively reachable
-                        block.removeTerminator();   //to make CFG simplification faster
-                        block.addTerminator(new Jump(block, block));    //formal terminator
-                        //but maybe I can assert that there is no such block
-                        break;
-                    } else {
+        irRoot.functions().forEach((name, fn) -> {
+            for (IRBlock block : fn.blocks()) {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next) {
+                    if (!liveCode.contains(inst)) {
+                        change = true;
+                        if (inst.isTerminal()) {
+                            //this block is not effectively reachable
+                            block.removeTerminator();   //to make CFG simplification faster
+                            block.addTerminator(new Jump(block, block));    //formal terminator
+                            break;
+                        } else inst.removeSelf(true);
+                    }
+                }
+                for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext(); ) {
+                    Phi inst = iter.next().getValue();
+                    if (!liveCode.contains(inst)) {
                         iter.remove();
                         inst.removeSelf(false);
+                        change = true;
                     }
                 }
             }
-            for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext();) {
-                Phi inst = iter.next().getValue();
-                if (!liveCode.contains(inst)) {
-                    iter.remove();
-                    inst.removeSelf(false);
-                    change = true;
-                }
-            }
-        }));
+            fn.blocks().removeIf(block -> block.precursors().size() == 1 && block.precursors().get(0) == block);
+        });
     }
 
     @Override

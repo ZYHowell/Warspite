@@ -12,7 +12,7 @@ public class IRBlock {
 
     private ArrayList<IRBlock> precursors = new ArrayList<>();
     private ArrayList<IRBlock> successors = new ArrayList<>();
-    private ArrayList<Inst>    instructions = new ArrayList<>();
+    public Inst headInst = null, tailInst = null;
     private HashMap<Register, Phi>  PhiInst = new HashMap<>();
     private String name;
     private boolean terminated = false;
@@ -47,16 +47,38 @@ public class IRBlock {
     }
 
     public void addInst(Inst inst) {    //add inst in unterminated block
-        instructions.add(inst);
+        if (headInst == null) headInst = tailInst = inst;
+        else {
+            tailInst.next = inst;
+            inst.prior = tailInst;
+            tailInst = inst;
+        }
+    }
+    public void addHeadInst(Inst inst) {
+        if (headInst == null) headInst = tailInst = inst;
+        else {
+            inst.next = headInst;
+            headInst.prior = inst;
+            headInst = inst;
+        }
     }
     public void addInstTerminated(Inst inst) {  //add inst in terminated blocks
-        instructions.add(instructions.size() - 1, inst);
-    }
-    public ArrayList<Inst> instructions() {
-        return instructions;
+        Inst priorTail = tailInst.prior;
+        if (priorTail == null) {
+            headInst = inst;
+            inst.prior = null;
+            inst.next = tailInst;
+            tailInst.prior = inst;
+        }
+        else {
+            priorTail.next = inst;
+            inst.next = tailInst;
+            tailInst.prior = inst;
+            inst.prior = priorTail;
+        }
     }
     public void addTerminator(Inst inst) {
-        instructions.add(inst);
+        addInst(inst);
         terminated = true;
         IRBlock dest;
         if (inst instanceof Jump) {
@@ -81,7 +103,7 @@ public class IRBlock {
     public void removeTerminator() {
         if (!terminated) return;
         terminated = false;
-        Inst currentTerm = instructions.get(instructions.size() - 1);
+        Inst currentTerm = tailInst;
         if (currentTerm instanceof Jump) {
             removeSuccessor(((Jump)currentTerm).destBlock());
         }
@@ -89,7 +111,8 @@ public class IRBlock {
             removeSuccessor(((Branch)currentTerm).trueDest());
             removeSuccessor(((Branch)currentTerm).falseDest());
         }
-        instructions.remove(instructions.size() - 1);
+        currentTerm.removeInList();
+        currentTerm.removeSelf(true);
     }
     public void addPhi(Phi inst) {
         PhiInst.put(inst.dest(), inst);
@@ -99,7 +122,7 @@ public class IRBlock {
     }
     public Inst terminator() {
         assert terminated;
-        return instructions.get(instructions.size() - 1);
+        return tailInst;
     }
 
     public void removeSuccessor(IRBlock successor) {
@@ -113,6 +136,26 @@ public class IRBlock {
         phiInst().forEach((reg, phi) -> phi.removeBlock(precursor));
     }
 
+    public void splitTo(IRBlock later, Inst inst) {
+        successors.forEach(suc -> {
+            suc.phiModify(this, later);
+            suc.precursors().remove(this);
+            suc.precursors().add(later);
+        });
+        later.successors.addAll(successors);
+        successors.clear();
+
+        later.headInst = inst.next;
+        later.tailInst = tailInst;
+        inst.next.prior = null;
+        for(Inst instr = inst.next;instr != null; instr = instr.next)
+            instr.setCurrentBlock(later);
+        terminated = false;
+        later.terminated = true;
+        tailInst = inst.prior;
+        if (tailInst != null) tailInst.next = null;
+        if (headInst == inst) headInst = null;
+    }
     public void setIDom(IRBlock iDom) {
         this.iDom = iDom;
         iDom.domChildren().add(this);
@@ -136,21 +179,46 @@ public class IRBlock {
         if (inst instanceof Phi) PhiInst.remove(inst.dest());
         else if (inst instanceof Branch || inst instanceof Return || inst instanceof Jump)
             removeTerminator();
-        else instructions.remove(inst);
+        else inst.removeInList();
+    }
+
+    private void replacePrecursor(IRBlock replaced, IRBlock newPre) {
+        if (precursors.contains(replaced)) {
+            precursors.remove(replaced);
+            precursors.add(newPre);
+            phiModify(replaced, newPre);
+        }
+    }
+    public void phiModify(IRBlock replaced, IRBlock newPre) {
+        PhiInst.forEach((reg, phi) -> {
+            int size = phi.blocks().size();
+            for (int i = 0;i < size;++i)
+                if (phi.blocks().get(i) == replaced) phi.blocks().set(i, newPre);
+        });
+    }
+    public ArrayList<Inst> instructions() { //debug use;
+        ArrayList<Inst> ret = new ArrayList<>();
+        for (Inst inst = headInst; inst != null; inst = inst.next)
+            ret.add(inst);
+        return ret;
     }
 
     public void mergeBlock(IRBlock merged) {
         assert !terminated;
         assert merged.precursors().size() == 0; //so no phi
         successors.addAll(merged.successors());
-        merged.successors().forEach(successor -> {
-            successor.precursors().remove(merged);
-            successor.addPrecursor(this);
-        });
+        merged.successors().forEach(successor -> successor.replacePrecursor(merged, this));
         merged.phiInst().forEach((reg, phi) -> phi.setCurrentBlock(this));
-        merged.instructions().forEach(inst -> inst.setCurrentBlock(this));
-        instructions.addAll(merged.instructions());
-        terminated = merged.terminated();
+        for (Inst inst = merged.headInst; inst != null; inst = inst.next)
+            inst.setCurrentBlock(this);
+        if (tailInst != null) tailInst.next = merged.headInst;
+        if (merged.headInst != null) merged.headInst.prior = tailInst;
+        if (headInst == null) headInst = merged.headInst;
+        tailInst = merged.tailInst;
+        terminated = merged.terminated;
+        merged.successors().forEach(suc -> {
+            if (suc.precursors().contains(merged)) throw new RuntimeException();
+        });
     }
 
     public boolean isDomed(IRBlock tryDom) {
@@ -188,7 +256,7 @@ public class IRBlock {
         HashSet<Register> notCopy = new HashSet<>();
         PhiInst.forEach((reg, phi) -> {
             //if the phiInst uses a phi in merged blocks, merge the two, no need to replaceAllUse
-            ArrayList<Operand> values = phi.values();
+            ArrayList<Operand> values = new ArrayList<>(phi.values());
             for (Operand value : values) {
                 if (value instanceof Register && merged.containsKey(value)) {
                     Phi mergeInst = merged.get(value);
@@ -199,19 +267,31 @@ public class IRBlock {
                     notCopy.add(mergeInst.dest());
                 }
             }
+            int size = phi.blocks().size();
+            for (int i = 0;i < size;++i) {
+                if (phi.blocks().get(i) == origin) {
+                    Operand value = phi.values().get(i);
+                    if (value instanceof Register && notCopy.contains(value)) {
+                        phi.blocks().remove(i);
+                        phi.values().remove(i);
+                    } else phi.blocks().set(i, origin.precursors.get(0));
+                    break;
+                }
+            }
         });
 
         merged.forEach((reg, phi) -> {
             //otherwise, copy it currently
-            if (notCopy.contains(reg)) {
-                //to consider: remove this check in the final version
-                phi.dest().uses().forEach(use -> {assert use.block() == this;});
+            if (!notCopy.contains(reg)) {
+                if (precursors().size() > 1) throw new RuntimeException();
+                phi.moveTo(this);
             }
-            else phi.moveTo(this);
         });
     }
     public void mergeEmptyBlock(IRBlock merged) {
         phiMerge(merged);
-        merged.precursors().forEach(pre -> pre.replaceSuccessor(merged, this));
+        this.precursors().remove(merged);
+        ArrayList<IRBlock> precursors = new ArrayList<>(merged.precursors());
+        precursors.forEach(pre -> pre.replaceSuccessor(merged, this));
     }
 }

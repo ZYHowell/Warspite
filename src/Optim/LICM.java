@@ -25,7 +25,7 @@ public class LICM extends Pass{
     }
 
     private void tryHoist(Inst inst, HashSet<Register> defInLoop, Queue<Inst> canHoist) {
-        if (inst.canHoist()) {
+        if (inst.noSideEffect()) {
             HashSet<Operand> uses = inst.uses();
             uses.retainAll(defInLoop);
             if (uses.isEmpty()) {
@@ -44,14 +44,15 @@ public class LICM extends Pass{
 
         loop.blocks().forEach(block -> {
             block.phiInst().forEach((reg, phi) -> defInLoop.add(phi.dest()));
-            block.instructions().forEach(inst -> {
+            for(Inst inst = block.headInst; inst != null; inst = inst.next)
                 if (inst.dest() != null) defInLoop.add(inst.dest());
-            });
         });
         //collect all register defined in the loop
         IRBlock pre = loop.preHead();
-        loop.blocks().forEach(block -> block.instructions().forEach(inst ->
-                tryHoist(inst, defInLoop, canHoist)));
+        loop.blocks().forEach(block -> {
+            for(Inst inst = block.headInst; inst != null; inst = inst.next)
+                tryHoist(inst, defInLoop, canHoist);
+        });
         change = change || !canHoist.isEmpty();
         //hoist and get more. the queue protects the correctness of the order
         while (!canHoist.isEmpty()) {

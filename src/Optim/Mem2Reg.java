@@ -10,8 +10,6 @@ import Util.DomGen;
 
 import java.util.*;
 
-//to consider: what about using DJ-graph and a better algorithm in SSA book to do this? maybe quicker
-
 public class Mem2Reg extends Pass{
 
     private Root irRoot;
@@ -47,20 +45,17 @@ public class Mem2Reg extends Pass{
 
         //collect load/store info.
         for (IRBlock block : fn.blocks()) {
-            for (Iterator<Inst> iter = block.instructions().iterator(); iter.hasNext(); ) {
-                Inst inst = iter.next();
+            for (Inst inst = block.headInst; inst != null;) {
+                Inst tmp = inst.next;
                 if (inst instanceof Load) {
                     Operand address = ((Load) inst).address();
                     if (address instanceof Register && (allocVars.contains(address))) {
                         HashMap<Register, Operand> blockLiveOut = allocStores.get(inst.block());
                         if (blockLiveOut.containsKey(address)) {
                             replaceMap.put(inst.dest(), blockLiveOut.get(address));
-                            iter.remove();
-                            inst.removeSelf(false);
+                            inst.removeSelf(true);
                         } //in the same block, no need to insert phi
-                        else {
-                            allocLoads.get(inst.block()).add((Load) inst);
-                        }
+                        else allocLoads.get(inst.block()).add((Load) inst);
                     }
                 } else if (inst instanceof Store) {
                     Operand address = ((Store) inst).address();
@@ -68,10 +63,10 @@ public class Mem2Reg extends Pass{
                         //add live-out info
                         defBlocks.add(inst.block());
                         allocStores.get(inst.block()).put((Register) address, ((Store) inst).value());
-                        iter.remove();
-                        inst.removeSelf(false);
+                        inst.removeSelf(true);
                     }
                 }
+                inst = tmp;
             }
         }
 
@@ -142,7 +137,10 @@ public class Mem2Reg extends Pass{
         });
         replaceMap.forEach((reg, rep) -> ((Register)reg).replaceAllUseWith(finalReplace(replaceMap, rep)));
 
-        fn.blocks().forEach(block -> block.instructions().removeIf(inst -> inst instanceof Alloc));
+        fn.blocks().forEach(block -> {
+            for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                if (inst instanceof Alloc) inst.removeInList();
+        });
     }
 
 

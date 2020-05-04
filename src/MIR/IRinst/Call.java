@@ -63,7 +63,7 @@ public class Call extends Inst{
     }
 
     @Override
-    public boolean canHoist() {
+    public boolean noSideEffect() {
         return false;
     }
 
@@ -71,7 +71,7 @@ public class Call extends Inst{
     public void addMirror(IRBlock destBlock, MIRMirror mirror) {
         ArrayList<Operand> mirrorParams = new ArrayList<>();
         params.forEach(param -> mirrorParams.add(mirror.opMir(param)));
-        destBlock.addInst(new Call(callee, mirrorParams, (Register)mirror.opMir(dest()), destBlock));
+        destBlock.addInst(new Call(callee, mirrorParams, dest() == null ? null : (Register)mirror.opMir(dest()), destBlock));
     }
 
     @Override

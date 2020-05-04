@@ -34,8 +34,7 @@ public class instReplacement extends Pass {
         return powNum;
     }
     public void runForBlock(IRBlock block) {
-        for (Iterator<Inst> iter = block.instructions().iterator(); iter.hasNext();) {
-            Inst inst = iter.next();
+        for (Inst inst = block.headInst; inst != null; inst = inst.next) {
             if (inst instanceof Binary) {
                 Binary bi = (Binary) inst;
                 Operand src = null;
@@ -44,8 +43,7 @@ public class instReplacement extends Pass {
                     if (bi.src1() instanceof ConstInt) {
                         if (((ConstInt) bi.src1()).value() == 0) {
                             bi.dest().replaceAllUseWith(new ConstInt(0, 32));
-                            iter.remove();
-                            bi.removeSelf(false);
+                            bi.removeSelf(true);
                         }
                         powNum = twoPow(((ConstInt) bi.src1()).value());
                         src = bi.src2();
@@ -53,8 +51,7 @@ public class instReplacement extends Pass {
                     if (bi.src2() instanceof ConstInt) {
                         if (((ConstInt) bi.src2()).value() == 0) {
                             bi.dest().replaceAllUseWith(new ConstInt(0, 32));
-                            iter.remove();
-                            bi.removeSelf(false);
+                            bi.removeSelf(true);
                         }
                         powNum = twoPow(((ConstInt) bi.src2()).value());
                         src = bi.src1();
@@ -75,8 +72,7 @@ public class instReplacement extends Pass {
                     if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 0) src = bi.src1();
                 } else continue;
                 bi.dest().replaceAllUseWith(src);
-                iter.remove();
-                bi.removeSelf(false);
+                bi.removeSelf(true);
             } else if (inst instanceof Cmp) {
                 Cmp cm = (Cmp) inst;
                 Operand src1, src2;

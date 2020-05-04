@@ -4,9 +4,11 @@ import Assemb.LFn;
 import Assemb.LIRBlock;
 import Assemb.LOperand.GReg;
 import Assemb.LRoot;
+import Assemb.RISCInst.RISCInst;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -14,9 +16,11 @@ public class AsmPrinter {
 
     private LRoot root;
     PrintStream out;
-    public AsmPrinter(LRoot root, PrintStream out) {
+    private boolean rename;
+    public AsmPrinter(LRoot root, PrintStream out, boolean rename) {
         this.root = root;
         this.out = out;
+        this.rename = rename;
     }
 
     private ArrayList<LIRBlock> visitList = new ArrayList<>();
@@ -27,7 +31,7 @@ public class AsmPrinter {
         visitList.add(fn.entryBlock());
         while (!blocks.isEmpty()) {
             LIRBlock check = blocks.poll();
-            check.name ="." + fn.name() + "_b." + blockCnt++;
+            if (rename) check.name ="." + fn.name() + "_b." + blockCnt++;
             check.successors.forEach(block -> {
                 if (block != null && !visitList.contains(block)) {
                     blocks.add(block);
@@ -36,12 +40,15 @@ public class AsmPrinter {
             });
         }
     }
-
+    private HashSet<LIRBlock> visited = new HashSet<>();
     private void runForBlock(LIRBlock block) {
+        if (visited.contains(block)) throw new RuntimeException();
+        visited.add(block);
         out.println(block.name + ": ");
-        block.instructions().forEach(inst -> out.println("\t" + inst.toString()));
+        for (RISCInst inst = block.head; inst != null; inst = inst.next)
+            out.println("\t" + inst.toString());
+        if (block.next != null) runForBlock(block.next);
     }
-
     private void runForFn(LFn fn) {
         out.println("\t.globl\t" + fn.name());
         out.println("\t.p2align\t1");
@@ -49,7 +56,11 @@ public class AsmPrinter {
         out.println(fn.name() + ":");
         visitList.clear();
         collectWithRename(fn);
-        visitList.forEach(this::runForBlock);
+
+        runForBlock(fn.entryBlock());
+        visitList.forEach(block -> {
+            if (!visited.contains(block)) runForBlock(block);
+        });
         out.println("\t.size\t" + fn.name() + ", " + ".-" + fn.name() + "\n");
     }
 

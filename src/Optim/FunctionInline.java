@@ -11,9 +11,10 @@ import java.util.*;
 
 public class FunctionInline extends Pass{
 
-    private boolean change = false;
+    private boolean newRound = false, change = false;
     private Root irRoot;
     private HashSet<Function> cannotInlineFun = new HashSet<>();
+    private HashMap<Call, Function> canUnFold = new HashMap<>();
 
     public FunctionInline(Root irRoot) {
         super();
@@ -23,6 +24,9 @@ public class FunctionInline extends Pass{
     private ArrayList<Function> DFSStack = new ArrayList<>();
     private HashSet<Function> visited = new HashSet<>();
     private HashMap<Function, HashSet<Function>> caller = new HashMap<>();
+    private void init() {
+        irRoot.functions().forEach((name, fn) -> caller.put(fn, new HashSet<>()));
+    }
     private void DFS(Function it) {
         visited.add(it);
         DFSStack.add(it);
@@ -65,34 +69,16 @@ public class FunctionInline extends Pass{
         mirror.setBlockMirror(mirrorBlocks);
         //copy all instructions
         callee.blocks().forEach(block -> {
-            block.instructions().forEach(instr -> instr.addMirror(block, mirror));
-            block.phiInst().forEach((reg, instr) -> instr.addMirror(block, mirror));
+            IRBlock mirB = mirror.blockMir(block);
+            for(Inst instr = block.headInst; instr != null; instr = instr.next)
+                instr.addMirror(mirB, mirror);
+            block.phiInst().forEach((reg, instr) -> instr.addMirror(mirB, mirror));
         });
+
         //split the current block into two parts(before the call and after it)
         IRBlock laterBlock = new IRBlock(currentBlock.name() + "_split");
-        boolean collect = false;
-        for (Iterator<Inst> iter = currentBlock.instructions().iterator(); iter.hasNext();) {
-            Inst instr = iter.next();
-            if (collect) {
-                instr.setCurrentBlock(laterBlock);
-                if (instr instanceof Branch || instr instanceof Return || instr instanceof Jump){
-                    laterBlock.addTerminator(instr);
-                    currentBlock.removeTerminator();
-                    break;
-                }
-                else {
-                    laterBlock.addInst(instr);
-                    iter.remove();
-                }
-            }
-            else if (instr == inst) {
-                collect = true;
-                iter.remove();
-            }
-        }
-        //merge the entry block with the former one of current block
-        fn.removeBlock(mirrorBlocks.get(callee.entryBlock()));
-        currentBlock.mergeBlock(mirrorBlocks.get(callee.entryBlock()));
+        currentBlock.splitTo(laterBlock, inst);
+
         //merge the exit block with the laterBlock one of current block,
         //no need to remove laterBlock since it is never added
         IRBlock exitBlock = mirrorBlocks.get(callee.exitBlock());
@@ -102,17 +88,31 @@ public class FunctionInline extends Pass{
         exitBlock.removeTerminator();
 
         exitBlock.mergeBlock(laterBlock);
+        //merge the entry block with the former one of current block
+        IRBlock mirEntry = mirrorBlocks.get(callee.entryBlock());
+        fn.removeBlock(mirEntry);  //no need to remove later block: not added into fn
+        currentBlock.mergeBlock(mirEntry);
+        if (fn.exitBlock() == currentBlock && mirEntry != exitBlock) fn.setExitBlock(exitBlock);
     }
     private void checkInline(Function fn) {
-        fn.blocks().forEach(block -> block.instructions().forEach(inst -> {
+        fn.blocks().forEach(block -> {
+            for (Inst inst = block.headInst; inst != null; inst = inst.next)
             if (inst instanceof Call && !cannotInlineFun.contains(((Call)inst).callee())) {
-                unfold((Call)inst, fn);
-                change = true;
+                canUnFold.put((Call) inst, fn);
+                newRound = true;
             }
-        }));
+        });
     }
+    int round = 0;
     private void inlining() {
-        irRoot.functions().forEach((name, func) -> checkInline(func));
+        do {
+            round++;
+            newRound = false;
+            canUnFold.clear();
+            irRoot.functions().forEach((name, func) -> checkInline(func));
+            canUnFold.forEach(this::unfold);
+            change = change || newRound;
+        } while (newRound);
         for (Iterator<Map.Entry<String, Function>> iter = irRoot.functions().entrySet().iterator(); iter.hasNext();) {
             Map.Entry<String, Function> entry = iter.next();
             Function fn = entry.getValue();
@@ -124,14 +124,15 @@ public class FunctionInline extends Pass{
 
     @Override
     public boolean run() {
-        change = false;
+        newRound = change = false;
         /* cannotInlineFun().clear();
          * visited.clear();
          * new MIRFuncCallCollect(irRoot).collect();
          */
         visited.addAll(irRoot.builtinFunctions().values());
         cannotInlineFun.addAll(visited);
-        cannotInlineFun.add(irRoot.getFunction("g_main"));
+        cannotInlineFun.add(irRoot.getFunction("main"));
+        init();
         inlineJudge();
         inlining();
         return change;

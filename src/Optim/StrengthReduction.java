@@ -41,6 +41,7 @@ public class StrengthReduction extends Pass{
         return -1;
     }
     private void runForLoop(MIRLoop loop) {
+        loop.children().forEach(this::runForLoop);
         HashMap<Register, MIRInductVar> indVar = new HashMap<>();
         IRBlock preHead = loop.preHead();
         IRBlock head = preHead.successors().get(0);
@@ -66,7 +67,7 @@ public class StrengthReduction extends Pass{
         do{
             newChange = false;
             for (IRBlock block : loop.blocks()) {
-                for (Inst inst : block.instructions()) {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next) {
                     if (inst instanceof Binary && ((Binary) inst).opCode() == Binary.BinaryOpCat.mul) {
                         Binary instr = (Binary) inst;
                         int constAt = partlyConst(instr);
@@ -116,7 +117,7 @@ public class StrengthReduction extends Pass{
                                 blocks.add(innerTerminator);
                                 values.add(instr.dest());
                                 head.addPhi(new Phi(newPhiReg, blocks, values, head));
-                                instr.strengthReduction(newPhiReg, new ConstInt(addValue, 32), Binary.BinaryOpCat.mul);
+                                instr.strengthReduction(newPhiReg, new ConstInt(addValue, 32), Binary.BinaryOpCat.add);
                                 MIRInductVar newInd = new MIRInductVar(newPhiReg, instr.dest(), 1);
                                 indVar.put(newPhiReg, newInd);
                                 indVar.put(instr.dest(), newInd);
@@ -140,7 +141,7 @@ public class StrengthReduction extends Pass{
 
     @Override
     public boolean run() {
-        change = true;
+        change = false;
         irRoot.functions().forEach((name, fn) -> runForFn(fn));
         return change;
     }

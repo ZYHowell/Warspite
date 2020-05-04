@@ -3,6 +3,7 @@ package Assemb.RISCInst;
 import Assemb.LIRBlock;
 import Assemb.LOperand.*;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 public class IType extends RISCInst {
@@ -26,6 +27,11 @@ public class IType extends RISCInst {
         HashSet<Reg> ret = new HashSet<>();
         ret.add(src);
         return ret;
+    }
+
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>(Collections.singletonList(dest()));
     }
 
     @Override

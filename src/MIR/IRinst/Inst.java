@@ -11,12 +11,19 @@ abstract public class Inst {
 
     private Register dest;
     private IRBlock block;
+    public Inst next = null, prior = null;
 
     public Inst(Register dest, IRBlock block) {
         this.dest = dest;
         this.block = block;
     }
 
+    public void removeInList() {
+        if (next != null) next.prior = prior;
+        else block.tailInst = prior;
+        if (prior != null) prior.next = next;
+        else block.headInst = next;
+    }
     public IRBlock block() {
         return block;
     }
@@ -37,5 +44,5 @@ abstract public class Inst {
     public abstract void addMirror(IRBlock destBlock, MIRMirror mirror);
     public abstract HashSet<Operand> uses();
     public abstract boolean sameMeaning(Inst inst);
-    public abstract boolean canHoist();
+    public abstract boolean noSideEffect();
 }

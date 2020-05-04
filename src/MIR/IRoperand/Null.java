@@ -13,7 +13,7 @@ public class Null extends Operand {
 
     @Override
     public HashSet<Inst> uses() {
-        return null;
+        return new HashSet<>();
     }
 
     @Override

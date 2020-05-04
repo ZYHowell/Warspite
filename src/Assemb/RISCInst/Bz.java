@@ -8,13 +8,17 @@ import java.util.HashSet;
 
 public class Bz extends RISCInst {
     private Reg judged;
-    private LIRBlock jumpTo;
+    private LIRBlock destBlock;
     private EzCategory opCode;
-    public Bz(Reg judged, EzCategory opCode, LIRBlock jumpTo, LIRBlock block) {
+    public Bz(Reg judged, EzCategory opCode, LIRBlock destBlock, LIRBlock block) {
         super(null, block);
         this.judged = judged;
-        this.jumpTo = jumpTo;
+        this.destBlock = destBlock;
         this.opCode = opCode;
+    }
+
+    public void replaceDest(LIRBlock origin, LIRBlock dest) {
+        if (destBlock == origin) destBlock = dest;
     }
 
     @Override
@@ -22,6 +26,10 @@ public class Bz extends RISCInst {
         HashSet<Reg> ret = new HashSet<>();
         ret.add(judged);
         return ret;
+    }
+    @Override
+    public HashSet<Reg> defs() {
+        return new HashSet<>();
     }
 
     @Override
@@ -34,6 +42,6 @@ public class Bz extends RISCInst {
 
     @Override
     public String toString() {
-        return "b" + opCode + "z " + judged + ", " + jumpTo;
+        return "b" + opCode + "z " + judged + ", " + destBlock;
     }
 }
