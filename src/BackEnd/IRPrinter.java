@@ -89,24 +89,24 @@ public class IRPrinter {
     }
 
     public void run(Root irRoot) {
-//        irRoot.builtinFunctions().forEach((name, fn) -> {
-//            symbolCnt = 0;
-//            out.println(fnHead(fn, true));
-//        });
-//        irRoot.types().forEach((name, type) -> {
-//            out.print("%struct." + name + " = " + "type {");
-//            int size = type.members().size();
-//            for (int i = 0; i < size;++i) {
-//                out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
-//            }
-//        });
-//        irRoot.globalVar().forEach(gVar ->
-//            out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
-//                    " zeroinitializer, align " + gVar.type().size() / 8)
-//        );
-//        irRoot.constStrings().forEach((name, constString) -> out.println(
-//                "@" + name + " = private unnamed_addr constant "
-//                + "[" + constString.value().length() + " x i8] c" + "\"" + constString.irValue() + "\", align 1"));
+        irRoot.builtinFunctions().forEach((name, fn) -> {
+            symbolCnt = 0;
+            out.println(fnHead(fn, true));
+        });
+        irRoot.types().forEach((name, type) -> {
+            out.print("%struct." + name + " = " + "type {");
+            int size = type.members().size();
+            for (int i = 0; i < size;++i) {
+                out.print(type.members().get(i).toString() + (i == size - 1 ? "}\n" : ", "));
+            }
+        });
+        irRoot.globalVar().forEach(gVar ->
+            out.println("@" + gVar.name() + " = global " + ((Pointer)gVar.type()).pointTo().toString() +
+                    " zeroinitializer, align " + gVar.type().size() / 8)
+        );
+        irRoot.constStrings().forEach((name, constString) -> out.println(
+                "@" + name + " = private unnamed_addr constant "
+                + "[" + constString.value().length() + " x i8] c" + "\"" + constString.irValue() + "\", align 1"));
         irRoot.functions().forEach(this::printFn);
     }
 }

@@ -249,49 +249,4 @@ public class IRBlock {
             addTerminator(newTerm);
         }
     }
-
-    private void phiMerge(IRBlock origin) {
-        assert origin.successors().size() == 1 && origin.successors().contains(this);
-        HashMap<Register, Phi> merged = origin.phiInst();
-        HashSet<Register> notCopy = new HashSet<>();
-        PhiInst.forEach((reg, phi) -> {
-            //if the phiInst uses a phi in merged blocks, merge the two, no need to replaceAllUse
-            ArrayList<Operand> values = new ArrayList<>(phi.values());
-            for (Operand value : values) {
-                if (value instanceof Register && merged.containsKey(value)) {
-                    Phi mergeInst = merged.get(value);
-                    ArrayList<Operand> mergeValues = mergeInst.values();
-                    ArrayList<IRBlock> mergeBlocks = mergeInst.blocks();
-                    for (int j = 0; j < mergeValues.size(); ++j)
-                        phi.addOrigin(mergeValues.get(j), mergeBlocks.get(j));
-                    notCopy.add(mergeInst.dest());
-                }
-            }
-            int size = phi.blocks().size();
-            for (int i = 0;i < size;++i) {
-                if (phi.blocks().get(i) == origin) {
-                    Operand value = phi.values().get(i);
-                    if (value instanceof Register && notCopy.contains(value)) {
-                        phi.blocks().remove(i);
-                        phi.values().remove(i);
-                    } else phi.blocks().set(i, origin.precursors.get(0));
-                    break;
-                }
-            }
-        });
-
-        merged.forEach((reg, phi) -> {
-            //otherwise, copy it currently
-            if (!notCopy.contains(reg)) {
-                if (precursors().size() > 1) throw new RuntimeException();
-                phi.moveTo(this);
-            }
-        });
-    }
-    public void mergeEmptyBlock(IRBlock merged) {
-        phiMerge(merged);
-        this.precursors().remove(merged);
-        ArrayList<IRBlock> precursors = new ArrayList<>(merged.precursors());
-        precursors.forEach(pre -> pre.replaceSuccessor(merged, this));
-    }
 }

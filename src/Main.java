@@ -65,7 +65,6 @@ public class Main {
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
-                //to consider:check optimizations
                 if (doOptimization) new Optimization(irRoot).run();
                 new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
                 new PhiResolve(irRoot).run();

@@ -5,6 +5,7 @@ import MIR.IRBlock;
 import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.Root;
+import Util.DomGen;
 import Util.MIRMirror;
 
 import java.util.*;
@@ -135,6 +136,7 @@ public class FunctionInline extends Pass{
         init();
         inlineJudge();
         inlining();
+        irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
         return change;
     }
 }

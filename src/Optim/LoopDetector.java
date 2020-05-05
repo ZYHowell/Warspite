@@ -30,10 +30,8 @@ public class LoopDetector {
         if (!loopMap.containsKey(head)) {
             MIRLoop loop = new MIRLoop();
             loopMap.put(head, loop);
-            loopMap.get(head).addTail(tail);
-            if (addPreHeader) addPreHeader(head, loop);
         }
-        else loopMap.get(head).addTail(tail);
+        loopMap.get(head).addTail(tail);
     }
     private void addPreHeader(IRBlock head, MIRLoop loop) {
         ArrayList<IRBlock> precursors = new ArrayList<>(head.precursors());
@@ -121,19 +119,6 @@ public class LoopDetector {
         visit(fn.entryBlock());
     }
 
-    private void mergePreHead(MIRLoop loop) {
-        if (!loop.children().isEmpty())
-            loop.children().forEach(this::mergePreHead);
-        IRBlock preHead = loop.preHead();
-        if (preHead.tailInst == preHead.headInst && preHead != fn.entryBlock()){
-            fn.blocks().remove(preHead);
-            preHead.successors().get(0).mergeEmptyBlock(preHead);
-        }
-    }
-    public void mergePreHeads() {
-        rootLoops.forEach(this::mergePreHead);
-    }
-
     public void runForFn() {
         //assume that the dominator relation is correct.
         fn.blocks().forEach(block -> {
@@ -143,6 +128,7 @@ public class LoopDetector {
                     break;
                 }
         });
+        if (addPreHeader) loopMap.forEach(this::addPreHeader);
         loopMap.forEach((head, loop) -> loop.tails().forEach(tail -> getWholeLoop(tail, head)));
         treeSpanning();
     }

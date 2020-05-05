@@ -29,10 +29,12 @@ public class CFGSimplification extends Pass {
 
     private Root irRoot;
     private boolean change;
+    private boolean doStraightening;
 
-    public CFGSimplification(Root irRoot) {
+    public CFGSimplification(Root irRoot, boolean doStraightening) {
         super();
         this.irRoot = irRoot;
+        this.doStraightening = doStraightening;
     }
 
     private boolean isConst(Operand src) {
@@ -120,14 +122,12 @@ public class CFGSimplification extends Pass {
         do {
             newChange = removeBB(fn);
             //newChange = mergeBB_1(fn) || newChange;
-            newChange = mergeBB_2(fn) || newChange;
-            if (newChange) {
-                change = true;
-                changed = true;
-            }
+            if (doStraightening) newChange = mergeBB_2(fn) || newChange;
+            changed = changed || newChange;
         } while(newChange);
         if (changed) new DomGen(fn, true).runForFn();
         //re-calculate the dom relationship
+        change = change || changed;
     }
 
     @Override

@@ -93,21 +93,23 @@ public class StrengthReduction extends Pass{
                                 }
                                 Register newPhiReg = new Register(instr.dest().type(), "strRedPhi");
                                 Register newInitReg = new Register(newPhiReg.type(), "strRedInit");
-                                if (src == ind.phiReg())
+                                if (src == ind.addReg())
                                     //init: if src is phi, the init is phi.outer * mulValue
                                     preHead.addInstTerminated(
                                         new Binary(phiInit, new ConstInt(mulValue, 32),
                                                 newInitReg, Binary.BinaryOpCat.mul, preHead));
                                 else {
                                     //else, the init is (phi.outer + ind.addValue()) * mulValue;
-                                    assert src == ind.addReg();
+                                    assert src == ind.phiReg();
                                     Register tmpAdd = new Register(newInitReg.type(), "strRedInitAdd");
-                                    preHead.addInstTerminated(
-                                        new Binary(phiInit, new ConstInt(ind.addValue(), 32),
+                                    if (ind.addValue() < 0)
+                                        preHead.addInstTerminated(new Binary(phiInit, new ConstInt(-1 * ind.addValue(), 32),
                                                 tmpAdd, Binary.BinaryOpCat.add, preHead));
+                                    else preHead.addInstTerminated(new Binary(phiInit, new ConstInt(ind.addValue(), 32),
+                                                tmpAdd, Binary.BinaryOpCat.sub, preHead));
                                     preHead.addInstTerminated(
                                         new Binary(tmpAdd, new ConstInt(mulValue, 32),
-                                                newInitReg, Binary.BinaryOpCat.add, preHead));
+                                                newInitReg, Binary.BinaryOpCat.mul, preHead));
                                 }
                                 ArrayList<IRBlock> blocks = new ArrayList<>();
                                 ArrayList<Operand> values = new ArrayList<>();
@@ -117,7 +119,14 @@ public class StrengthReduction extends Pass{
                                 blocks.add(innerTerminator);
                                 values.add(instr.dest());
                                 head.addPhi(new Phi(newPhiReg, blocks, values, head));
-                                instr.strengthReduction(newPhiReg, new ConstInt(addValue, 32), Binary.BinaryOpCat.add);
+                                Binary stepInst;
+                                Register stepReg = new Register(instr.dest().type(), "");
+                                if (addValue >= 0) stepInst = new Binary(newPhiReg, new ConstInt(addValue, 32), stepReg, Binary.BinaryOpCat.add, head);
+                                else stepInst = new Binary(newPhiReg, new ConstInt(addValue * -1, 32), stepReg, Binary.BinaryOpCat.sub, head);
+                                head.addInstTerminated(stepInst);
+                                instr.dest().replaceAllUseWith(stepReg);
+                                instr.removeSelf(true);
+
                                 MIRInductVar newInd = new MIRInductVar(newPhiReg, instr.dest(), 1);
                                 indVar.put(newPhiReg, newInd);
                                 indVar.put(instr.dest(), newInd);
@@ -136,7 +145,6 @@ public class StrengthReduction extends Pass{
         LoopDetector loops = new LoopDetector(fn, true);
         loops.runForFn();
         loops.rootLoops().forEach(this::runForLoop);
-        loops.mergePreHeads();
     }
 
     @Override

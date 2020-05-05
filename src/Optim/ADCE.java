@@ -8,6 +8,7 @@ import MIR.IRoperand.Register;
 import MIR.IRtype.ArrayType;
 import MIR.IRtype.Pointer;
 import MIR.Root;
+import Util.DomGen;
 import Util.MIRFnGraph;
 
 import java.util.HashSet;
@@ -198,6 +199,7 @@ public class ADCE extends Pass {
                 }
             }
             fn.blocks().removeIf(block -> block.precursors().size() == 1 && block.precursors().get(0) == block);
+            new DomGen(fn, true).runForFn();
         });
     }
 

@@ -9,10 +9,7 @@ import MIR.IRoperand.ConstInt;
 import MIR.IRoperand.Operand;
 import MIR.Root;
 
-import java.util.Iterator;
-
 import static MIR.IRinst.Binary.BinaryOpCat.*;
-import static MIR.IRinst.Cmp.CmpOpCategory.sgt;
 import static MIR.IRinst.Cmp.CmpOpCategory.slt;
 
 public class instReplacement extends Pass {
@@ -23,15 +20,15 @@ public class instReplacement extends Pass {
         this.irRoot = irRoot;
     }
 
-    public int twoPow(int value) {
+    public int logTwo(int value) {
         if (value <= 0) return -1;
-        int powNum = 0;
+        int logRet = 0;
         while(value > 1) {
             if (value % 2 != 0) return -1;
             value = value / 2;
-            ++powNum;
+            ++logRet;
         }
-        return powNum;
+        return logRet;
     }
     public void runForBlock(IRBlock block) {
         for (Inst inst = block.headInst; inst != null; inst = inst.next) {
@@ -45,7 +42,7 @@ public class instReplacement extends Pass {
                             bi.dest().replaceAllUseWith(new ConstInt(0, 32));
                             bi.removeSelf(true);
                         }
-                        powNum = twoPow(((ConstInt) bi.src1()).value());
+                        powNum = logTwo(((ConstInt) bi.src1()).value());
                         src = bi.src2();
                     }
                     if (bi.src2() instanceof ConstInt) {
@@ -53,13 +50,12 @@ public class instReplacement extends Pass {
                             bi.dest().replaceAllUseWith(new ConstInt(0, 32));
                             bi.removeSelf(true);
                         }
-                        powNum = twoPow(((ConstInt) bi.src2()).value());
+                        powNum = logTwo(((ConstInt) bi.src2()).value());
                         src = bi.src1();
                     }
-                    if (powNum > 0) {
+                    if (powNum > 0)
                         bi.strengthReduction(src, new ConstInt(powNum, 32), shl);
-                        continue;
-                    }
+                    continue;
                 } else if (bi.opCode() == add) {
                     if (bi.src1() instanceof ConstInt && ((ConstInt)bi.src1()).value() == 0) src = bi.src2();
                     else if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 0) src = bi.src1();
@@ -70,7 +66,8 @@ public class instReplacement extends Pass {
                     if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 1) src = bi.src1();
                 } else if (bi.opCode() == shl) {
                     if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 0) src = bi.src1();
-                } else continue;
+                }
+                if (src == null) continue;
                 bi.dest().replaceAllUseWith(src);
                 bi.removeSelf(true);
             } else if (inst instanceof Cmp) {
@@ -112,6 +109,6 @@ public class instReplacement extends Pass {
     @Override
     public boolean run() {
         irRoot.functions().forEach((name, fn) -> runForFn(fn));
-        return true;    //only need to do once
+        return true;
     }
 }

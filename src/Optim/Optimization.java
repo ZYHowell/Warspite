@@ -21,12 +21,14 @@ public class Optimization {
         do{
             change = new ADCE(irRoot).run();
             change = new SCCP(irRoot).run() || change;
-            change = new CFGSimplification(irRoot).run() || change;
+            change = new CFGSimplification(irRoot, false).run() || change;
             change = new CSE(irRoot).run() || change;
             new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
-//            change = new LICM(irRoot).run() || change;    this will be checked later after alias
+            new instReplacement(irRoot).run();
             change = new StrengthReduction(irRoot).run() || change;
+//            change = new LICM(irRoot).run() || change;    this will be checked later after alias
         }
         while (change);
+        new CFGSimplification(irRoot, true).run();
     }
 }

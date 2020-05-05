@@ -67,7 +67,6 @@ public class LICM extends Pass{
         LoopDetector loops = new LoopDetector(fn, true);
         loops.runForFn();
         loops.rootLoops().forEach(this::runForLoop);
-        loops.mergePreHeads();
         //merge unnecessary preHead, is safe here since the loops are used up
     }
 

@@ -7,6 +7,7 @@ import MIR.IRoperand.*;
 import MIR.IRtype.BoolType;
 import MIR.IRtype.IntType;
 import MIR.Root;
+import Util.DomGen;
 
 import java.util.*;
 
@@ -212,6 +213,7 @@ public class SCCP extends Pass {
     }
     private void runForFn(Function fn) {
         currentFn = fn;
+        boolean everChanged = false;
         do {
             visited.clear();
             changeFn = false;
@@ -223,8 +225,10 @@ public class SCCP extends Pass {
                     changeFn = true;
                 }
             });
-            change = change || changeFn;
+            everChanged = everChanged || changeFn;
         } while(changeFn);
+        if (everChanged) new DomGen(fn, true).runForFn();
+        change = change || everChanged;
     }
     @Override
     public boolean run() {

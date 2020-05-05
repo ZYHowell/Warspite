@@ -19,9 +19,6 @@ public class MIRLoop {
     public IRBlock preHead() {
         return preHead;
     }
-    public void addBlock(IRBlock block) {
-        blocks.add(block);
-    }
     public void addBlocks(HashSet<IRBlock> newBlocks) {
         blocks.addAll(newBlocks);
     }
