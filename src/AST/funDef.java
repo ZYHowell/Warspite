@@ -10,7 +10,7 @@ public class funDef extends ASTNode {
     private typeNode type;
     private blockNode body;
     private boolean isConstructor, isMethod;
-    private ArrayList<varDef> parameters;   //should have no expr node(not visited in semantic checker)
+    private ArrayList<varDef> parameters;
     private funcDecl decl;
 
     public funDef(String name, position pos, boolean isConstructor,

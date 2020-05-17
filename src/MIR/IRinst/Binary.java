@@ -27,7 +27,6 @@ public class Binary extends Inst {
         src1.addUse(this);src2.addUse(this);
         dest.setDef(this);
     }
-    //the type is always the same as its src
     public Operand src1() {
         return src1;
     }

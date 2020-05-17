@@ -20,7 +20,6 @@ public class Store extends Inst{
         this.address = address;
         value.addUse(this);
         address.addUse(this);
-        //notice that the address is a "def" in mem2reg if it is an allocated reg
     }
 
     public Operand address() {

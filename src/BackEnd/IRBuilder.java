@@ -826,7 +826,7 @@ public class IRBuilder implements ASTVisitor {
             else it.setOperand(null);
             ArrayList<Operand> params = new ArrayList<>();
             if (calleeFunc.isMethod())
-                params.add(resolvePointer(currentBlock, it.callee().operand())); //let "this" be the first
+                params.add(resolvePointer(currentBlock, it.callee().operand()));//"this"
             it.params().forEach(param -> {
                 param.accept(this);
                 params.add(resolvePointer(currentBlock, param.operand()));
@@ -842,7 +842,7 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(methodExpr it) {
         it.caller().accept(this);
-        it.setOperand(it.caller().operand());   //record the array pointer or the caller class pointer(this)
+        it.setOperand(it.caller().operand());   //array pointer or caller class pointer(this)
     }
 
     @Override
@@ -850,8 +850,6 @@ public class IRBuilder implements ASTVisitor {
         it.caller().accept(this);
         Operand classPtr = resolvePointer(currentBlock, it.caller().operand());
         it.setOperand(new Register(it.entity().asOperand().type(), "this." + it.member()));
-        //the entity.operand() is always a resolvable pointer, pointing to this+offset
-        //entity.reg is an abstract one, so only use its type to create a new reg
         currentBlock.addInst(new GetElementPtr(((Pointer)classPtr.type()).pointTo(), classPtr,
                             new ConstInt(0, 32), it.entity().elementIndex(),
                             (Register)it.operand(), currentBlock));
@@ -885,7 +883,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(funcNode it) {
         funcDecl func = (funcDecl)it.type();
         if (func.isMethod()) {
-            it.setOperand(currentFunction.getClassPtr());   //record "this"
+            it.setOperand(currentFunction.getClassPtr());   //"this"
         }
     }
 
@@ -988,7 +986,7 @@ public class IRBuilder implements ASTVisitor {
             ArrayList<Operand> values = new ArrayList<>();
             ArrayList<IRBlock> blocks = new ArrayList<>();
             //here use the ptr as i32* is correct, so use allocBitCast to get the ptr is ok
-            //this is especially efficient since I can use 1-base counter to get 0-base ptr
+            //especially efficient since I can use 1-base counter to get 0-base ptr
             values.add(new ConstInt(0, 32));
             blocks.add(currentBlock);
             currentBlock.addTerminator(new Jump(incrBlock, currentBlock));

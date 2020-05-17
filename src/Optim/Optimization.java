@@ -14,8 +14,9 @@ public class Optimization {
         this.irRoot = irRoot;
     }
 
-    public void run() throws FileNotFoundException {
+    public void run() {
         boolean change;
+        int round = 0;
 
         new FunctionInline(irRoot).run();
         do{
@@ -23,10 +24,16 @@ public class Optimization {
             change = new SCCP(irRoot).run() || change;
             change = new CFGSimplification(irRoot, false).run() || change;
             change = new CSE(irRoot).run() || change;
-            new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
+//            new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
             new instReplacement(irRoot).run();
             change = new StrengthReduction(irRoot).run() || change;
-//            change = new LICM(irRoot).run() || change;    this will be checked later after alias
+            if (change || round == 0) {
+                AliasAnalysis alias = new AliasAnalysis(irRoot);
+                alias.run();
+                change = new MemCSE(irRoot, alias).run() || change;
+                //change = new LICM(irRoot).run() || change;
+            }
+            ++round;
         }
         while (change);
         new CFGSimplification(irRoot, true).run();

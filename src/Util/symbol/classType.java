@@ -6,20 +6,15 @@ import Util.scope.*;
 
 import java.util.ArrayList;
 
-//this is for a class
-//a classType can also be an entity(just like what varEntity can be)
 public class classType extends BaseType {
-
-    private classDef define;
 
     private int allocSize = 0;
     private Scope localScope;
-    private varEntity formalEntity; //this is used for this expr(provide it a entity)
+    private varEntity formalEntity; //used for this expr(provide it a entity)
     private ArrayList<Type> elementTypeList = new ArrayList<>();
 
     public classType(String name, classDef define) {
         super(name);
-        this.define = define;
         formalEntity = new varEntity("formal entity", this, true, false);
     }
 

@@ -70,9 +70,7 @@ public class InstSelection {
             block.addInst(new Li(new Imm(((ConstBool) src).value() ? 1 : 0), reg, block));
             return reg;
         } else {
-            VirtualReg reg = new VirtualReg(1, cnt++);
-            block.addInst(new Li(new Imm(0), reg, block));
-            return reg;
+            return lRoot.getPhyReg(0);
         }
     }
     private boolean inBounds(int value) {
@@ -319,8 +317,12 @@ public class InstSelection {
             Move mv = (Move) inst;
             if (mv.origin() instanceof ConstInt)
                 block.addInst(new Li(new Imm(((ConstInt) mv.origin()).value()), RegM2L(mv.dest()), block));
-            else if (mv.origin() instanceof GlobalReg)
+            else if (mv.origin() instanceof GlobalReg || mv.origin() instanceof ConstString)
                 block.addInst(new La((GReg)RegM2L(mv.origin()), RegM2L(mv.dest()), block));
+            else if (mv.origin() instanceof ConstBool) {
+                if (((ConstBool) mv.origin()).value()) block.addInst(new Li(new Imm(1), RegM2L(mv.dest()), block));
+                else block.addInst(new Mv(lRoot.getPhyReg(0), RegM2L(mv.dest()), block));
+            }
             else block.addInst(new Mv(RegM2L(mv.origin()), RegM2L(mv.dest()), block));
         }
         else if (inst instanceof Return) {
@@ -388,7 +390,7 @@ public class InstSelection {
         for (int i = 8; i < fn.params().size();++i) {
             entryBlock.addInst(new Ld(lRoot.getPhyReg(2), lFn.params().get(i),
                     new SLImm(paraOffset), fn.params().get(i).type().size() / 8, entryBlock));
-            paraOffset += fn.params().get(i).type().size() / 8;
+            paraOffset += 4;
         }
 
         fn.blocks().forEach(block -> {

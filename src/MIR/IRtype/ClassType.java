@@ -3,7 +3,6 @@ package MIR.IRtype;
 import java.util.ArrayList;
 
 public class ClassType extends IRBaseType{
-    //each class type is treated as a pointer(an i32 address)
     private String name;
     private int size = 0;
     private ArrayList<IRBaseType> members = new ArrayList<>();

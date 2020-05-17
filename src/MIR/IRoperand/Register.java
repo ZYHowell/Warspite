@@ -5,7 +5,6 @@ import MIR.IRinst.Inst;
 
 import java.util.HashSet;
 
-//all virtual register
 public class Register extends Operand {
 
     private String name;

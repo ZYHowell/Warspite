@@ -25,7 +25,6 @@ public class arrayExpr extends exprNode{
     @Override
     public varEntity entity() {
         throw new internalError("entity of arrayExpr??", pos());
-        // return base.entity();
     }
     @Override
     public void accept(ASTVisitor visitor) {

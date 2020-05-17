@@ -1,7 +1,9 @@
 package MIR.IRoperand;
 
 import MIR.IRinst.Inst;
+import MIR.IRtype.ArrayType;
 import MIR.IRtype.IRBaseType;
+import MIR.IRtype.Pointer;
 
 import java.util.HashSet;
 
@@ -19,6 +21,9 @@ abstract public class Operand {
     }
     public IRBaseType type() {
         return type;
+    }
+    public boolean isPointer() {
+        return type instanceof Pointer || type instanceof ArrayType;
     }
 
     public abstract HashSet<Inst> uses();

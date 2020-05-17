@@ -3,8 +3,6 @@ package BackEnd;
 import Assemb.*;
 import Assemb.LOperand.*;
 import Assemb.RISCInst.*;
-import Util.error.internalError;
-import Util.position;
 
 import java.util.*;
 
@@ -28,19 +26,19 @@ public class RegAlloc {
     private HashSet<Reg> preColored;
     private LRoot root;
     private LFn currentFn;
-    private HashSet<Mv> workListMoves = new HashSet<>(),
+    private HashSet<Mv> workListMoves = new LinkedHashSet<>(),
                         activeMoves = new HashSet<>(),
                         coalescedMoves = new HashSet<>(),
                         constrainedMoves = new HashSet<>(),
                         frozenMoves = new HashSet<>();
-    private HashSet<Reg> spillWorkList = new HashSet<>(),
+    private HashSet<Reg> spillWorkList = new LinkedHashSet<>(),
                          freezeWorkList = new HashSet<>(),
-                         simplifyWorkList = new HashSet<>(),
-                         spilledNodes = new HashSet<>(),
+                         simplifyWorkList = new LinkedHashSet<>(),
+                         spilledNodes = new LinkedHashSet<>(),
                          coloredNodes = new HashSet<>(),
-                         coalescedNodes = new HashSet<>(),
+                         coalescedNodes = new LinkedHashSet<>(),
                          spillIntroduce = new HashSet<>(),
-                         initial = new HashSet<>();
+                         initial = new LinkedHashSet<>();
     private HashSet<edge> adjSet = new HashSet<>();
     private Stack<Reg> selectStack = new Stack<>();
     private int stackLength = 0;
@@ -84,7 +82,7 @@ public class RegAlloc {
         currentFn.blocks().forEach(block -> {
             for (RISCInst inst = block.head; inst != null; inst = inst.next){
                 initial.addAll(inst.defs());
-                initial.addAll(inst.defs());
+                initial.addAll(inst.uses());
             }
         });
         initial.removeAll(preColored);
@@ -326,7 +324,6 @@ public class RegAlloc {
         coalescedNodes.forEach(n -> n.color = getAlias(n).color);
     }
     private void rewrite() {
-        HashSet<Reg> newTemps = new HashSet<>();
         spilledNodes.forEach(v -> {
             v.stackOffset = new SLImm(-1 * stackLength - 4); // if stackOffset is 0, it is actually store 4(sp)
             stackLength += 4;
@@ -347,7 +344,6 @@ public class RegAlloc {
                             inst.replaceDest(reg, tmp);
                             inst.addPre(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
                             inst.addPost(new St(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
-                            newTemps.add(tmp);
                         }
                         else {
                             if (inst instanceof Mv && ((Mv)inst).origin() == reg && inst.dest().stackOffset == null) {//safe for only one reg
@@ -359,7 +355,6 @@ public class RegAlloc {
                                 spillIntroduce.add(tmp);
                                 inst.addPre(new Ld(root.getPhyReg(2), tmp, reg.stackOffset, tmp.size(), block));
                                 inst.replaceUse(reg, tmp);
-                                newTemps.add(tmp);
                             }
                         }
                     }
@@ -377,24 +372,19 @@ public class RegAlloc {
                                 spillIntroduce.add(tmp);
                                 inst.replaceDest(def, tmp);
                                 inst.addPost(new St(root.getPhyReg(2), tmp, def.stackOffset, ((VirtualReg)def).size(), block));
-                                newTemps.add(tmp);
                             }
                         }
                     }
                 }
             }
         });
-        spillIntroduce.addAll(newTemps);
-        initial.addAll(coloredNodes);
-        initial.addAll(coalescedNodes);
-        initial.addAll(newTemps);
     }
     private void runForFn(LFn fn){
         //makeWorkList
         boolean done;
         do{
             init();
-            new LivenessAnal(fn).runForFn();
+            new LivenessAnalysis(fn).runForFn();
             build();
             //make workList
             initial.forEach(node -> {

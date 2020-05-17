@@ -5,7 +5,6 @@ import MIR.IRBlock;
 import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
-import MIR.IRtype.ArrayType;
 import MIR.IRtype.Pointer;
 import MIR.Root;
 import Util.DomGen;
@@ -51,7 +50,7 @@ public class ADCE extends Pass {
 
     private void testOp(Operand op, HashSet<Operand> addedOp) {
         HashSet<Inst> uses = op.uses();
-        if (!(op.type() instanceof Pointer || op.type() instanceof ArrayType)){
+        if (!op.isPointer()){
             if (op.defInst() != null) System.err.println(op.defInst().toString());
             else System.err.println(op.toString());
             throw new RuntimeException();
@@ -69,8 +68,8 @@ public class ADCE extends Pass {
                         testOp(st.value(), addedOp);
                     }
                 } else if (inst instanceof BitCast || inst instanceof GetElementPtr ||
-                    (inst instanceof Call && inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) ||
-                    (inst instanceof Load && inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) ||
+                    (inst instanceof Call && inst.dest() != null && inst.dest().isPointer()) ||
+                    (inst instanceof Load && inst.dest() != null && inst.dest().isPointer()) ||
                     (inst instanceof Phi)) {
                     if (!addedOp.contains(inst.dest()) && !outerOp.contains(inst.dest())){
                         addedOp.add(inst.dest());
@@ -99,7 +98,7 @@ public class ADCE extends Pass {
         outerOp.addAll(irRoot.constStrings().values());
         irRoot.functions().forEach((name, fn) -> {
             fn.params().forEach(param -> {
-                if (param.type() instanceof Pointer || param.type() instanceof ArrayType) outerOp.add(param);
+                if (param.isPointer()) outerOp.add(param);
             });
             fn.setSideEffect(false);
         });
@@ -136,7 +135,7 @@ public class ADCE extends Pass {
                 liveCode.add(opr.defInst());
                 tryAdd(opr.defInst());
             }
-            if (opr.type() instanceof Pointer || opr.type() instanceof ArrayType)
+            if (opr.isPointer())
                 opr.uses().forEach(use -> {
                     if ((use instanceof Store || use instanceof BitCast || use instanceof GetElementPtr ||
                          use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))
@@ -146,7 +145,7 @@ public class ADCE extends Pass {
                     }
                 });
         });
-        if (inst.dest() != null && (inst.dest().type() instanceof Pointer || inst.dest().type() instanceof ArrayType)) {
+        if (inst.dest() != null && inst.dest().isPointer()) {
             inst.dest().uses().forEach(use -> {
                 if ((use instanceof Store || use instanceof BitCast || use instanceof GetElementPtr ||
                         use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))

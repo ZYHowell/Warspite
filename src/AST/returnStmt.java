@@ -4,7 +4,7 @@ import Util.position;
 
 public class returnStmt extends stmtNode {
 
-    private exprNode returnValue;   //mention that this one can be null
+    private exprNode returnValue;
     private funDef dest;
 
     public returnStmt(exprNode returnValue, position pos) {

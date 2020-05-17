@@ -1,14 +1,14 @@
 package Assemb;
 
 import Assemb.LOperand.Reg;
-import Assemb.RISCInst.Mv;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public class LFn {
 
-    private HashSet<LIRBlock> blocks = new HashSet<>();
+    private HashSet<LIRBlock> blocks = new LinkedHashSet<>();
     private ArrayList<Reg> params = new ArrayList<>();
     public LIRBlock entryBlock, exitBlock;
     public int paramOffset = 0;

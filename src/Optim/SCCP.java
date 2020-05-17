@@ -39,7 +39,7 @@ public class SCCP extends Pass {
             if (op1 instanceof ConstInt) {
                 assert op2 instanceof ConstInt;
                 int value1 = ((ConstInt)op1).value(), value2 = ((ConstInt)op2).value();
-                int destValue = 0;
+                int destValue;
                 switch(inst.opCode()) {
                     case mul: destValue = value1 * value2; break;
                     case sdiv: {
@@ -54,21 +54,24 @@ public class SCCP extends Pass {
                     case ashr:destValue = value1 >> value2;break;
                     case sub:destValue = value1 - value2;break;
                     case add:destValue = value1 + value2;break;
-                    default: assert false;
+                    case and:destValue = value1 & value2;break;
+                    case or: destValue = value1 | value2;break;
+                    case xor:destValue = value1 ^ value2;break;
+                    default: throw new RuntimeException();
                 }
                 ConstInt replaceConst = new ConstInt(destValue, 32);
                 inst.dest().replaceAllUseWith(replaceConst);
                 constMap.put(inst.dest(), replaceConst);
-            } else {
-                assert op1 instanceof ConstBool;
-                assert op2 instanceof ConstBool;
+            } else {        //seems like totally wrong here
+                if (!(op1 instanceof ConstBool && op2 instanceof ConstBool) )
+                    throw new RuntimeException();
                 boolean value1 = ((ConstBool) op1).value(), value2 = ((ConstBool) op2).value();
-                boolean destValue = false;
+                boolean destValue;
                 switch(inst.opCode()) {
                     case and: destValue = value1 && value2; break;
                     case or: destValue = value1 || value2;break;
                     case xor: destValue = value1 ^ value2;break;
-                    default: assert false;
+                    default: throw new RuntimeException();
                 }
                 ConstBool replaceConst = new ConstBool(destValue);
                 inst.dest().replaceAllUseWith(replaceConst);
@@ -81,7 +84,7 @@ public class SCCP extends Pass {
         op1 = constTrans(inst.src1());
         op2 = constTrans(inst.src2());
         if (op1 != null && op2 != null) {
-            boolean destValue = false;
+            boolean destValue;
             if (op1 instanceof ConstInt) {
                 assert op2 instanceof ConstInt;
                 int value1 = ((ConstInt)op1).value(), value2 = ((ConstInt)op2).value();
@@ -92,7 +95,7 @@ public class SCCP extends Pass {
                     case sge: destValue = value1 >= value2;break;
                     case eq:  destValue = value1 == value2;break;
                     case ne:  destValue = value1 != value2;break;
-                    default:assert false;
+                    default: throw new RuntimeException();
                 }
             } else {
                 assert op1 instanceof ConstBool;
@@ -101,7 +104,7 @@ public class SCCP extends Pass {
                 switch(inst.opCode()) {
                     case eq: destValue = value1 == value2;break;
                     case ne: destValue = value1 != value2;break;
-                    default:assert false;
+                    default:throw new RuntimeException();
                 }
             }
             ConstBool replaceConst = new ConstBool(destValue);
@@ -159,7 +162,8 @@ public class SCCP extends Pass {
                         }
                     }
                 }
-                if (same) inst.dest().replaceAllUseWith(trans);
+                if (same)
+                    inst.dest().replaceAllUseWith(trans);
                 return same;
             }
             else return false;

@@ -2,14 +2,12 @@ package Util.symbol;
 
 import Util.error.internalError;
 import Util.position;
-//this is for constructor
 public class constructorType extends BaseType {
 
     public constructorType() {
         super("classConstruct");
     }
 
-    //this name should never be used.
     @Override
     public int size() {
         throw new internalError("call the size of a constructor return value",

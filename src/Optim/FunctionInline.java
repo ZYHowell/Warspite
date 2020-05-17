@@ -119,7 +119,7 @@ public class FunctionInline extends Pass{
             Function fn = entry.getValue();
             if (!cannotInlineFun.contains(fn)) iter.remove();
             else if (caller.get(fn).size() == 1 && caller.get(fn).contains(fn)) iter.remove();
-            //very rare: its only caller is itself. This is used to speed up anal instead of running
+            //very rare: its only caller is itself. This is used to speed up analysis instead of running
         }   //remove inlined function
     }
 

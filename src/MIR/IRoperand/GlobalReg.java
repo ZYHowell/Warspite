@@ -35,8 +35,7 @@ public class GlobalReg extends Operand {
 
     @Override
     public Operand copy() {
-        assert false;
-        return null;
+        throw new RuntimeException();
     }
 
     @Override

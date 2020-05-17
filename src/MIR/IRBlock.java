@@ -20,8 +20,6 @@ public class IRBlock {
 
     private IRBlock iDom = null;
     private HashSet<IRBlock> domFrontiers = new HashSet<>();
-    private HashSet<IRBlock> domChildren = new HashSet<>();
-
 
     public IRBlock(String name) {
         this.name = name;
@@ -158,7 +156,6 @@ public class IRBlock {
     }
     public void setIDom(IRBlock iDom) {
         this.iDom = iDom;
-        iDom.domChildren().add(this);
     }
     public IRBlock iDom() {
         return iDom;
@@ -171,7 +168,6 @@ public class IRBlock {
     }
     public void clearDomInfo() {
         domFrontiers.clear();
-        domChildren.clear();
         iDom = null;
     }
 
@@ -195,12 +191,6 @@ public class IRBlock {
             for (int i = 0;i < size;++i)
                 if (phi.blocks().get(i) == replaced) phi.blocks().set(i, newPre);
         });
-    }
-    public ArrayList<Inst> instructions() { //debug use;
-        ArrayList<Inst> ret = new ArrayList<>();
-        for (Inst inst = headInst; inst != null; inst = inst.next)
-            ret.add(inst);
-        return ret;
     }
 
     public void mergeBlock(IRBlock merged) {
@@ -230,9 +220,6 @@ public class IRBlock {
         }
 
         return false;
-    }
-    public HashSet<IRBlock> domChildren() {
-        return domChildren;
     }
 
     public void replaceSuccessor(IRBlock origin, IRBlock dest) {

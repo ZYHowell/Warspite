@@ -72,7 +72,7 @@ public class DomGen {
         for (int i = tot; i > 1; --i) {
             tmp = DFSIndex.get(i);
             for (IRBlock pre : tmp.precursors()) {
-                IRBlock evalBlock = eval(pre);  //to check
+                IRBlock evalBlock = eval(pre);
                 if (dfsOrder.get(sDom.get(tmp)) > dfsOrder.get(sDom.get(evalBlock)))
                     sDom.put(tmp, sDom.get(evalBlock));
             }
@@ -96,7 +96,6 @@ public class DomGen {
             fn.blocks().remove(null);
         }
 
-        //in any order is ok, but since I have DFSIndex to collect all blocks...
         int size = DFSIndex.size();
         for (int i = 1; i < size; ++i) {
             IRBlock block = DFSIndex.get(i);

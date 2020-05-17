@@ -70,8 +70,7 @@ public class Mem2Reg extends Pass{
             }
         }
 
-        //phi inserting. not the quickest, but the faster one seems needing a "cache"(by SSA book. consider later)
-        //this version is totally incorrect here
+        //phi inserting. not the quickest, but the faster one seems needing a "cache"(by SSA book)
         HashSet<IRBlock> runningSet;
         while(defBlocks.size() > 0){
             runningSet = defBlocks;
@@ -131,7 +130,6 @@ public class Mem2Reg extends Pass{
                     //the replaced one can only from an ancestor of the currentBlock or itself
                     replaceMap.put(reg, finalReplace(replaceMap, replace));
                     load.removeSelf(true);
-                    //this one is safe since it is not in iterating all instructions in the block
                 });
             }
         });

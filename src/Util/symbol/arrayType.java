@@ -4,7 +4,6 @@ public class arrayType extends Type {
     private BaseType baseType;
     private int dim;
 
-    //constructors
     public arrayType(BaseType basicType, int dim) {
         this.baseType = basicType;
         this.dim = dim;
@@ -14,7 +13,6 @@ public class arrayType extends Type {
         this.dim = lowerType.dim() - 1;
     }
 
-    //methods
     @Override
     public int size() {
         return 32;

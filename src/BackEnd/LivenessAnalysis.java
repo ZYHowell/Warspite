@@ -9,13 +9,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 //this is done after phi resolution
-public class LivenessAnal {
+public class LivenessAnalysis {
     private LFn fn;
     private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>(),
                                             blockDefs = new HashMap<>();
     private HashSet<LIRBlock> visited = new HashSet<>();
 
-    public LivenessAnal(LFn fn) {
+    public LivenessAnalysis(LFn fn) {
         this.fn = fn;
     }
 
