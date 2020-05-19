@@ -18,14 +18,23 @@ public class LICM extends Pass{
 
     private Root irRoot;
     private boolean change;
+    private AliasAnalysis alias;
 
-    public LICM(Root irRoot) {
+    public LICM(Root irRoot, AliasAnalysis alias) {
         super();
         this.irRoot = irRoot;
+        this.alias = alias;
     }
 
     private void tryHoist(Inst inst, HashSet<Register> defInLoop, Queue<Inst> canHoist) {
-        if (inst.noSideEffect()) {
+        if (inst instanceof Load) {
+            HashSet<Operand> uses = inst.uses();
+            uses.retainAll(defInLoop);
+            if (uses.isEmpty() && !alias.storeInLoop((Load)inst)) {
+                defInLoop.remove(inst.dest());
+                canHoist.add(inst);
+            }
+        } else if (inst.noSideEffect()) {
             HashSet<Operand> uses = inst.uses();
             uses.retainAll(defInLoop);
             if (uses.isEmpty()) {
@@ -43,10 +52,11 @@ public class LICM extends Pass{
         Queue<Inst> canHoist = new LinkedList<>();
 
         loop.blocks().forEach(block -> {
-            block.phiInst().forEach((reg, phi) -> defInLoop.add(phi.dest()));
+            block.phiInst().forEach((reg, phi) -> defInLoop.add(reg));
             for(Inst inst = block.headInst; inst != null; inst = inst.next)
                 if (inst.dest() != null) defInLoop.add(inst.dest());
         });
+        alias.buildStoreInLoop(loop);
         //collect all register defined in the loop
         IRBlock pre = loop.preHead();
         loop.blocks().forEach(block -> {
@@ -57,6 +67,7 @@ public class LICM extends Pass{
         //hoist and get more. the queue protects the correctness of the order
         while (!canHoist.isEmpty()) {
             Inst inst = canHoist.poll();
+            inst.removeInList();
             pre.addInstTerminated(inst);
             inst.dest().uses().forEach(useInst -> {
                 if (defInLoop.contains(useInst.dest())) tryHoist(useInst, defInLoop, canHoist);

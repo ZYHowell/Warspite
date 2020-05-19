@@ -74,6 +74,7 @@ public class IRBlock {
             tailInst.prior = inst;
             inst.prior = priorTail;
         }
+        inst.setCurrentBlock(this);
     }
     public void addTerminator(Inst inst) {
         addInst(inst);

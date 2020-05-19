@@ -19,6 +19,7 @@ public class MemCSE extends Pass {
     private Root irRoot;
     private AliasAnalysis alias;
     private boolean change;
+    private HashSet<IRBlock> visited = new HashSet<>();
 
     public MemCSE(Root irRoot, AliasAnalysis alias) {
         this.irRoot = irRoot;
@@ -49,11 +50,6 @@ public class MemCSE extends Pass {
         }
         return !interrupted;
     }
-    private void tryLoadCSE(IRBlock currentBlock, Load inst, HashSet<IRBlock> domChildren) {
-        if (!domChildren.contains(currentBlock)) return;
-        if (_LoadCSE(inst, currentBlock.headInst))
-            currentBlock.successors().forEach(suc -> tryLoadCSE(suc, inst, domChildren));
-    }
 
     private boolean _StoreCSE(Store inst, Inst beginning) {
         boolean interrupted = false;
@@ -80,7 +76,8 @@ public class MemCSE extends Pass {
         return !interrupted;
     }
     private void tryStoreCSE(IRBlock currentBlock, Store inst, HashSet<IRBlock> domChildren) {
-        if (!domChildren.contains(currentBlock)) return;
+        if (!domChildren.contains(currentBlock) || visited.contains(currentBlock)) return;
+        visited.add(currentBlock);
         if (_StoreCSE(inst, currentBlock.headInst))
             currentBlock.successors().forEach(suc -> tryStoreCSE(suc, inst, domChildren));
     }
@@ -100,18 +97,23 @@ public class MemCSE extends Pass {
                     });
                 }
             }
+            //do the collection of store memories in.
+            alias.buildStoreInBlock(domChildren);
             for (Inst inst = block.headInst; inst != null; inst = inst.next) {
                 if (inst instanceof Load) {
-                    if (_LoadCSE((Load) inst, inst.next))
-                        for (IRBlock suc : block.successors()) tryLoadCSE(suc, (Load) inst, domChildren);
+                    if (_LoadCSE((Load) inst, inst.next)) {
+                        for (IRBlock dom : domChildren) {
+                            if (!alias.storeInBlock(dom, ((Load)inst).address()))
+                                _LoadCSE((Load)inst, dom.headInst);
+                        }
+                    }
                 }
                 else if (inst instanceof Store) {
                     //is remove redundant store really that necessary? emm... just do for fun
-                    boolean interrupted = false, loadUse = false;
+                    boolean loadUse = false;
                     Operand src = ((Store) inst).address();
                     for (Inst following = inst.next; following != null; following = following.next) {
                         if (following instanceof Store && alias.mayAlias(src, ((Store) following).address())) {
-                            interrupted = true;
                             if (!loadUse && ((Store) following).address() == src) {
                                 inst.removeSelf(true);
                                 change = true;
@@ -119,7 +121,6 @@ public class MemCSE extends Pass {
                             break;
                         } else if (following instanceof Call) {
                             if (alias.mayModify(src, ((Call) following).callee())) {
-                                interrupted = true;
                                 break;
                             }
                         } else if (following instanceof Load &&
@@ -132,8 +133,6 @@ public class MemCSE extends Pass {
                             }
                         }
                     }
-                    if (!interrupted) for (IRBlock suc : block.successors())
-                        tryStoreCSE(suc, (Store) inst, domChildren);
                 }
             }
         });

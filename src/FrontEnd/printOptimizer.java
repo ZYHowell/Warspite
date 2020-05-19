@@ -1,6 +1,8 @@
 package FrontEnd;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
 import AST.*;
 import Util.position;
 import Util.scope.globalScope;
@@ -13,7 +15,8 @@ import Util.error.internalError;
 public class printOptimizer implements ASTVisitor{
 
     private globalScope gScope;
-    private funcDecl printFunction, printlnFunction;
+    private funcDecl printFunction, printlnFunction, printIntFn, printlnIntFn, toStringFn;
+    private HashSet<exprNode> canSplit = new HashSet<>();
 
     private funCallExpr generatePrint(exprNode param) {
         exprList tmp = new exprList(param.pos());
@@ -45,15 +48,18 @@ public class printOptimizer implements ASTVisitor{
 
     public printOptimizer(globalScope gScope) {
         this.gScope = gScope;
-        printFunction = gScope.getMethod("print", new position(0,0), false);
-        printlnFunction = gScope.getMethod("println", new position(0,0), false);
+        position tmp = new position(0, 0);
+        printFunction = gScope.getMethod("print",tmp, false);
+        printlnFunction = gScope.getMethod("println", tmp, false);
+        printIntFn = gScope.getMethod("printInt", tmp, false);
+        printlnIntFn = gScope.getMethod("printlnInt", tmp, false);
+        toStringFn = gScope.getMethod("toString", tmp, false);
     }
 
     @Override
     public void visit(rootNode it) {
-        if (!it.allDef().isEmpty()) {
+        if (!it.allDef().isEmpty())
             it.allDef().forEach(node -> node.accept(this));
-        }
     }
 
     @Override
@@ -86,9 +92,7 @@ public class printOptimizer implements ASTVisitor{
     public void visit(ifStmt it) {
         it.trueStmt().accept(this);
 
-        if (it.falseStmt() != null) {
-            it.falseStmt().accept(this);
-        }
+        if (it.falseStmt() != null) it.falseStmt().accept(this);
     }
 
     @Override
@@ -114,21 +118,19 @@ public class printOptimizer implements ASTVisitor{
     @Override public void visit(suffixExpr it) {}
     @Override public void visit(thisExpr it) {}
 
+    private boolean canOpt(exprNode expr) {
+        if (expr instanceof binaryExpr) return true;
+        if (expr instanceof funCallExpr)
+            return ((funCallExpr) expr).callee().type().equals(toStringFn);
+        return false;
+    }
     @Override
     public void visit(funCallExpr it) {
         funcDecl func = (funcDecl)it.callee().type();
         if (func.equals(printFunction)) {
-            exprNode expr = it.params().get(0);
-            if (expr instanceof binaryExpr) {
-                //todo: of course more
-                split((binaryExpr)expr, false);
-            }
+            if (canOpt(it.params().get(0))) canSplit.add(it);
         } else if (func.equals(printlnFunction)) {
-            exprNode expr = it.params().get(0);
-            if (expr instanceof binaryExpr) {
-                //todo: of course more
-                split((binaryExpr)expr, true);
-            }
+            if (canOpt(it.params().get(0))) canSplit.add(it);
         }
     }
 

@@ -6,6 +6,7 @@ import MIR.IRtype.IRBaseType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public class Function {
 
@@ -17,7 +18,7 @@ public class Function {
                     exitBlock;
     private HashSet<Function> callFunction = new HashSet<>();
     private HashSet<Register> allocaVar = new HashSet<>();
-    private HashSet<IRBlock> blocks = new HashSet<>();
+    private LinkedHashSet<IRBlock> blocks = new LinkedHashSet<>();
     private boolean hasSideEffect = true;
 
 
@@ -42,7 +43,7 @@ public class Function {
     public void removeBlock(IRBlock block) {
         blocks.remove(block);
     }
-    public HashSet<IRBlock> blocks() {
+    public LinkedHashSet<IRBlock> blocks() {
         return blocks;
     }
     public HashSet<Function> callFunction() {

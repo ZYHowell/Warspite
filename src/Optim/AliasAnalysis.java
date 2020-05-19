@@ -1,11 +1,14 @@
 package Optim;
 
 import MIR.Function;
+import MIR.IRBlock;
 import MIR.IRinst.*;
+import MIR.IRoperand.Null;
 import MIR.IRoperand.Operand;
 import MIR.IRtype.Pointer;
 import MIR.Root;
 import Util.MIRFnGraph;
+import Util.MIRLoop;
 
 import java.util.*;
 
@@ -33,6 +36,7 @@ public class AliasAnalysis {
     private HashMap<Operand, Memory> pointerMap = new HashMap<>();
     private HashSet<Memory> memSet = new HashSet<>();
     private HashMap<Function, HashSet<Memory>> fnStores = new HashMap<>();
+    private HashMap<IRBlock, HashSet<Memory>> storeIn = new HashMap<>(), storeOut = new HashMap<>();
 
     public AliasAnalysis(Root irRoot) {
         super();
@@ -85,7 +89,10 @@ public class AliasAnalysis {
             block.phiInst().forEach((reg, phi) -> {
                 if (reg.type() instanceof Pointer) {
                     Memory phiMem = pointerMap.get(reg);
-                    phi.values().forEach(value -> pointerMap.get(value).simpleConstraints.add(phiMem));
+                    phi.values().forEach(value -> {
+                        if (!(value instanceof Null))
+                            pointerMap.get(value).simpleConstraints.add(phiMem);
+                    });
                 }
             });
             for (Inst inst = block.headInst; inst != null; inst = inst.next) {
@@ -100,15 +107,16 @@ public class AliasAnalysis {
                 }
                 else if (inst instanceof Call) {
                     Call ca = (Call) inst;
+                    if (irRoot.isBuiltIn(ca.callee().name())) continue;
                     for (int i = 0;i < ca.params().size();++i) {
                         Operand op = ca.params().get(i);
-                        if (op.type() instanceof Pointer)
+                        if (op.type() instanceof Pointer && !(op instanceof Null))
                             pointerMap.get(op).simpleConstraints.add(
                                     pointerMap.get(ca.callee().params().get(i)));
                     }
-                    if (ca.dest().type() instanceof Pointer) {
+                    if (ca.dest() != null && ca.dest().type() instanceof Pointer) {
                         Operand RetReg = ((Return) ca.callee().exitBlock().terminator()).value();
-                        pointerMap.get(RetReg).simpleConstraints.add(pointerMap.get(ca.dest()));
+                        if (!(RetReg instanceof Null)) pointerMap.get(RetReg).simpleConstraints.add(pointerMap.get(ca.dest()));
                     }
                 }
                 else if (inst instanceof Malloc) {
@@ -118,7 +126,7 @@ public class AliasAnalysis {
                 }
                 else if (inst instanceof Store) {
                     Store st = (Store) inst;
-                    if (st.value().type() instanceof Pointer)
+                    if (st.value().type() instanceof Pointer && !(st.value() instanceof Null))
                         pointerMap.get(st.address()).complexBConstraints.add(pointerMap.get(st.value()));
                 }
             }
@@ -186,7 +194,8 @@ public class AliasAnalysis {
             HashSet<Memory> stores = new HashSet<>();
             fn.blocks().forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next)
-                    if (inst instanceof Store) stores.addAll(pointerMap.get(((Store) inst).address()).pts);
+                    if (inst instanceof Store)
+                        stores.addAll(pointerMap.get(((Store) inst).address()).pts);
             });
             fnStores.put(fn, stores);
         });
@@ -206,6 +215,18 @@ public class AliasAnalysis {
                 });
             });
         }
+        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+            HashSet<Memory> blockStores = new HashSet<>();
+            for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                if (inst instanceof Store)
+                    blockStores.addAll(pointerMap.get(((Store) inst).address()).pts);
+                else if (inst instanceof Call) {
+                    Call ca = (Call) inst;
+                    if (!irRoot.isBuiltIn(ca.callee().name()))
+                        blockStores.addAll(fnStores.get(ca.callee()));
+                }
+            storeOut.put(block, blockStores);
+        }));
     }
 
     public void run() {
@@ -219,12 +240,67 @@ public class AliasAnalysis {
         if (!((Pointer)src1.type()).pointTo().sameType(((Pointer)src2.type()).pointTo())) return false;
         HashSet<Memory> pts1 = new HashSet<>(pointerMap.get(src1).pts);
         pts1.retainAll(pointerMap.get(src2).pts);
-        return pts1.isEmpty();
+        return !pts1.isEmpty();
     }
     public boolean mayModify(Operand src, Function fn) {
         if (irRoot.isBuiltIn(fn.name())) return false;
         HashSet<Memory> pts = new HashSet<>(pointerMap.get(src).pts);
         pts.retainAll(fnStores.get(fn));
-        return pts.isEmpty();
+        return !pts.isEmpty();
+    }
+
+    public void buildStoreInBlock(HashSet<IRBlock> domChildren) {
+        storeIn.clear();
+        domChildren.forEach(dom -> storeIn.put(dom, new HashSet<>()));
+        Queue<IRBlock> workQueue = new LinkedList<>();
+        domChildren.forEach(workQueue::offer);
+        HashSet<IRBlock> workQueueSet = new HashSet<>(domChildren);
+        while (!workQueue.isEmpty()) {
+            IRBlock runner = workQueue.poll();
+            workQueueSet.remove(runner);
+            HashSet<Memory> stores = new HashSet<>(storeIn.get(runner));
+            stores.addAll(storeOut.get(runner));
+            runner.successors().forEach(suc -> {
+                if (domChildren.contains(suc) && !storeIn.get(suc).containsAll(stores)) {
+                    storeIn.get(suc).addAll(stores);
+                    if (!workQueueSet.contains(suc)){
+                        workQueue.offer(suc);
+                        workQueueSet.add(suc);
+                    }
+                }
+            });
+        }
+    }
+    public boolean storeInBlock(IRBlock block, Operand src) {
+        HashSet<Memory> pts = new HashSet<>(pointerMap.get(src).pts);
+        pts.retainAll(storeIn.get(block));
+        return !pts.isEmpty();
+    }
+
+    private HashSet<Memory> storeInLoop = new HashSet<>();
+    private HashSet<Operand> storeAddrInLoop = new HashSet<>();
+    public void buildStoreInLoop(MIRLoop loop) {
+        storeInLoop.clear();
+        loop.blocks().forEach(block -> {
+            for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                if (inst instanceof Store)
+                    storeAddrInLoop.add(((Store) inst).address());
+                else if (inst instanceof Call) {
+                    Call ca = (Call) inst;
+                    if (!irRoot.isBuiltIn(ca.callee().name()))
+                        storeInLoop.addAll(fnStores.get(ca.callee()));
+                }
+        });
+    }
+    public boolean storeInLoop(Load inst) {
+        Operand address = inst.address();
+        HashSet<Memory> pts = new HashSet<>(pointerMap.get(inst.address()).pts);
+        pts.retainAll(storeInLoop);
+        if (pts.isEmpty()) {
+            for (Operand addr : storeAddrInLoop) {
+                if (mayAlias(addr, address)) return true;
+            }
+            return false;
+        } else return true;
     }
 }
