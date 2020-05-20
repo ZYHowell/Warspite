@@ -14,9 +14,7 @@ HIR is mainly an AST. In order to make semantic check, symbol table is also need
 
 There are three kinds of type: primitive, class and function. They represent abstract "def" nodes. (defined but not used)
 
-A naïve optimization is made in HIR level, that to split print(string + string) to two print commands. 
-
-Suggested by senior students' reports, a DCE is made in HIR level. But I think its MIR version is already in ADCE, so maybe it is not so useful now? 
+A naïve print optimization is made in HIR level. 
 
 ### MIR
 
@@ -26,12 +24,13 @@ It is simply a LLVM IR. (and that's why this homework is not interesting: simply
 
 My optim already contains: 
 
-* Function inline
+* Function inline(include force inline)
 * a precise side effect analysis(also, a rough alias analysis) and ADCE with it
 * SCCP
 * CFG simplification(part of it)
-* global CSE
-* LICM
+* (can be global) CSE
+* LICM based on Anderson alias
+* Memory CSE based on Anderson alias
 * strength reduction
 
 I intend to realize: 
@@ -46,9 +45,13 @@ I intend to realize:
 
 Commits of "Young and beautiful"
 
-I guess that during register allocation, there is an optimization that, if the result of a register should be stored, try to judge if it can be re-calculated instead of load&store. (Use dominate info may help with this)
+Graph coloring. 
 
-Or, maybe move the global CSE to LIR. 
+Implement peephole optimization. 
+
+### Assembler
+
+see another repo. 
 
 ### References
 

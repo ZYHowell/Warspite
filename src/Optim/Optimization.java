@@ -1,11 +1,6 @@
 package Optim;
 
-import BackEnd.IRPrinter;
 import MIR.Root;
-
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
-import java.util.ArrayList;
 
 public class Optimization {
     private Root irRoot;
@@ -35,7 +30,6 @@ public class Optimization {
         new FunctionInline(irRoot, false).run();
         LCSAI();
         new FunctionInline(irRoot, true).run();
-        //new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
         LCSAI();
         new CFGSimplification(irRoot, true).run();
     }

@@ -1,6 +1,5 @@
 package Optim;
 
-import BackEnd.IRPrinter;
 import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRinst.*;

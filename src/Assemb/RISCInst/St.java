@@ -7,8 +7,8 @@ import java.util.HashSet;
 
 public class St extends RISCInst{
 
-    private Reg address, value;
-    private Imm offset;
+    public Reg address, value;
+    public Imm offset;
     private int size;
 
     public St(Reg address, Reg value, Imm offset, int size, LIRBlock block) {

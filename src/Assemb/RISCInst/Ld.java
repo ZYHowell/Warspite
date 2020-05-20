@@ -11,9 +11,9 @@ import java.util.HashSet;
 
 public class Ld extends RISCInst {
 
-    private Reg address;
+    public Reg address;
     private int size;
-    private Imm offset;
+    public Imm offset;
     public Ld(Reg address, Reg dest, Imm offset, int size, LIRBlock block) {
         super(dest, block);
         this.address = address;

@@ -59,7 +59,7 @@ public class AsmPrinter {
 
         runForBlock(fn.entryBlock());
         visitList.forEach(block -> {
-            if (!visited.contains(block)) runForBlock(block);
+            if (!visited.contains(block) && !block.hasPrior) runForBlock(block);
         });
         out.println("\t.size\t" + fn.name() + ", " + ".-" + fn.name() + "\n");
     }

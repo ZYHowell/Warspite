@@ -448,30 +448,31 @@ public class RegAlloc {
         currentFn.blocks().removeAll(canMix);
     }
     private void reschedule() {
-//        HashSet<LIRBlock> visited = new HashSet<>();
-//        Queue<LIRBlock> queue = new LinkedList<>();
-//        queue.add(currentFn.entryBlock);
-//        do {
-//            LIRBlock currentBlock = queue.poll();
-//            visited.add(currentBlock);
-//            assert currentBlock != null;
-//            if (currentBlock.tail instanceof Jp) {
-//                assert currentBlock.next == null;
-//                Jp jp = (Jp) currentBlock.tail;
-//                if (!jp.destBlock().hasPrior) {
-//                    currentBlock.next = jp.destBlock();
-//                    jp.destBlock().hasPrior = true;
-////                    currentBlock.tail = jp.previous;
-////                    //jp cannot be the only instruction by the one in subtle modify
-////                    currentBlock.tail.next = null;
-////                    jp.previous = null;
-//                }
-//            }
-//            currentBlock.successors.forEach(suc -> {
-//                if (!visited.contains(suc)) queue.offer(suc);
-//            });
-//        }
-//        while(!queue.isEmpty());
+        HashSet<LIRBlock> visited = new HashSet<>();
+        Queue<LIRBlock> queue = new LinkedList<>();
+        queue.add(currentFn.entryBlock);
+        visited.add(currentFn.entryBlock);
+        do {
+            LIRBlock currentBlock = queue.poll();
+            assert currentBlock != null;
+            if (currentBlock.tail instanceof Jp) {
+                assert currentBlock.next == null;
+                Jp jp = (Jp) currentBlock.tail;
+                if (!jp.destBlock().hasPrior) {
+                    currentBlock.next = jp.destBlock();
+                    jp.destBlock().hasPrior = true;
+                    currentBlock.tail = jp.previous;
+                    //jp cannot be the only instruction by the one in subtle modify
+                    currentBlock.tail.next = null;
+                    jp.previous = null;
+                }
+            }
+            currentBlock.successors.forEach(suc -> {
+                if (!visited.contains(suc)) queue.offer(suc);
+            });
+            visited.addAll(currentBlock.successors);
+        }
+        while(!queue.isEmpty());
     }
     public void run() {
         root.functions().forEach(fn -> {

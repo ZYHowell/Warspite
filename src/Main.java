@@ -37,7 +37,6 @@ public class Main {
             }
         }
         PrintStream pst = new PrintStream("output.s");
-        //to consider: notice this in committing, and remember to implement the jump replacement after reg alloc
         if (name == null) name = "test.mx";
         InputStream input = new FileInputStream(name);
         try {
@@ -67,7 +66,8 @@ public class Main {
 
                 LRoot lRoot = new InstSelection(irRoot).run();
                 new RegAlloc(lRoot).run();
-                new AsmPrinter(lRoot, System.out, true).run();
+                new Peephole(lRoot).run();
+                new AsmPrinter(lRoot, pst, true).run();
             }
         } catch (error er) {
             System.err.println(er.toString());
