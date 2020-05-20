@@ -5,7 +5,7 @@ import Util.position;
 
 public class forStmt extends stmtNode{
     private exprNode condition, incr, init;
-    private stmtNode body;
+    public stmtNode body;
     private IRBlock incrBlock, destBlock;
 
     public forStmt(exprNode init, exprNode incr, exprNode condition, stmtNode body, position pos) {

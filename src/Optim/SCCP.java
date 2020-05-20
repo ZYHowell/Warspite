@@ -1,5 +1,6 @@
 package Optim;
 
+import BackEnd.IRPrinter;
 import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRinst.*;
@@ -8,7 +9,10 @@ import MIR.IRtype.BoolType;
 import MIR.IRtype.IntType;
 import MIR.Root;
 import Util.DomGen;
+import Util.MIRReachable;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.*;
 
 public class SCCP extends Pass {
@@ -222,17 +226,17 @@ public class SCCP extends Pass {
             visited.clear();
             changeFn = false;
             visit(fn.entryBlock());
+            MIRReachable reachable = new MIRReachable(fn);
             fn.blocks().forEach(block -> {
-                if (block.precursors().size() == 0 && block != currentFn.entryBlock()) {
-                    block.removeTerminator();   //unreachable block, wait to be removed
+                if (!reachable.reachable.contains(block)) {
+                    block.removeTerminator();
                     block.addTerminator(new Jump(block, block));
-                    changeFn = true;
                 }
             });
             everChanged = everChanged || changeFn;
         } while(changeFn);
-        if (everChanged) new DomGen(fn, true).runForFn();
         change = change || everChanged;
+        if (everChanged) new DomGen(fn, true).runForFn();
     }
     @Override
     public boolean run() {

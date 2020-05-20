@@ -9,6 +9,7 @@ import MIR.IRtype.Pointer;
 import MIR.Root;
 import Util.DomGen;
 import Util.MIRFnGraph;
+import Util.MIRReachable;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -197,7 +198,13 @@ public class ADCE extends Pass {
                     }
                 }
             }
-            fn.blocks().removeIf(block -> block.precursors().size() == 1 && block.precursors().get(0) == block);
+            MIRReachable reachable = new MIRReachable(fn);
+            fn.blocks().forEach(block -> {
+                if (!reachable.reachable.contains(block)) {
+                    block.removeTerminator();
+                    block.addTerminator(new Jump(block, block));
+                }
+            });
             new DomGen(fn, true).runForFn();
         });
     }

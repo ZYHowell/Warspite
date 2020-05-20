@@ -97,13 +97,19 @@ public class AliasAnalysis {
             });
             for (Inst inst = block.headInst; inst != null; inst = inst.next) {
                 if (inst instanceof Load && inst.dest().type() instanceof Pointer) {
-                    pointerMap.get(((Load) inst).address()).complexAConstraints.add(pointerMap.get(inst.dest()));
+                    if (!(((Load) inst).address() instanceof Null))
+                        pointerMap.get(((Load) inst).address())
+                                .complexAConstraints.add(pointerMap.get(inst.dest()));
                 }
                 else if (inst instanceof BitCast) {
-                    pointerMap.get(((BitCast) inst).origin()).simpleConstraints.add(pointerMap.get(inst.dest()));
+                    if (!(((BitCast) inst).origin() instanceof Null))
+                        pointerMap.get(((BitCast) inst).origin())
+                                .simpleConstraints.add(pointerMap.get(inst.dest()));
                 }
                 else if (inst instanceof GetElementPtr) {
-                    pointerMap.get(((GetElementPtr) inst).ptr()).simpleConstraints.add(pointerMap.get(inst.dest()));
+                    if (!(((GetElementPtr) inst).ptr() instanceof Null))
+                        pointerMap.get(((GetElementPtr) inst).ptr())
+                                .simpleConstraints.add(pointerMap.get(inst.dest()));
                 }
                 else if (inst instanceof Call) {
                     Call ca = (Call) inst;
@@ -116,7 +122,8 @@ public class AliasAnalysis {
                     }
                     if (ca.dest() != null && ca.dest().type() instanceof Pointer) {
                         Operand RetReg = ((Return) ca.callee().exitBlock().terminator()).value();
-                        if (!(RetReg instanceof Null)) pointerMap.get(RetReg).simpleConstraints.add(pointerMap.get(ca.dest()));
+                        if (!(RetReg instanceof Null))
+                            pointerMap.get(RetReg).simpleConstraints.add(pointerMap.get(ca.dest()));
                     }
                 }
                 else if (inst instanceof Malloc) {

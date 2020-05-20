@@ -6,54 +6,132 @@ import java.util.HashSet;
 import AST.*;
 import Util.position;
 import Util.scope.globalScope;
+import Util.symbol.Type;
 import Util.symbol.funcDecl;
 import Util.error.internalError;
 
-//this is to split print(stringA + stringB) into print(stringA);print(stringB);
-//the idea comes from whoever senior student's report, special thanks to him/her.
-//todo
 public class printOptimizer implements ASTVisitor{
 
-    private globalScope gScope;
     private funcDecl printFunction, printlnFunction, printIntFn, printlnIntFn, toStringFn;
-    private HashSet<exprNode> canSplit = new HashSet<>();
+    private HashSet<stmtNode> canSplit = new HashSet<>();
+    private Type voidInstance;
 
-    private funCallExpr generatePrint(exprNode param) {
+    private stringLiteral toLiteral(String it, position pos) {
+        return new stringLiteral("\"" + it + "\"", pos);
+    }
+    private String stringResolve(stringLiteral it) {
+        String ret = it.value();
+        return ret.substring(1, ret.length() - 1);
+    }
+    private exprStmt generatePrint(exprNode param, boolean newLine) {
         exprList tmp = new exprList(param.pos());
         tmp.addParam(param);
-        funCallExpr ret = new funCallExpr(new funcNode("print", param.pos()),
-                                          tmp, param.pos());
-        ret.setType(printFunction);
+        funCallExpr ret;
+        if (!newLine) {
+            funcNode func = new funcNode("print", param.pos());
+            ret = new funCallExpr(func, tmp, param.pos());
+            func.setType(printFunction);
+            ret.setType(voidInstance);
+        } else {
+            funcNode func = new funcNode("println", param.pos());
+            ret = new funCallExpr(func, tmp, param.pos());
+            func.setType(printlnFunction);
+            ret.setType(voidInstance);
+        }
+        return new exprStmt(ret, param.pos());
+    }
+
+    private ArrayList<exprNode> unfold(binaryExpr expr) {
+        ArrayList<exprNode> ret = new ArrayList<>();
+        exprNode lhs = expr.src1(), rhs = expr.src2();
+        if (lhs instanceof binaryExpr) {
+            ret = unfold((binaryExpr)lhs);
+        }
+        else ret.add(lhs);
+        if (rhs instanceof binaryExpr) ret.addAll(unfold((binaryExpr) rhs));
+        else ret.add(rhs);
+        for (int i = 0; i < ret.size();++i) {
+            exprNode arg = ret.get(i);
+            if (arg instanceof funCallExpr &&
+                ((funCallExpr) arg).callee().type().equals(toStringFn)) {
+                exprNode param =  ((funCallExpr) arg).params().get(0);
+                if (param instanceof intLiteral)
+                    ret.set(i, toLiteral("" + ((intLiteral) param).value(), param.pos()));
+            }
+        }
         return ret;
     }
-    private ArrayList<exprNode> split(binaryExpr parameters, boolean newline) {
-        ArrayList<exprNode> result = new ArrayList<>();
-        if (parameters.src1() instanceof binaryExpr)
-            result.addAll(split((binaryExpr)parameters.src1(), false));
-        //warning: maybe no need to consider this
-        else if (parameters.src1() instanceof funcNode || parameters.src1() instanceof stringLiteral)
-            result.add(generatePrint(parameters.src1()));
-        else throw new internalError("cannot split it", parameters.pos());
 
-        if (parameters.src2() instanceof binaryExpr)
-            result.addAll(split((binaryExpr)parameters.src2(), false));
-        else if (parameters.src2() instanceof varNode || parameters.src2() instanceof stringLiteral)
-            result.add(generatePrint(parameters.src2()));
-        else throw new internalError("cannot split it", parameters.pos());
-
-        if (newline)
-            result.add(generatePrint(new stringLiteral("\n", parameters.pos())));
-        return result;
+    private blockNode splitPrint(stmtNode it) {
+        if (!(it instanceof exprStmt)) throw new internalError("split stmt not expr", it.pos());
+        exprNode ex = ((exprStmt) it).expr();
+        if (!(ex instanceof funCallExpr)) throw new internalError("split expr not print", it.pos());
+        funCallExpr fn = (funCallExpr) ex;
+        blockNode printBlock = new blockNode(it.pos());
+        if (fn.callee().type().equals(printFunction)) {
+            if (!(fn.params().get(0) instanceof binaryExpr))
+                throw new internalError("split not print str1 + str2", it.pos());
+            binaryExpr param = (binaryExpr)fn.params().get(0);
+            ArrayList<exprNode> args = unfold(param);
+            StringBuilder currentString = null;
+            for (exprNode arg : args) {
+                if (arg instanceof stringLiteral) {
+                    if (currentString == null)
+                        currentString = new StringBuilder(stringResolve((stringLiteral) arg));
+                    else currentString.append(stringResolve((stringLiteral) arg));
+                } else {
+                    if (currentString != null) {
+                        stringLiteral tmp = toLiteral(currentString.toString(), arg.pos());
+                        printBlock.addStmt(generatePrint(tmp, false));
+                        currentString = null;
+                    }
+                    printBlock.addStmt(generatePrint(arg, false));
+                }
+            }
+            if (currentString != null) {
+                stringLiteral tmp = toLiteral(currentString.toString(), it.pos());
+                printBlock.addStmt(generatePrint(tmp, false));
+            }
+            return printBlock;
+        }
+        else if (fn.callee().type().equals(printlnFunction)) {
+            if (!(fn.params().get(0) instanceof binaryExpr))
+                throw new internalError("split not print str1 + str2", it.pos());
+            binaryExpr param = (binaryExpr)fn.params().get(0);
+            ArrayList<exprNode> args = unfold(param);
+            StringBuilder currentString = null;
+            for (int i = 0;i < args.size();++i) {
+                exprNode arg = args.get(i);
+                if (arg instanceof stringLiteral) {
+                    if (currentString == null)
+                        currentString = new StringBuilder(stringResolve((stringLiteral) arg));
+                    else currentString.append(stringResolve((stringLiteral) arg));
+                } else {
+                    if (currentString != null) {
+                        stringLiteral tmp = toLiteral(currentString.toString(), arg.pos());
+                        printBlock.addStmt(generatePrint(tmp, false));
+                        currentString = null;
+                    }
+                    printBlock.addStmt(generatePrint(arg, i == args.size() - 1));
+                }
+            }
+            if (currentString != null) {
+                stringLiteral tmp = toLiteral(currentString.toString(), it.pos());
+                printBlock.addStmt(generatePrint(tmp, true));
+            }
+            return printBlock;
+        }
+        else throw new internalError("split function not print", it.pos());
     }
 
     public printOptimizer(globalScope gScope) {
-        this.gScope = gScope;
         position tmp = new position(0, 0);
         printFunction = gScope.getMethod("print",tmp, false);
         printlnFunction = gScope.getMethod("println", tmp, false);
         printIntFn = gScope.getMethod("printInt", tmp, false);
         printlnIntFn = gScope.getMethod("printlnInt", tmp, false);
         toStringFn = gScope.getMethod("toString", tmp, false);
+        voidInstance = printFunction.returnType();
     }
 
     @Override
@@ -79,30 +157,60 @@ public class printOptimizer implements ASTVisitor{
 
     @Override
     public void visit(blockNode it) {
-        it.getStmtList().forEach(stmt -> stmt.accept(this)); //cannot be null
+        ArrayList<stmtNode> stmtList = new ArrayList<>(it.getStmtList());
+        for (int i = 0; i < stmtList.size(); i++) {
+            stmtNode stmt = stmtList.get(i);
+            stmt.accept(this);
+            if (canSplit.contains(stmt)) {
+                it.getStmtList().set(i, splitPrint(stmt));
+            }
+        }
     }
 
 
     @Override
     public void visit(exprStmt it) {
         it.expr().accept(this);
+        if (it.expr() instanceof funCallExpr) {
+            funCallExpr ca = (funCallExpr) it.expr();
+            funcDecl func = (funcDecl) ca.callee().type();
+            if (func.equals(printFunction)) {
+                if (ca.params().get(0) instanceof binaryExpr) canSplit.add(it);
+            } else if (func.equals(printlnFunction)) {
+                if (ca.params().get(0) instanceof binaryExpr) canSplit.add(it);
+            }
+        }
     }
 
     @Override
     public void visit(ifStmt it) {
         it.trueStmt().accept(this);
+        if (canSplit.contains(it.trueStmt())) {
+            it.trueStmt = splitPrint(it.trueStmt());
+        }
 
-        if (it.falseStmt() != null) it.falseStmt().accept(this);
+        if (it.falseStmt() != null) {
+            it.falseStmt().accept(this);
+            if (canSplit.contains(it.falseStmt())) {
+                it.falseStmt = splitPrint(it.falseStmt());
+            }
+        }
     }
 
     @Override
     public void visit(forStmt it) {
         it.body().accept(this);
+        if (canSplit.contains(it.body())) {
+            it.body = splitPrint(it.body());
+        }
     }
 
     @Override
     public void visit(whileStmt it) {
         it.body().accept(this);
+        if (canSplit.contains(it.body())) {
+            it.body = splitPrint(it.body());
+        }
     }
 
     @Override public void visit(returnStmt it) {}
@@ -118,19 +226,31 @@ public class printOptimizer implements ASTVisitor{
     @Override public void visit(suffixExpr it) {}
     @Override public void visit(thisExpr it) {}
 
-    private boolean canOpt(exprNode expr) {
-        if (expr instanceof binaryExpr) return true;
-        if (expr instanceof funCallExpr)
-            return ((funCallExpr) expr).callee().type().equals(toStringFn);
-        return false;
-    }
     @Override
     public void visit(funCallExpr it) {
         funcDecl func = (funcDecl)it.callee().type();
         if (func.equals(printFunction)) {
-            if (canOpt(it.params().get(0))) canSplit.add(it);
+            exprNode expr = it.params().get(0);
+            if (expr instanceof funCallExpr &&
+                    ((funCallExpr) expr).callee().type().equals(toStringFn)) {
+                funcNode callee = new funcNode("printInt", it.pos());
+                callee.setType(printIntFn);
+                it.resetCallee(callee);
+
+                it.params().clear();
+                it.params().add(((funCallExpr) expr).params().get(0));
+            }
         } else if (func.equals(printlnFunction)) {
-            if (canOpt(it.params().get(0))) canSplit.add(it);
+            exprNode expr = it.params().get(0);
+            if (expr instanceof funCallExpr &&
+                    ((funCallExpr) expr).callee().type().equals(toStringFn)) {
+                funcNode callee = new funcNode("printlnInt", it.pos());
+                callee.setType(printlnIntFn);
+                it.resetCallee(callee);
+
+                it.params().clear();
+                it.params().add(((funCallExpr) expr).params().get(0));
+            }
         }
     }
 

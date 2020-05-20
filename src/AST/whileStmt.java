@@ -5,7 +5,7 @@ import Util.position;
 
 public class whileStmt extends stmtNode {
     private exprNode condition;
-    private stmtNode body;
+    public stmtNode body;
     private IRBlock condBlock, destBlock;
 
     public whileStmt(exprNode condition, stmtNode body, position pos) {

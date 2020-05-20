@@ -38,7 +38,6 @@ public class Main {
         }
         PrintStream pst = new PrintStream("output.s");
         //to consider: notice this in committing, and remember to implement the jump replacement after reg alloc
-        PrintStream IRPst = new PrintStream("out.ll");
         if (name == null) name = "test.mx";
         InputStream input = new FileInputStream(name);
         try {
@@ -58,16 +57,15 @@ public class Main {
             new SymbolCollector(gScope, irRoot).visit(ASTRoot);
             new TypeFilter(gScope).visit(ASTRoot);
             new SemanticChecker(gScope, irRoot).visit(ASTRoot);
+            new printOptimizer(gScope).visit(ASTRoot);
 
             if (doCodeGen) {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
                 if (doOptimization) new Optimization(irRoot).run();
-                //new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
                 new PhiResolve(irRoot).run();
 
                 LRoot lRoot = new InstSelection(irRoot).run();
-                //new AsmPrinter(lRoot, new PrintStream("debug.s"), false).run();
                 new RegAlloc(lRoot).run();
                 new AsmPrinter(lRoot, System.out, true).run();
             }

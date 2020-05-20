@@ -19,6 +19,9 @@ public class funCallExpr extends exprNode {
     public exprNode callee() {
         return callee;
     }
+    public void resetCallee(exprNode callee) {
+        this.callee = callee;
+    }
 
     public ArrayList<exprNode> params() {
         return params;

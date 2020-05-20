@@ -16,10 +16,12 @@ public class FunctionInline extends Pass{
     private Root irRoot;
     private HashSet<Function> cannotInlineFun = new HashSet<>();
     private HashMap<Call, Function> canUnFold = new HashMap<>();
+    private boolean forceInline;
 
-    public FunctionInline(Root irRoot) {
+    public FunctionInline(Root irRoot, boolean forceInline) {
         super();
         this.irRoot = irRoot;
+        this.forceInline = forceInline;
     }
 
     private ArrayList<Function> DFSStack = new ArrayList<>();
@@ -62,14 +64,15 @@ public class FunctionInline extends Pass{
             mirrorOpr.put(virtualParam, callParam);
         }
         //copy all blocks of callee
-        for (IRBlock block : callee.blocks()) {
+        HashSet<IRBlock> copied = new HashSet<>(callee.blocks());
+        for (IRBlock block : copied) {
             IRBlock mirrorBlock =  new IRBlock(block.name() + "_inline");
             mirrorBlocks.put(block, mirrorBlock);
-            fn.addBlock(mirrorBlock);
         }
+        fn.blocks().addAll(mirrorBlocks.values());
         mirror.setBlockMirror(mirrorBlocks);
         //copy all instructions
-        callee.blocks().forEach(block -> {
+        copied.forEach(block -> {
             IRBlock mirB = mirror.blockMir(block);
             for(Inst instr = block.headInst; instr != null; instr = instr.next)
                 instr.addMirror(mirB, mirror);
@@ -119,24 +122,47 @@ public class FunctionInline extends Pass{
             Function fn = entry.getValue();
             if (!cannotInlineFun.contains(fn)) iter.remove();
             else if (caller.get(fn).size() == 1 && caller.get(fn).contains(fn)) iter.remove();
-            //very rare: its only caller is itself. This is used to speed up analysis instead of running
         }   //remove inlined function
     }
 
+    private static int bound = 150;
     @Override
     public boolean run() {
-        newRound = change = false;
-        /* cannotInlineFun().clear();
-         * visited.clear();
-         * new MIRFuncCallCollect(irRoot).collect();
-         */
-        visited.addAll(irRoot.builtinFunctions().values());
-        cannotInlineFun.addAll(visited);
-        cannotInlineFun.add(irRoot.getFunction("main"));
-        init();
-        inlineJudge();
-        inlining();
-        irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
-        return change;
+        if (!forceInline){
+            newRound = change = false;
+            visited.addAll(irRoot.builtinFunctions().values());
+            cannotInlineFun.addAll(visited);
+            cannotInlineFun.add(irRoot.getFunction("main"));
+            init();
+            inlineJudge();
+            inlining();
+            irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
+            return change;
+        } else {
+            HashMap<Function, Integer> lineNumber = new HashMap<>();
+            cannotInlineFun.addAll(irRoot.builtinFunctions().values());
+            cannotInlineFun.add(irRoot.getFunction("main"));
+            irRoot.functions().forEach((name, fn) -> {
+                int cnt = 0;
+                for (IRBlock block : fn.blocks()) {
+                    for (Inst inst = block.headInst; inst != null; inst = inst.next) cnt++;
+                }
+                lineNumber.put(fn, cnt);
+            });
+            irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                    if (inst instanceof Call) {
+                        Call ca = (Call) inst;
+                        Function callee = ca.callee();
+                        if (!cannotInlineFun.contains(callee) && lineNumber.get(callee) < bound){
+                            canUnFold.put(ca, fn);
+                            lineNumber.put(fn, lineNumber.get(fn) + lineNumber.get(callee));
+                        }
+                    }
+            }));
+            canUnFold.forEach(this::unfold);
+            irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
+            return true;
+        }
     }
 }

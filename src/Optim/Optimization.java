@@ -14,11 +14,8 @@ public class Optimization {
         this.irRoot = irRoot;
     }
 
-    public void run() {
+    private void LCSAI() {
         boolean change;
-        int round = 0;
-
-        new FunctionInline(irRoot).run();
         do{
             change = new ADCE(irRoot).run();
             change = new SCCP(irRoot).run() || change;
@@ -30,12 +27,16 @@ public class Optimization {
             AliasAnalysis alias = new AliasAnalysis(irRoot);
             alias.run();
             change = new MemCSE(irRoot, alias).run() || change;
-            //if (round == 0)new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
             change = new LICM(irRoot, alias).run() || change;
-
-            ++round;
         }
         while (change);
+    }
+    public void run() {
+        new FunctionInline(irRoot, false).run();
+        LCSAI();
+        new FunctionInline(irRoot, true).run();
+        //new IRPrinter(new PrintStream("debug.ll"), true).run(irRoot);
+        LCSAI();
         new CFGSimplification(irRoot, true).run();
     }
 }

@@ -7,6 +7,7 @@ import MIR.*;
 import MIR.IRoperand.*;
 import MIR.IRinst.*;
 import MIR.IRtype.ClassType;
+import MIR.IRtype.IRBaseType;
 import MIR.IRtype.Pointer;
 import Optim.LoopDetector;
 
@@ -287,7 +288,10 @@ public class InstSelection {
                 if (value == 0) destPtr = destIdx;
                 else {
                     assert gep.ptr().type() instanceof Pointer;
-                    value = ((ClassType) ((Pointer)gep.ptr().type()).pointTo()).getEleOff(value) / 8;
+                    IRBaseType type = ((Pointer)gep.ptr().type()).pointTo();
+                    if (type instanceof ClassType)
+                        value = ((ClassType) type).getEleOff(value) / 8;
+                    else value = 0;
                     destPtr = new VirtualReg(4, cnt++);
                     if (inBounds(value)) block.addInst(new IType(destIdx, new Imm(value), add,
                             destPtr, block));
