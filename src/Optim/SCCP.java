@@ -10,8 +10,6 @@ import MIR.Root;
 import Util.DomGen;
 import Util.MIRReachable;
 
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.*;
 
 public class SCCP extends Pass {

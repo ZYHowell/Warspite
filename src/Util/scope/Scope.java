@@ -1,12 +1,12 @@
 package Util.scope;
 
-import java.util.HashMap;
-
+import Util.error.semanticError;
+import Util.position;
+import Util.symbol.Type;
 import Util.symbol.funcDecl;
 import Util.symbol.varEntity;
-import Util.position;
-import Util.error.semanticError;
-import Util.symbol.Type;
+
+import java.util.HashMap;
 
 public class Scope {
 

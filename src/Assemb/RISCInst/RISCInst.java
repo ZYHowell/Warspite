@@ -1,18 +1,14 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.LOperand;
 import Assemb.LOperand.Reg;
-import Assemb.LOperand.VirtualReg;
-import MIR.IRoperand.Operand;
-import MIR.IRoperand.Register;
 
 import java.util.HashSet;
 
 public abstract class RISCInst {
 
     public enum CalCategory {
-        add, sub, slt, sltU, xor, or, and , sll, srl, sra, mul, mulH, div, rem
+        add, sub, slt, xor, or, and , sll, srl, sra, mul, div, rem
     }
     public enum EzCategory {
         eq, ne, le, ge, lt, gt

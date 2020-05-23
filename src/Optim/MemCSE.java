@@ -80,6 +80,7 @@ public class MemCSE extends Pass {
         visited.add(currentBlock);
         if (_StoreCSE(inst, currentBlock.headInst))
             currentBlock.successors().forEach(suc -> tryStoreCSE(suc, inst, domChildren));
+        //maybe I'll debug this later
     }
 
     private void runForFn(Function fn) {

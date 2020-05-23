@@ -1,18 +1,18 @@
 package AST;
 
-import java.util.HashSet;
 import Util.position;
 import Util.scope.Scope;
 import Util.symbol.varEntity;
 
+import java.util.HashSet;
+
 abstract public class ASTNode {
     private position pos;
     private Scope scope;
-    private HashSet<varEntity> dirty, use;
+    private HashSet<varEntity> use;
 
     public ASTNode(position pos) {
         this.pos = pos;
-        this.dirty = new HashSet<>();
         this.use = new HashSet<>();
     }
 
@@ -28,9 +28,6 @@ abstract public class ASTNode {
         return scope;
     }
 
-    public HashSet<varEntity> dirty() {
-        return dirty;
-    }
     public HashSet<varEntity> use() {
         return use;
     }

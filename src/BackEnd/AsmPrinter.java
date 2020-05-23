@@ -6,7 +6,7 @@ import Assemb.LOperand.GReg;
 import Assemb.LRoot;
 import Assemb.RISCInst.RISCInst;
 
-import java.io.*;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;

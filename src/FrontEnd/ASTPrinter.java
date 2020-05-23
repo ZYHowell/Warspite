@@ -1,11 +1,11 @@
 package FrontEnd;
 
-import java.util.ArrayList;
 import AST.*;
-import Util.symbol.*;
+import Util.symbol.funcDecl;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 
 //I'm afraid that I might be wrong, so I make such ASTPrinter to keep track of my AST.
 //is for DEBUG USE

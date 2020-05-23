@@ -2,7 +2,6 @@ package Assemb.RISCInst;
 
 import Assemb.LFn;
 import Assemb.LIRBlock;
-import Assemb.LOperand.PhyReg;
 import Assemb.LOperand.Reg;
 import Assemb.LRoot;
 

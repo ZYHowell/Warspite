@@ -1,10 +1,15 @@
 package FrontEnd;
 
 import AST.*;
-import Util.scope.*;
-import Util.symbol.*;
 import Util.error.internalError;
 import Util.error.semanticError;
+import Util.scope.Scope;
+import Util.scope.functionScope;
+import Util.scope.globalScope;
+import Util.symbol.classType;
+import Util.symbol.constructorType;
+import Util.symbol.funcDecl;
+import Util.symbol.varEntity;
 
 //mention that in this language, forwarding reference of class member is also not allowed!!!
 public class TypeFilter implements ASTVisitor {
@@ -55,7 +60,7 @@ public class TypeFilter implements ASTVisitor {
     }
 
     @Override public void visit(varDef it) {
-        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), true, false);
+        varEntity param = new varEntity(it.name(), gScope.generateType(it.type()), false);
         if (param.type().isVoid())
             throw new semanticError("type of a parameter is void", it.pos());
         if (currentScope instanceof functionScope){

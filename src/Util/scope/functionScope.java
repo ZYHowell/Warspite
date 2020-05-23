@@ -1,8 +1,9 @@
 package Util.scope;
 
-import java.util.ArrayList;
 import Util.position;
 import Util.symbol.varEntity;
+
+import java.util.ArrayList;
 
 public class functionScope extends Scope {
 
@@ -22,7 +23,4 @@ public class functionScope extends Scope {
         return params;
     }
 
-    public int paramNum() {
-        return params.size();
-    }
 }

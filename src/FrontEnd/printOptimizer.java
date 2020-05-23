@@ -1,14 +1,14 @@
 package FrontEnd;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-
 import AST.*;
+import Util.error.internalError;
 import Util.position;
 import Util.scope.globalScope;
 import Util.symbol.Type;
 import Util.symbol.funcDecl;
-import Util.error.internalError;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 
 public class printOptimizer implements ASTVisitor{
 

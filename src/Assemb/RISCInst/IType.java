@@ -1,7 +1,9 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.*;
+import Assemb.LOperand.Imm;
+import Assemb.LOperand.Reg;
+import Assemb.LOperand.SLImm;
 
 import java.util.Collections;
 import java.util.HashSet;

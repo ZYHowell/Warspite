@@ -2,8 +2,9 @@ import AST.rootNode;
 import Assemb.LRoot;
 import BackEnd.*;
 import FrontEnd.*;
-import Optim.*;
 import MIR.Root;
+import Optim.Mem2Reg;
+import Optim.Optimization;
 import Parser.MxErrorListener;
 import Parser.MxLexer;
 import Parser.MxParser;
@@ -13,12 +14,14 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
 
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        boolean doCodeGen = true, doOptimization = true;//, inTest = false;
+        boolean doCodeGen = true, doOptimization = true, emitLL = false;
         String name = null;
 
         if (args.length > 0) {
@@ -26,7 +29,7 @@ public class Main {
                 switch (arg) {
                     case "-O0": doOptimization = false;break;
                     case "-semantic": doCodeGen = false;break;
-                    //case "-test": inTest = true;break;
+                    case "-emit-llvm": emitLL = true;break;
                     default: break;
                 }
                 if (arg.length() > 5 && arg.substring(0, 5).equals("-dir=")){
@@ -62,6 +65,7 @@ public class Main {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
                 if (doOptimization) new Optimization(irRoot).run();
+                if (emitLL) new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
                 new PhiResolve(irRoot).run();
 
                 LRoot lRoot = new InstSelection(irRoot).run();

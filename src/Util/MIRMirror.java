@@ -1,7 +1,8 @@
 package Util;
 
 import MIR.IRBlock;
-import MIR.IRoperand.*;
+import MIR.IRoperand.GlobalReg;
+import MIR.IRoperand.Operand;
 
 import java.util.HashMap;
 

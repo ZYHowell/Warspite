@@ -181,6 +181,6 @@ public class Root {
             else return new Pointer(getType(name), false);
         }
         else if (type.isNull()) return new VoidType();
-        return new VoidType(); //really do so? or just throw error? type is function/constructor
+        return new VoidType();
     }
 }

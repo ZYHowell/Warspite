@@ -1,7 +1,8 @@
 package AST;
 
-import java.util.ArrayList;
 import Util.position;
+
+import java.util.ArrayList;
 
 public class blockNode extends stmtNode{
     private ArrayList<stmtNode> stmtList = new ArrayList<>();

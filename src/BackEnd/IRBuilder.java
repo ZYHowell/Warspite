@@ -1,14 +1,17 @@
 package BackEnd;
 
 import AST.*;
-import MIR.*;
-import MIR.IRoperand.*;
+import MIR.Function;
+import MIR.IRBlock;
 import MIR.IRinst.*;
+import MIR.IRoperand.*;
 import MIR.IRtype.*;
+import MIR.Root;
 import Util.error.internalError;
 import Util.position;
 import Util.scope.globalScope;
-import Util.symbol.*;
+import Util.symbol.arrayType;
+import Util.symbol.classType;
 import Util.symbol.funcDecl;
 import Util.symbol.varEntity;
 

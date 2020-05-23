@@ -1,6 +1,8 @@
 package AST;
-import java.util.ArrayList;
+
 import Util.position;
+
+import java.util.ArrayList;
 
 public class classDef extends ASTNode {
     private String identifier;

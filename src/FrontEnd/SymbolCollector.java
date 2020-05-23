@@ -3,9 +3,12 @@ package FrontEnd;
 import AST.*;
 import MIR.IRtype.ClassType;
 import MIR.Root;
-import Util.error.*;
-import Util.scope.*;
-import Util.symbol.*;
+import Util.error.internalError;
+import Util.error.semanticError;
+import Util.scope.Scope;
+import Util.scope.classScope;
+import Util.scope.globalScope;
+import Util.symbol.classType;
 import Util.symbol.funcDecl;
 
 //to support forwarding reference
@@ -33,7 +36,7 @@ public class SymbolCollector implements ASTVisitor {
     public void visit(classDef it) {
         if (!(currentScope instanceof globalScope))
             throw new internalError("class not defined in global scope", it.pos());
-        classType defClass = new classType(it.Identifier(), it);
+        classType defClass = new classType(it.Identifier());
         Scope localScope = new classScope(currentScope);
         currentScope = localScope;
         irRoot.addType(it.Identifier(), new ClassType(it.Identifier()));

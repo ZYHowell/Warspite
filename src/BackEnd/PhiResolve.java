@@ -7,8 +7,6 @@ import MIR.IRinst.Move;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 import MIR.Root;
-import Util.error.internalError;
-import Util.position;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,8 +1,7 @@
 package Util.symbol;
 
-import AST.classDef;
 import Util.position;
-import Util.scope.*;
+import Util.scope.Scope;
 
 import java.util.ArrayList;
 
@@ -13,9 +12,9 @@ public class classType extends BaseType {
     private varEntity formalEntity; //used for this expr(provide it a entity)
     private ArrayList<Type> elementTypeList = new ArrayList<>();
 
-    public classType(String name, classDef define) {
+    public classType(String name) {
         super(name);
-        formalEntity = new varEntity("formal entity", this, true, false);
+        formalEntity = new varEntity("formal entity", this, false);
     }
 
     public varEntity formalEntity() {
@@ -35,9 +34,6 @@ public class classType extends BaseType {
         elementTypeList.add(type);
         allocSize += type.size();
         return ret;
-    }
-    public ArrayList<Type> elementTypeList() {
-        return elementTypeList;
     }
 
     @Override

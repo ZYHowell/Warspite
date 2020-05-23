@@ -1,11 +1,11 @@
 package AST;
 
 import MIR.IRBlock;
+import MIR.IRoperand.Operand;
 import Util.error.internalError;
 import Util.position;
 import Util.symbol.Type;
 import Util.symbol.varEntity;
-import MIR.IRoperand.Operand;
 
 abstract public class exprNode extends ASTNode {
     private Type type;

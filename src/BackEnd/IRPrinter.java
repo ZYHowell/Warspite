@@ -4,7 +4,6 @@ import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRinst.Inst;
 import MIR.IRoperand.Param;
-import MIR.IRoperand.Register;
 import MIR.IRtype.Pointer;
 import MIR.Root;
 

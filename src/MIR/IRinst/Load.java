@@ -61,6 +61,6 @@ public class Load extends Inst{
 
     @Override
     public boolean noSideEffect() {
-        return true;
+        return false;
     }
 }

@@ -1,8 +1,8 @@
 package MIR.IRoperand;
 
 import MIR.IRinst.Inst;
-import MIR.IRtype.IntType;
 import MIR.IRtype.ArrayType;
+import MIR.IRtype.IntType;
 import MIR.IRtype.Pointer;
 
 import java.util.HashSet;

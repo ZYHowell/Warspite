@@ -8,7 +8,10 @@ import MIR.IRoperand.Register;
 import MIR.Root;
 import Util.DomGen;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class Mem2Reg extends Pass{
 

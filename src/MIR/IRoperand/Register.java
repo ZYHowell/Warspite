@@ -1,7 +1,7 @@
 package MIR.IRoperand;
 
-import MIR.IRtype.IRBaseType;
 import MIR.IRinst.Inst;
+import MIR.IRtype.IRBaseType;
 
 import java.util.HashSet;
 

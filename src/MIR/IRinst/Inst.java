@@ -33,9 +33,6 @@ abstract public class Inst {
     public Register dest() {
         return dest;
     }
-    public void moveTo(IRBlock block) {
-        this.block = block;
-    }
 
     public abstract boolean isTerminal();
     public abstract void removeSelf(boolean removeFromBlock);

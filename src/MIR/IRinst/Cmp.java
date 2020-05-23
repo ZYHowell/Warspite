@@ -4,7 +4,6 @@ import MIR.IRBlock;
 import MIR.IRoperand.Null;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
-import MIR.IRtype.IRBaseType;
 import Util.MIRMirror;
 
 import java.util.HashSet;
@@ -45,9 +44,6 @@ public class Cmp extends Inst{
         this.src1 = src1;
         this.src2 = src2;
         this.opCode = opCode;
-    }
-    public boolean commutable() {
-        return opCode.ordinal() > 3;
     }
 
     @Override

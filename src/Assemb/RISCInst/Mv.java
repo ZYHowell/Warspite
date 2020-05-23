@@ -1,7 +1,6 @@
 package Assemb.RISCInst;
 
 import Assemb.LIRBlock;
-import Assemb.LOperand.GReg;
 import Assemb.LOperand.Reg;
 
 import java.util.Collections;

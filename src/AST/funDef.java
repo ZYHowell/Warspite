@@ -1,8 +1,9 @@
 package AST;
 
-import java.util.ArrayList;
 import Util.position;
 import Util.symbol.funcDecl;
+
+import java.util.ArrayList;
 
 
 public class funDef extends ASTNode {

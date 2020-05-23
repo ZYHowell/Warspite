@@ -1,7 +1,12 @@
 package BackEnd;
 
-import Assemb.*;
-import Assemb.LOperand.*;
+import Assemb.LFn;
+import Assemb.LIRBlock;
+import Assemb.LOperand.PhyReg;
+import Assemb.LOperand.Reg;
+import Assemb.LOperand.SLImm;
+import Assemb.LOperand.VirtualReg;
+import Assemb.LRoot;
 import Assemb.RISCInst.*;
 
 import java.util.*;

@@ -1,7 +1,6 @@
 package MIR;
 
 import MIR.IRinst.*;
-import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
 
 import java.util.ArrayList;

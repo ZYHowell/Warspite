@@ -1,19 +1,18 @@
 package Util.symbol;
 
-import MIR.IRoperand.*;
+import MIR.IRoperand.ConstInt;
+import MIR.IRoperand.Operand;
 
 public class varEntity extends Entity {
 
     private Type type;
-    private boolean isOuter;    //indicate if the variable is {member of a class, global variable}
     private boolean isGlobal, isMember;   //in some way similar with the one above, but used for IR
     private Operand asOperand;  //if it is a member, is this able to be used as the offset?
     private ConstInt index;
 
-    public varEntity(String name, Type type, boolean isOuter, boolean isGlobal) {
+    public varEntity(String name, Type type, boolean isGlobal) {
         super(name);
         this.type = type;
-        this.isOuter = isOuter;
         this.isGlobal = isGlobal;
         this.isMember = false;
     }
@@ -25,9 +24,6 @@ public class varEntity extends Entity {
         this.index = new ConstInt(index, 32);
     }
     public Type type() { return type; }
-    public boolean isOuter() {
-        return isOuter;
-    }
     public boolean isGlobal() { return isGlobal; }
     public void setIsMember() {
         isMember = true;

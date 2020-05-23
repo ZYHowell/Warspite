@@ -34,7 +34,6 @@ import java.util.Map;
  *          }
  *      although x SEEMS not useful so f(x) can be eliminated, the fact is not so.
  */
-//O(n)!O(n)!
 public class ADCE extends Pass {
 
     private Root irRoot;
@@ -80,7 +79,6 @@ public class ADCE extends Pass {
                     System.err.println(inst.toString());
                     throw new RuntimeException();
                 }
-                    //the last one is to get the size.
             });
         }
     }
@@ -184,7 +182,7 @@ public class ADCE extends Pass {
                         if (inst.isTerminal()) {
                             //this block is not effectively reachable
                             block.removeTerminator();   //to make CFG simplification faster
-                            block.addTerminator(new Jump(block, block));    //formal terminator
+                            block.addTerminator(new Jump(block, block));
                             break;
                         } else inst.removeSelf(true);
                     }

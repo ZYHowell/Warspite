@@ -1,16 +1,19 @@
 package FrontEnd;
 
-import java.util.ArrayList;
-import java.util.Stack;
 import AST.*;
 import MIR.IRtype.ClassType;
 import MIR.IRtype.IRBaseType;
 import MIR.IRtype.Pointer;
 import MIR.Root;
-import Util.scope.*;
-import Util.symbol.*;
-import Util.error.*;
+import Util.error.semanticError;
 import Util.position;
+import Util.scope.Scope;
+import Util.scope.classScope;
+import Util.scope.globalScope;
+import Util.symbol.*;
+
+import java.util.ArrayList;
+import java.util.Stack;
 
 //principle: set new scope before visit its body;
 //(so check condition: {...;{};...})
@@ -103,7 +106,7 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(varDef it) {
-        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()), isOuter(),
+        varEntity theVar = new varEntity(it.name(), gScope.generateType(it.type()),
                 currentScope == gScope);
         it.setEntity(theVar);
         if (theVar.type().isVoid()) throw new semanticError("type of the variable is void", it.pos());

@@ -2,7 +2,9 @@ package Optim;
 
 import MIR.Function;
 import MIR.IRBlock;
-import MIR.IRinst.*;
+import MIR.IRinst.Call;
+import MIR.IRinst.Inst;
+import MIR.IRinst.Return;
 import MIR.IRoperand.Operand;
 import MIR.Root;
 import Util.DomGen;

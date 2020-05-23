@@ -1,6 +1,7 @@
 package AST;
 
 import Util.position;
+
 import java.util.ArrayList;
 
 public class varDefList extends stmtNode {

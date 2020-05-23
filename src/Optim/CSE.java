@@ -2,12 +2,14 @@ package Optim;
 
 import MIR.Function;
 import MIR.IRBlock;
-import MIR.IRinst.Inst;
-import MIR.IRinst.Phi;
+import MIR.IRinst.*;
 import MIR.IRoperand.Register;
 import MIR.Root;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 /*
  * this is a naïve global CSE, based on the iDom of the block.
@@ -23,6 +25,29 @@ public class CSE extends Pass {
 
     public CSE(Root irRoot) {
         this.irRoot = irRoot;
+    }
+
+    static int bound = 10;
+
+    private void tryReplace(IRBlock block, int cnt, ArrayList<Inst> instructions, IRBlock origin){
+        for (Inst inst = block.headInst; inst != null; inst = inst.next) {
+            ++cnt;
+            if (cnt > bound) break;
+            if (inst instanceof GetElementPtr || inst instanceof BitCast || inst instanceof Binary) {
+                for (Inst instr : instructions) {
+                    if (instr.sameMeaning(inst)) {
+                        inst.dest().replaceAllUseWith(instr.dest());
+                        inst.removeSelf(true);
+                        break;
+                    }
+                }
+            }
+        }
+        if (cnt < bound) {
+            for (IRBlock suc : block.successors()) {
+                if (suc.isDomed(origin)) tryReplace(suc, cnt, instructions, block);
+            }
+        }
     }
 
     private void visit(IRBlock block) {
@@ -63,6 +88,10 @@ public class CSE extends Pass {
                     else hasChange = true;
                 }
             }
+
+            block.successors().forEach(suc -> {
+                if (suc.isDomed(block)) tryReplace(suc, instructions.size(), instructions, block);
+            });
             change = change || hasChange;
         } while(hasChange);
     }

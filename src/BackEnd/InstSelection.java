@@ -1,23 +1,28 @@
 package BackEnd;
 
-import Assemb.*;
+import Assemb.LFn;
+import Assemb.LIRBlock;
 import Assemb.LOperand.*;
+import Assemb.LRoot;
 import Assemb.RISCInst.*;
-import MIR.*;
-import MIR.IRoperand.*;
+import MIR.Function;
+import MIR.IRBlock;
 import MIR.IRinst.*;
+import MIR.IRoperand.*;
 import MIR.IRtype.ClassType;
 import MIR.IRtype.IRBaseType;
 import MIR.IRtype.Pointer;
+import MIR.Root;
 import Optim.LoopDetector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static Assemb.RISCInst.RISCInst.*;
+import static Assemb.RISCInst.RISCInst.CalCategory;
 import static Assemb.RISCInst.RISCInst.CalCategory.*;
-import static Assemb.RISCInst.RISCInst.EzCategory.*;
+import static Assemb.RISCInst.RISCInst.EzCategory.eq;
+import static Assemb.RISCInst.RISCInst.EzCategory.ne;
 
 /*
  * for extra params(a8, a9, ...an) they are in stack:

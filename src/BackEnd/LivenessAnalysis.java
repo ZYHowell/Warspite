@@ -8,7 +8,6 @@ import Assemb.RISCInst.RISCInst;
 import java.util.HashMap;
 import java.util.HashSet;
 
-//this is done after phi resolution
 public class LivenessAnalysis {
     private LFn fn;
     private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>(),
@@ -19,7 +18,7 @@ public class LivenessAnalysis {
         this.fn = fn;
     }
 
-    public void runForBlockA(LIRBlock block) {
+    public void runForBlock(LIRBlock block) {
         HashSet<Reg> uses = new HashSet<>();
         HashSet<Reg> defs = new HashSet<>();
         for (RISCInst inst = block.head; inst != null; inst = inst.next) {
@@ -53,10 +52,9 @@ public class LivenessAnalysis {
 
     public void runForFn() {
         //run the first round in each block: collect def and use in each block
-        fn.blocks().forEach(this::runForBlockA);
+        fn.blocks().forEach(this::runForBlock);
         //run to get the live-in and live-out of each block
         LiveIO(fn.exitBlock());
-        //run the second round in each block
     }
 
 }

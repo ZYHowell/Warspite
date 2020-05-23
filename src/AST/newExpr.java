@@ -1,8 +1,8 @@
 package AST;
 
-import java.util.ArrayList;
 import Util.position;
-import Util.symbol.varEntity;
+
+import java.util.ArrayList;
 
 public class newExpr extends exprNode {
 
