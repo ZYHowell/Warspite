@@ -193,6 +193,21 @@ public class IRBuilder implements ASTVisitor {
         });
         it.allDef().forEach(node -> node.accept(this));
         irRoot.getInit().exitBlock().addTerminator(new Return(irRoot.getInit().exitBlock(), null));
+        currentFunction = irRoot.getInit();
+        entryReachable = new HashSet<>(); returnVisited = new HashSet<>();
+        entryDFS(currentFunction.entryBlock());
+        for (Iterator<Return> iter = returnList.iterator();iter.hasNext();) {
+            Return ret = iter.next();
+            if (returnDFS(ret.block())) {
+                iter.remove();
+                ret.block().removeTerminator();
+            }
+        }
+        entryReachable.removeIf(block -> !block.terminated());
+        currentFunction.blocks().addAll(entryReachable);
+        entryReachable = null;returnVisited = null;
+
+        new globLoc(irRoot).run();
     }
 
     @Override
@@ -269,7 +284,8 @@ public class IRBuilder implements ASTVisitor {
                 ret.block().removeTerminator();
             }
         }
-
+        entryReachable.removeIf(block -> !block.terminated());
+        currentFunction.blocks().addAll(entryReachable);
         entryReachable = null;returnVisited = null;
 
         if (returnList.size() > 1) {
@@ -294,6 +310,7 @@ public class IRBuilder implements ASTVisitor {
             }
             rootReturn.addTerminator(new Return(rootReturn, returnValue));
             currentFunction.setExitBlock(rootReturn);
+            currentFunction.addBlock(rootReturn);
         } else {
             currentFunction.setExitBlock(returnList.get(0).currentBlock());
         }

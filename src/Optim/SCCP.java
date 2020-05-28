@@ -233,7 +233,7 @@ public class SCCP extends Pass {
             everChanged = everChanged || changeFn;
         } while(changeFn);
         change = change || everChanged;
-        if (everChanged) new DomGen(fn, true).runForFn();
+        if (everChanged) new DomGen(fn).runForFn();
     }
     @Override
     public boolean run() {

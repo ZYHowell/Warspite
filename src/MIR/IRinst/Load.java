@@ -21,6 +21,11 @@ public class Load extends Inst{
     public Operand address() {
         return address;
     }
+    public void setAddress(Operand address) {
+        this.address.removeUse(this);
+        this.address = address;
+        address.addUse(this);
+    }
 
     @Override
     public String toString() {

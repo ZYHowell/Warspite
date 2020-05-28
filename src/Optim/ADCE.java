@@ -203,7 +203,7 @@ public class ADCE extends Pass {
                     block.addTerminator(new Jump(block, block));
                 }
             });
-            new DomGen(fn, true).runForFn();
+            new DomGen(fn).runForFn();
         });
     }
 

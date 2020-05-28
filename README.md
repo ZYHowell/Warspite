@@ -85,3 +85,5 @@ while (!queue.isEmpty());
 4月28日，单线程代码，IDEA在windows下build，可以通过所有测试，在Linux下使用脚本build，某些测试的输出结果会RE或WA
 
 4月30日，在Linux下，先new Print stream再将其传入时会出现bug导致传入的Print stream并没能成功输出
+
+5月25日，java不支持typedef和unsigned

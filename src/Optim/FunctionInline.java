@@ -138,7 +138,7 @@ public class FunctionInline extends Pass{
             init();
             inlineJudge();
             inlining();
-            irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
+            irRoot.functions().forEach((name, fn) -> new DomGen(fn).runForFn());
             return change;
         } else {
             HashMap<Function, Integer> lineNumber = new HashMap<>();
@@ -163,7 +163,7 @@ public class FunctionInline extends Pass{
                     }
             }));
             canUnFold.forEach(this::unfold);
-            irRoot.functions().forEach((name, fn) -> new DomGen(fn, true).runForFn());
+            irRoot.functions().forEach((name, fn) -> new DomGen(fn).runForFn());
             return true;
         }
     }

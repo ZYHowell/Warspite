@@ -26,6 +26,11 @@ public class Store extends Inst{
         return address;
     }
 
+    public void setAddress(Operand address) {
+        this.address.removeUse(this);
+        this.address = address;
+        address.addUse(this);
+    }
     public Operand value() {
         return value;
     }

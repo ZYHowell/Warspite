@@ -38,7 +38,7 @@ public class Mem2Reg extends Pass{
         HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new HashMap<>();
         HashMap<Operand, Operand> replaceMap = new HashMap<>();
 
-        new DomGen(fn, false).runForFn();
+        new DomGen(fn).runForFn();
 
         fn.blocks().forEach(block -> {
             allocLoads.put(block, new HashSet<>());

@@ -1,0 +1,34 @@
+//How dare anybody think LOCALIZATION is the most important one for O1?
+//How dare anybody think LOCALIZATION is not excluded from memory-about optimization?
+//How dare anybody think LOCALIZATION is a very reasonable and necessary optimization?
+int n;
+int c;
+int count(int x, int dep) {
+    ++c;
+    if (dep > 0) count(x, dep - 1);
+    return c % x;
+}
+
+int main() {
+    int cnt = 0, max = getInt();    //max=1e4
+    bool flag = getInt() == 0;
+    n = 0;
+    c = 0;
+    int i;
+    for (i = 0; i < max;++i) {
+        cnt += count(n, i);
+        cnt += count(n, i);
+        cnt += count(n, i);
+        //test whether before the call of each time, the store is always inserted or not. 
+    }
+    for (i = 0;i < max;++i) {
+        if (flag) cnt += count(n, i);
+        else n = n + 1;
+        if (flag) cnt += count(n, i);
+        else n = n + 1;
+        if (flag) cnt += count(n, i);
+        else n = n + 1;
+    }
+    printInt(cnt);
+    return 0;
+}

@@ -23,3 +23,13 @@ IgnoreLexer.java~
 /debug.s
 /output.s
 /debug.ll
+/asm/Assemb.interp
+/asm/Assemb.tokens
+/asm/AssembBaseListener.java
+/asm/AssembBaseVisitor.java
+/asm/AssembLexer.interp
+/asm/AssembLexer.java
+/asm/AssembLexer.tokens
+/asm/AssembListener.java
+/asm/AssembParser.java
+/asm/AssembVisitor.java

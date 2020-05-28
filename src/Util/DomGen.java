@@ -8,11 +8,9 @@ import java.util.HashMap;
 
 public class DomGen {
     private Function fn;
-    private boolean blockCollected;
 
-    public DomGen(Function fn, boolean blockCollected) {
+    public DomGen(Function fn) {
         this.fn = fn;
-        this.blockCollected = blockCollected;
     }
 
     ArrayList<ArrayList<IRBlock>> bucket = new ArrayList<>();
@@ -88,11 +86,6 @@ public class DomGen {
             tmp = DFSIndex.get(i);
             if (tmp.iDom() != sDom.get(tmp))
                 tmp.setIDom(tmp.iDom().iDom());
-        }
-
-        if (!blockCollected) {
-            fn.blocks().addAll(DFSIndex);
-            fn.blocks().remove(null);
         }
 
         int size = DFSIndex.size();

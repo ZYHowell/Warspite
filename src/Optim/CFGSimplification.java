@@ -111,22 +111,16 @@ public class CFGSimplification extends Pass {
         fn.blocks().removeAll(mergeSet);
         return !mergeSet.isEmpty();
     }
-//    private void InstModify(Function fn) {
-//        //modify instructions. hard to judge
-//        //to consider: add this?
-//    }
 
     private void simplify(Function fn) {
         boolean newChange;
         boolean changed = false;
         do {
             newChange = removeBB(fn);
-            //newChange = mergeBB_1(fn) || newChange;
             if (doStraightening) newChange = mergeBB_2(fn) || newChange;
             changed = changed || newChange;
         } while(newChange);
-        if (changed) new DomGen(fn, true).runForFn();
-        //re-calculate the dom relationship
+        if (changed) new DomGen(fn).runForFn();
         change = change || changed;
     }
 
