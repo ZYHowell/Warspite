@@ -27,7 +27,7 @@ public class CSE extends Pass {
         this.irRoot = irRoot;
     }
 
-    static int bound = 10;
+    static int bound = 20;
 
     private void tryReplace(IRBlock block, int cnt, ArrayList<Inst> instructions, IRBlock origin){
         for (Inst inst = block.headInst; inst != null; inst = inst.next) {
