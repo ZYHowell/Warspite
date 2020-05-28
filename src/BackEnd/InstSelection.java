@@ -42,6 +42,7 @@ public class InstSelection {
 
     private LFn currentLFn;
     private LIRBlock currentBlock;
+    private HashMap<Integer, Reg> liReg = new HashMap<>();
 
     public InstSelection(Root irRoot) {
         this.irRoot = irRoot;
@@ -67,13 +68,23 @@ public class InstSelection {
                 return reg;
             } else return regMap.get(src);
         } else if (src instanceof ConstInt) {
+            int value = ((ConstInt) src).value();
+            if (value == 0) return lRoot.getPhyReg(0);
+            if (liReg.containsKey(value)) return liReg.get(value);
+
             VirtualReg reg = new VirtualReg(4, cnt++);
-            block.addInst(new Li(new Imm(((ConstInt) src).value()), reg, block));
+            block.addInst(new Li(new Imm(value), reg, block));
+            liReg.put(value, reg);
             return reg;
         }
         else if (src instanceof ConstBool) {
+            int value = ((ConstBool) src).value() ? 1 : 0;
+            if (value == 0) return lRoot.getPhyReg(0);
+            if (liReg.containsKey(value)) return liReg.get(value);
+
             VirtualReg reg = new VirtualReg(1, cnt++);
-            block.addInst(new Li(new Imm(((ConstBool) src).value() ? 1 : 0), reg, block));
+            block.addInst(new Li(new Imm(value), reg, block));
+            liReg.put(value, reg);
             return reg;
         } else {
             return lRoot.getPhyReg(0);
@@ -404,6 +415,7 @@ public class InstSelection {
 
         fn.blocks().forEach(block -> {
             LIRBlock lBlock = blockMap.get(block);
+            liReg.clear();
             copyBlock(block, lBlock);
             lFn.addBlock(lBlock);
         });
