@@ -3,8 +3,7 @@ package Util;
 import MIR.Function;
 import MIR.IRBlock;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public class DomGen {
     private Function fn;
@@ -21,6 +20,7 @@ public class DomGen {
             union = new HashMap<>(),
             minVer = new HashMap<>(),
             dfsFather = new HashMap<>();
+    private HashMap<IRBlock, LinkedList<IRBlock>> domTree;
 
     private void DFS(IRBlock it) {
         if (dfsOrder.containsKey(it)) return;
@@ -30,7 +30,7 @@ public class DomGen {
         dfsOrder.put(it, ++tot);
         union.put(it, it);
         minVer.put(it, it);
-        it.successors().forEach(son -> {
+        it.successors.forEach(son -> {
             if (!dfsOrder.containsKey(son)){
                 DFS(son);
                 dfsFather.put(son, it);
@@ -56,7 +56,7 @@ public class DomGen {
     }
 
     public void runForFn() {
-        IRBlock tmp, entranceBlock = fn.entryBlock();
+        IRBlock tmp, entranceBlock = fn.entryBlock;
 
         bucket = new ArrayList<>();
         DFSIndex = new ArrayList<>();
@@ -68,7 +68,7 @@ public class DomGen {
 
         for (int i = tot; i > 1; --i) {
             tmp = DFSIndex.get(i);
-            for (IRBlock pre : tmp.precursors()) {
+            for (IRBlock pre : tmp.precursors) {
                 IRBlock evalBlock = eval(pre);
                 if (dfsOrder.get(sDom.get(tmp)) > dfsOrder.get(sDom.get(evalBlock)))
                     sDom.put(tmp, sDom.get(evalBlock));
@@ -78,27 +78,43 @@ public class DomGen {
             union.put(tmp, x);
             for (IRBlock buk : bucket.get(dfsOrder.get(x))) {
                 IRBlock u = eval(buk);
-                buk.setIDom(dfsOrder.get(sDom.get(u)) < dfsOrder.get(x) ? u : x);
+                buk.iDom = dfsOrder.get(sDom.get(u)) < dfsOrder.get(x) ? u : x;
             }
             bucket.get(dfsOrder.get(x)).clear();
         }
         for (int i = 2; i <= tot; ++i) {
             tmp = DFSIndex.get(i);
-            if (tmp.iDom() != sDom.get(tmp))
-                tmp.setIDom(tmp.iDom().iDom());
+            if (tmp.iDom != sDom.get(tmp))
+                tmp.iDom = tmp.iDom.iDom;
         }
 
         int size = DFSIndex.size();
         for (int i = 1; i < size; ++i) {
             IRBlock block = DFSIndex.get(i);
-            if (block.precursors().size() >= 2) {
-                for (IRBlock runner : block.precursors()) {
-                    while (runner != block.iDom()) {
-                        runner.addDomFrontier(block);
-                        runner = runner.iDom();
+            if (block.precursors.size() >= 2) {
+                for (IRBlock runner : block.precursors) {
+                    while (runner != block.iDom) {
+                        runner.domFrontiers.add(block);
+                        runner = runner.iDom;
                     }
                 }
             }
         }
+
+        domTree = new HashMap<>();
+        fn.blocks.forEach(b -> domTree.put(b, new LinkedList<>()));
+        fn.blocks.forEach(b -> {
+            if (b.iDom != null) domTree.get(b.iDom).add(b);
+            b.domEntranceID = b.domExitID = -1;
+        });
+        _id = 0;
+        domTreeDFS(entranceBlock);
+        _id = 0;domTree.clear();
+    }
+    private int _id = 0;
+    private void domTreeDFS(IRBlock b){
+        b.domEntranceID = _id++;
+        domTree.get(b).forEach(this::domTreeDFS);
+        b.domExitID = _id++;
     }
 }

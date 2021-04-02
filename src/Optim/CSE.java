@@ -44,7 +44,7 @@ public class CSE extends Pass {
             }
         }
         if (cnt < bound) {
-            for (IRBlock suc : block.successors()) {
+            for (IRBlock suc : block.successors) {
                 if (suc.isDomed(origin)) tryReplace(suc, cnt, instructions, block);
             }
         }
@@ -55,7 +55,7 @@ public class CSE extends Pass {
         do {
             hasChange = false;
             HashSet<Phi> retainedPhi = new HashSet<>();
-            for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext();) {
+            for (Iterator<Map.Entry<Register, Phi>> iter = block.PhiInst.entrySet().iterator(); iter.hasNext();) {
                 Map.Entry<Register, Phi> entry = iter.next();
                 Phi phi = entry.getValue();
                 boolean replaced = false;
@@ -89,7 +89,7 @@ public class CSE extends Pass {
                 }
             }
 
-            block.successors().forEach(suc -> {
+            block.successors.forEach(suc -> {
                 if (suc.isDomed(block)) tryReplace(suc, instructions.size(), instructions, block);
             });
             change = change || hasChange;
@@ -97,7 +97,7 @@ public class CSE extends Pass {
     }
 
     private void runForFn(Function fn) {
-        fn.blocks().forEach(this::visit);
+        fn.blocks.forEach(this::visit);
     }
 
     @Override

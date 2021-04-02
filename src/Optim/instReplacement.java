@@ -104,7 +104,7 @@ public class instReplacement extends Pass {
         }
     }
     public void runForFn(Function fn) {
-        fn.blocks().forEach(this::runForBlock);
+        fn.blocks.forEach(this::runForBlock);
     }
     @Override
     public boolean run() {

@@ -22,7 +22,7 @@ public class Jump extends Inst {
 
     @Override
     public String toString() {
-        return "br label %" + jumpDest.name();
+        return "br label %" + jumpDest.name;
     }
 
     @Override

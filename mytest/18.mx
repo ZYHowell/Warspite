@@ -1,0 +1,6 @@
+int main() {
+    println("\\n"); //if you simply use replace here, you may get ('\' and '\n'); or '\n'
+    println("\\n\\t\\r");   //just for fun
+    println("\\\n");    //the rest two just for fun
+    println("\\\\n");
+}

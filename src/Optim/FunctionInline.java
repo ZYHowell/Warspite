@@ -40,7 +40,7 @@ public class FunctionInline extends Pass{
             if (it.isCallee(fn)) inRing = true;
             if (inRing) cannotInlineFun.add(fn);
         }
-        it.callFunction().forEach(callee -> {
+        it.callFunction.forEach(callee -> {
             if (!visited.contains(callee)) DFS(callee);
             caller.get(callee).add(it);
         });
@@ -66,28 +66,28 @@ public class FunctionInline extends Pass{
             mirrorOpr.put(virtualParam, callParam);
         }
         //copy all blocks of callee
-        HashSet<IRBlock> copied = new HashSet<>(callee.blocks());
+        HashSet<IRBlock> copied = new HashSet<>(callee.blocks);
         for (IRBlock block : copied) {
-            IRBlock mirrorBlock =  new IRBlock(block.name() + "_inline");
+            IRBlock mirrorBlock =  new IRBlock(block.name + "_inline");
             mirrorBlocks.put(block, mirrorBlock);
         }
-        fn.blocks().addAll(mirrorBlocks.values());
+        fn.blocks.addAll(mirrorBlocks.values());
         mirror.setBlockMirror(mirrorBlocks);
         //copy all instructions
         copied.forEach(block -> {
             IRBlock mirB = mirror.blockMir(block);
             for(Inst instr = block.headInst; instr != null; instr = instr.next)
                 instr.addMirror(mirB, mirror);
-            block.phiInst().forEach((reg, instr) -> instr.addMirror(mirB, mirror));
+            block.PhiInst.forEach((reg, instr) -> instr.addMirror(mirB, mirror));
         });
 
         //split the current block into two parts(before the call and after it)
-        IRBlock laterBlock = new IRBlock(currentBlock.name() + "_split");
+        IRBlock laterBlock = new IRBlock(currentBlock.name + "_split");
         currentBlock.splitTo(laterBlock, inst);
 
         //merge the exit block with the laterBlock one of current block,
         //no need to remove laterBlock since it is never added
-        IRBlock exitBlock = mirrorBlocks.get(callee.exitBlock());
+        IRBlock exitBlock = mirrorBlocks.get(callee.exitBlock);
         assert exitBlock.terminator() instanceof Return;
         Return retInst = (Return) exitBlock.terminator();
         if (retInst.value() != null) inst.dest().replaceAllUseWith(retInst.value());
@@ -95,13 +95,13 @@ public class FunctionInline extends Pass{
 
         exitBlock.mergeBlock(laterBlock);
         //merge the entry block with the former one of current block
-        IRBlock mirEntry = mirrorBlocks.get(callee.entryBlock());
+        IRBlock mirEntry = mirrorBlocks.get(callee.entryBlock);
         fn.removeBlock(mirEntry);  //no need to remove later block: not added into fn
         currentBlock.mergeBlock(mirEntry);
-        if (fn.exitBlock() == currentBlock && mirEntry != exitBlock) fn.setExitBlock(exitBlock);
+        if (fn.exitBlock == currentBlock && mirEntry != exitBlock) fn.setExitBlock(exitBlock);
     }
     private void checkInline(Function fn) {
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             for (Inst inst = block.headInst; inst != null; inst = inst.next)
             if (inst instanceof Call && !cannotInlineFun.contains(((Call)inst).callee())) {
                 canUnFold.put((Call) inst, fn);
@@ -146,12 +146,12 @@ public class FunctionInline extends Pass{
             cannotInlineFun.add(irRoot.getFunction("main"));
             irRoot.functions().forEach((name, fn) -> {
                 int cnt = 0;
-                for (IRBlock block : fn.blocks()) {
+                for (IRBlock block : fn.blocks) {
                     for (Inst inst = block.headInst; inst != null; inst = inst.next) cnt++;
                 }
                 lineNumber.put(fn, cnt);
             });
-            irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+            irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next)
                     if (inst instanceof Call) {
                         Call ca = (Call) inst;

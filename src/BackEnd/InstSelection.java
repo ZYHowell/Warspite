@@ -378,7 +378,7 @@ public class InstSelection {
     private void copyBlock(IRBlock origin, LIRBlock block) {
         currentBlock = block;
         for(Inst inst = origin.headInst; inst != null; inst = inst.next) genLIR(inst);
-        origin.successors().forEach(suc -> {
+        origin.successors.forEach(suc -> {
             block.successors.add(blockMap.get(suc));
             blockMap.get(suc).precursors.add(block);
         });
@@ -413,7 +413,7 @@ public class InstSelection {
             paraOffset += 4;
         }
 
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             LIRBlock lBlock = blockMap.get(block);
             liReg.clear();
             copyBlock(block, lBlock);
@@ -436,12 +436,12 @@ public class InstSelection {
         });
         irRoot.functions().forEach((name, fn) -> {
             new LoopDetector(fn, false).runForFn();
-            fn.blocks().forEach(block -> {
-                LIRBlock lBlock = new LIRBlock(block.loopDepth, "." + fn.name() + "_" + block.name());
+            fn.blocks.forEach(block -> {
+                LIRBlock lBlock = new LIRBlock(block.loopDepth, "." + fn.name + "_" + block.name);
                 blockMap.put(block, lBlock);
             });
             //this is for reg alloc
-            LFn lFn = new LFn(name, blockMap.get(fn.entryBlock()), blockMap.get(fn.exitBlock()));
+            LFn lFn = new LFn(name, blockMap.get(fn.entryBlock), blockMap.get(fn.exitBlock));
             fnMap.put(fn, lFn);
             fn.params().forEach(para -> lFn.addPara(RegM2L(para)));
             lRoot.addFunction(lFn);

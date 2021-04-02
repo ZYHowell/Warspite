@@ -37,7 +37,7 @@ public class globLoc extends Pass {
         irRoot.functions().forEach((name, fn) -> {
             HashSet<GlobalReg> allUse = new HashSet<>(), allDefs = new HashSet<>();
             HashSet<Function> allCall = new HashSet<>();
-            fn.blocks().forEach(block -> {
+            fn.blocks.forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next){
                     for (Operand use : inst.uses()) {
                         if (use instanceof GlobalReg) {
@@ -47,7 +47,7 @@ public class globLoc extends Pass {
                     }
                     if (inst instanceof Call) {
                         Function callee = ((Call) inst).callee();
-                        if (!irRoot.isBuiltIn(callee.name())) allCall.add(callee);
+                        if (!irRoot.isBuiltIn(callee.name)) allCall.add(callee);
                     }
                 }
             });
@@ -107,7 +107,7 @@ public class globLoc extends Pass {
             localMap.put(glob, reg);
             fn.addVar(reg);
         });
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             for (Inst inst = block.headInst; inst != null; inst = inst.next) {
                 HashSet<Operand> uses = inst.uses();
                 uses.retainAll(canLoc);
@@ -124,7 +124,7 @@ public class globLoc extends Pass {
                 }
             }
         });
-        IRBlock entry = fn.entryBlock(), exit = fn.exitBlock();
+        IRBlock entry = fn.entryBlock, exit = fn.exitBlock;
         localMap.forEach((glob, loc) -> {
             Register tmpHd = new Register(((Pointer) glob.type()).pointTo(),
                             "tmp_load_" + ((GlobalReg)glob).name());

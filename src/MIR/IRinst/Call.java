@@ -40,7 +40,7 @@ public class Call extends Inst{
             ret.append(" ");
         } else ret.append("call void ");
         ret.append("@");
-        ret.append(callee.name());
+        ret.append(callee.name);
         if (params.size() == 0) ret.append("(");
         for (int i = 0;i < params.size();++i){
             ret.append((i == 0 ? "(" : ", "));

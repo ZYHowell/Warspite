@@ -22,10 +22,10 @@ public class MIRFnGraph {
         if (callerCollect)
             irRoot.functions().forEach((name, func) -> caller.put(func, new HashSet<>()));
         irRoot.functions().forEach((name, func) -> {
-            func.callFunction().clear();
-            func.blocks().forEach(block ->{
+            func.callFunction.clear();
+            func.blocks.forEach(block ->{
                 for (Inst inst = block.headInst; inst != null;inst = inst.next){
-                    if (inst instanceof Call && !irRoot.isBuiltIn(((Call) inst).callee().name())) {
+                    if (inst instanceof Call && !irRoot.isBuiltIn(((Call) inst).callee().name)) {
                         func.addCalleeFunction(((Call)inst).callee());
                         if (callerCollect) caller.get(((Call)inst).callee()).add(func);
                     }

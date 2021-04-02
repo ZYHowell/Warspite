@@ -79,22 +79,24 @@ public class MemCSE extends Pass {
         if (!domChildren.contains(currentBlock) || visited.contains(currentBlock)) return;
         visited.add(currentBlock);
         if (_StoreCSE(inst, currentBlock.headInst))
-            currentBlock.successors().forEach(suc -> tryStoreCSE(suc, inst, domChildren));
+            currentBlock.successors.forEach(suc -> tryStoreCSE(suc, inst, domChildren));
         //maybe I'll debug this later
     }
 
     private void runForFn(Function fn) {
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             HashSet<IRBlock> domChildren = new HashSet<>();
-            Queue<IRBlock> runners = new LinkedList<>(block.successors());
-            HashSet<IRBlock> visited = new HashSet<>();
+            Queue<IRBlock> runners = new LinkedList<>(block.successors);
+            HashSet<IRBlock> visited = new HashSet<>(block.successors);
             while(!runners.isEmpty()) {
                 IRBlock runner = runners.poll();
-                visited.add(runner);
                 if (runner.isDomed(block)) {
                     domChildren.add(runner);
-                    runner.successors().forEach(suc -> {
-                        if (!visited.contains(suc)) runners.offer(suc);
+                    runner.successors.forEach(suc -> {
+                        if (!visited.contains(suc)) {
+                            runners.offer(suc);
+                            visited.add(suc);
+                        }
                     });
                 }
             }

@@ -40,14 +40,14 @@ public class Mem2Reg extends Pass{
 
         new DomGen(fn).runForFn();
 
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             allocLoads.put(block, new HashSet<>());
             allocStores.put(block, new HashMap<>());
             allocPhiMap.put(block, new HashMap<>());
         });
 
         //collect load/store info.
-        for (IRBlock block : fn.blocks()) {
+        for (IRBlock block : fn.blocks) {
             for (Inst inst = block.headInst; inst != null;) {
                 Inst tmp = inst.next;
                 if (inst instanceof Load) {
@@ -81,7 +81,7 @@ public class Mem2Reg extends Pass{
             for (IRBlock runner : runningSet) {
                 HashMap<Register, Operand> runnerDefAlloc = allocStores.get(runner);
                 if (runnerDefAlloc.size() != 0) {
-                    for (IRBlock df : runner.domFrontiers()) {
+                    for (IRBlock df : runner.domFrontiers) {
                         for (Map.Entry<Register, Operand> entry : runnerDefAlloc.entrySet()) {
                             Register allocVar = entry.getKey();
                             Operand value = entry.getValue();
@@ -106,11 +106,11 @@ public class Mem2Reg extends Pass{
         }
 
         //rename: remove all load about alloca reg(stores are already removed above)
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             if (!allocPhiMap.get(block).isEmpty()) {
-                allocPhiMap.get(block).forEach((address, phi) -> block.precursors().forEach(pre -> {
+                allocPhiMap.get(block).forEach((address, phi) -> block.precursors.forEach(pre -> {
                     IRBlock runner = pre;
-                    while (!allocStores.get(runner).containsKey(address)) runner = runner.iDom();
+                    while (!allocStores.get(runner).containsKey(address)) runner = runner.iDom;
                     phi.addOrigin(allocStores.get(runner).get(address), pre);
                 }));
             }
@@ -123,12 +123,12 @@ public class Mem2Reg extends Pass{
                     if (allocPhiMap.get(block).containsKey(replacedVar))
                         replace = allocPhiMap.get(block).get(replacedVar).dest();
                     else {
-                        IRBlock currentBlock = block.iDom();
+                        IRBlock currentBlock = block.iDom;
                         while (true)
                             if (allocStores.get(currentBlock).containsKey(replacedVar)) {
                                 replace = allocStores.get(currentBlock).get(replacedVar);
                                 break;
-                            } else currentBlock = currentBlock.iDom();
+                            } else currentBlock = currentBlock.iDom;
                     }
                     //the replaced one can only from an ancestor of the currentBlock or itself
                     replaceMap.put(reg, finalReplace(replaceMap, replace));
@@ -138,7 +138,7 @@ public class Mem2Reg extends Pass{
         });
         replaceMap.forEach((reg, rep) -> ((Register)reg).replaceAllUseWith(finalReplace(replaceMap, rep)));
 
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             for (Inst inst = block.headInst; inst != null; inst = inst.next)
                 if (inst instanceof Alloc) inst.removeInList();
         });

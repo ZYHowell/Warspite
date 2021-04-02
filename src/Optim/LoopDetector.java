@@ -34,13 +34,13 @@ public class LoopDetector {
         loopMap.get(head).addTail(tail);
     }
     private void addPreHeader(IRBlock head, MIRLoop loop) {
-        ArrayList<IRBlock> precursors = new ArrayList<>(head.precursors());
+        ArrayList<IRBlock> precursors = new ArrayList<>(head.precursors);
         precursors.removeAll(loop.tails());
         if (precursors.size() == 1) loop.setPreHead(precursors.get(0));
         else {
-            IRBlock preHead = new IRBlock("preHead of " + head.name());
-            fn.blocks().add(preHead);
-            for (Iterator<Map.Entry<Register, Phi>> iter = head.phiInst().entrySet().iterator(); iter.hasNext();) {
+            IRBlock preHead = new IRBlock("preHead of " + head.name);
+            fn.blocks.add(preHead);
+            for (Iterator<Map.Entry<Register, Phi>> iter = head.PhiInst.entrySet().iterator(); iter.hasNext();) {
                 Map.Entry<Register, Phi> entry = iter.next();
                 Phi phi = entry.getValue(), mirrorPhi = null;
                 boolean canRemove = true;
@@ -86,7 +86,7 @@ public class LoopDetector {
 
         while(!workList.isEmpty()) {
             IRBlock workBlock = workList.poll();
-            workBlock.precursors().forEach(pre -> {
+            workBlock.precursors.forEach(pre -> {
                 if (!inLoopBlocks.contains(pre)) {
                     workList.offer(pre);
                     inLoopBlocks.add(pre);
@@ -111,18 +111,18 @@ public class LoopDetector {
             loopStack.push(loop);
         }
         block.loopDepth = loopStack.size();
-        block.successors().forEach(suc -> {
+        block.successors.forEach(suc -> {
            if (!visited.contains(suc)) visit(suc);
         });
     }
     private void treeSpanning() {
-        visit(fn.entryBlock());
+        visit(fn.entryBlock);
     }
 
     public void runForFn() {
         //assume that the dominator relation is correct.
-        fn.blocks().forEach(block -> {
-            for (IRBlock suc : block.successors())
+        fn.blocks.forEach(block -> {
+            for (IRBlock suc : block.successors)
                 if (block.isDomed(suc)) {
                     collectLoop(block, suc);
                     break;

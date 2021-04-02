@@ -51,7 +51,7 @@ public class Phi extends Inst {
         for (int i = 0;i < values.size();i++) {
             if (i > 0) ret.append(", ");
             ret.append("[ ").append(values.get(i).toString());
-            ret.append(", ").append("%").append(blocks.get(i).name()).append(" ]");
+            ret.append(", ").append("%").append(blocks.get(i).name).append(" ]");
         }
         return ret.toString();
     }

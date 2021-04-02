@@ -11,9 +11,7 @@ import Util.DomGen;
 import Util.MIRFnGraph;
 import Util.MIRReachable;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /*
  * principle: I/O, "outer" store and side effect call are necessary
@@ -41,6 +39,7 @@ public class ADCE extends Pass {
     private HashSet<Inst> liveCode = new HashSet<>();
     private HashSet<Operand> outerOp = new HashSet<>();
     private MIRFnGraph CallGraph;
+    private Queue<Inst> handleQueue = new LinkedList<>();
 
     public ADCE(Root irRoot) {
         super();
@@ -107,7 +106,7 @@ public class ADCE extends Pass {
         outerOp.addAll(added);
         //collect I/O and side effect functions and outer stores and returns
         irRoot.functions().forEach((name, fn) ->
-            fn.blocks().forEach(block -> {
+            fn.blocks.forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next)
                     if (inst instanceof Call && ((Call)inst).callee().hasSideEffect()){
                         //this includes I/O
@@ -121,7 +120,7 @@ public class ADCE extends Pass {
                         CallGraph.callerOf(fn).forEach(this::setSideEffectTrue);
                     } else if (inst instanceof Return) liveCode.add(inst);
             }));
-        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+        irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next)
                     if (inst instanceof Call && ((Call)inst).callee().hasSideEffect())
                         liveCode.add(inst);
@@ -132,7 +131,7 @@ public class ADCE extends Pass {
         inst.uses().forEach(opr -> {
             if (opr.defInst() != null && !liveCode.contains(opr.defInst())) {
                 liveCode.add(opr.defInst());
-                tryAdd(opr.defInst());
+                handleQueue.offer(opr.defInst());
             }
             if (opr.isPointer())
                 opr.uses().forEach(use -> {
@@ -140,7 +139,7 @@ public class ADCE extends Pass {
                          use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))
                             && !liveCode.contains(use)) {
                         liveCode.add(use);
-                        tryAdd(use);
+                        handleQueue.offer(use);
                     }
                 });
         });
@@ -150,32 +149,35 @@ public class ADCE extends Pass {
                         use instanceof Phi || (use instanceof Load && use.dest().type() instanceof Pointer))
                         && !liveCode.contains(use)) {
                     liveCode.add(use);
-                    tryAdd(use);
+                    handleQueue.offer(use);
                 }
             });
         }
-        inst.block().precursors().forEach(pre -> {
+        inst.block().precursors.forEach(pre -> {
             if (!liveCode.contains(pre.terminator())) {
                 liveCode.add(pre.terminator());
-                tryAdd(pre.terminator());
+                handleQueue.offer(pre.terminator());
             }
         });
     }
 
     private void collect() {
-        irRoot.functions().forEach((name, fn) -> fn.blocks().forEach(block -> {
+        irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
             for (Inst inst = block.headInst; inst != null; inst = inst.next) {
-                if (liveCode.contains(inst)) tryAdd(inst);
+                if (liveCode.contains(inst)) handleQueue.add(inst);
             }
-            block.phiInst().forEach(((reg, inst) -> {
-                if (liveCode.contains(inst)) tryAdd(inst);
+            block.PhiInst.forEach(((reg, inst) -> {
+                if (liveCode.contains(inst)) handleQueue.add(inst);
             }));
         }));
+        while(!handleQueue.isEmpty()) {
+            tryAdd(handleQueue.poll());
+        }
     }
 
     public void clean() {
         irRoot.functions().forEach((name, fn) -> {
-            for (IRBlock block : fn.blocks()) {
+            for (IRBlock block : fn.blocks) {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next) {
                     if (!liveCode.contains(inst)) {
                         change = true;
@@ -187,7 +189,7 @@ public class ADCE extends Pass {
                         } else inst.removeSelf(true);
                     }
                 }
-                for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext(); ) {
+                for (Iterator<Map.Entry<Register, Phi>> iter = block.PhiInst.entrySet().iterator(); iter.hasNext(); ) {
                     Phi inst = iter.next().getValue();
                     if (!liveCode.contains(inst)) {
                         iter.remove();
@@ -197,7 +199,7 @@ public class ADCE extends Pass {
                 }
             }
             MIRReachable reachable = new MIRReachable(fn);
-            fn.blocks().forEach(block -> {
+            fn.blocks.forEach(block -> {
                 if (!reachable.reachable.contains(block)) {
                     block.removeTerminator();
                     block.addTerminator(new Jump(block, block));

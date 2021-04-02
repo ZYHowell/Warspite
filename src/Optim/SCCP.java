@@ -176,12 +176,12 @@ public class SCCP extends Pass {
 
     private void visit(IRBlock block) {
         visited.add(block);
-        if (block.precursors().size() == 0 && block != currentFn.entryBlock()) {
+        if (block.precursors.size() == 0 && block != currentFn.entryBlock) {
             block.removeTerminator();   //unreachable block, wait to be removed
             block.addTerminator(new Jump(block, block));
             return;
         }
-        for (Iterator<Map.Entry<Register, Phi>> iter = block.phiInst().entrySet().iterator(); iter.hasNext();) {
+        for (Iterator<Map.Entry<Register, Phi>> iter = block.PhiInst.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Register, Phi> entry = iter.next();
             Phi phi = entry.getValue();
             if (phiCheck(phi)) {
@@ -212,7 +212,7 @@ public class SCCP extends Pass {
             }
         }
 
-        block.successors().forEach(suc -> {
+        block.successors.forEach(suc -> {
             if (!visited.contains(suc)) visit(suc);
         });
     }
@@ -222,9 +222,9 @@ public class SCCP extends Pass {
         do {
             visited.clear();
             changeFn = false;
-            visit(fn.entryBlock());
+            visit(fn.entryBlock);
             MIRReachable reachable = new MIRReachable(fn);
-            fn.blocks().forEach(block -> {
+            fn.blocks.forEach(block -> {
                 if (!reachable.reachable.contains(block)) {
                     block.removeTerminator();
                     block.addTerminator(new Jump(block, block));

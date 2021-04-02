@@ -53,7 +53,7 @@ public class LICM extends Pass{
         Queue<Inst> canHoist = new LinkedList<>();
 
         loop.blocks().forEach(block -> {
-            block.phiInst().forEach((reg, phi) -> defInLoop.add(reg));
+            block.PhiInst.forEach((reg, phi) -> defInLoop.add(reg));
             for(Inst inst = block.headInst; inst != null; inst = inst.next)
                 if (inst.dest() != null) defInLoop.add(inst.dest());
         });

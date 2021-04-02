@@ -27,33 +27,33 @@ public class IRPrinter {
 
     private void renameBlock(IRBlock block) {
         if (!rename) return;
-        block.phiInst().forEach((reg, phi) -> reg.setName("" + symbolCnt++));
+        block.PhiInst.forEach((reg, phi) -> reg.setName("" + symbolCnt++));
         for (Inst inst = block.headInst; inst != null; inst = inst.next){
             if (inst.dest() != null) inst.dest().setName("" + symbolCnt++);
         }
     }
     public void printBlock(IRBlock block) {
-        out.println(block.name() + ":");
+        out.println(block.name + ":");
         out.print(";precursors: ");
-        block.precursors().forEach(pre -> out.print(pre.name() + " "));
+        block.precursors.forEach(pre -> out.print(pre.name + " "));
         out.print("\n;successors: ");
-        block.successors().forEach(suc -> out.print(suc.name() + " "));
+        block.successors.forEach(suc -> out.print(suc.name + " "));
         out.print("\n;head: " + block.headInst);
         out.print("\n;tail: " + block.tailInst);
         out.print("\n");
-        block.phiInst().forEach((reg, phi) -> out.println("\t" + phi.toString()));
+        block.PhiInst.forEach((reg, phi) -> out.println("\t" + phi.toString()));
         for (Inst inst = block.headInst; inst != null; inst = inst.next)
             out.println("\t" + inst.toString());
     }
 
     private void collectWithRename(Function fn) {
         Queue<IRBlock> blocks = new LinkedList<>();
-        blocks.add(fn.entryBlock());
-        visitList.add(fn.entryBlock());
+        blocks.add(fn.entryBlock);
+        visitList.add(fn.entryBlock);
         while (!blocks.isEmpty()) {
             IRBlock check = blocks.poll();
-            if (rename) check.setName("b." + blockCnt++);
-            check.successors().forEach(block -> {
+            if (rename) check.name = "b." + blockCnt++;
+            check.successors.forEach(block -> {
                 if (block != null && !visitList.contains(block)) {
                     blocks.add(block);
                     visitList.add(block);
@@ -63,7 +63,7 @@ public class IRPrinter {
     }
     private String fnHead(Function fn, boolean isBuiltIn) {
         StringBuilder ret = new StringBuilder(isBuiltIn ? "declare " : "define ");
-        ret.append(fn.retType()).append(" @").append(fn.name()).append("(");
+        ret.append(fn.retType).append(" @").append(fn.name).append("(");
         int size = fn.params().size();
         for (int i = 0;i < size;++i) {
             Param param = fn.params().get(i);

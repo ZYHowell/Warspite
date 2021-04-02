@@ -33,7 +33,7 @@ public class Branch extends Inst {
     @Override
     public String toString() {
         return "br " + condition.type().toString() + " " + condition.toString() + ", label %" +
-                trueDest.name() + ", label %" + falseDest.name();
+                trueDest.name + ", label %" + falseDest.name;
     }
 
     @Override

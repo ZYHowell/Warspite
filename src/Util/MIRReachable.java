@@ -10,7 +10,7 @@ public class MIRReachable {
     public HashSet<IRBlock> reachable = new HashSet<>();
 
     private void dfs(IRBlock block) {
-        block.successors().forEach(suc -> {
+        block.successors.forEach(suc -> {
             if (!reachable.contains(suc)) {
                 reachable.add(suc);
                 dfs(suc);
@@ -19,7 +19,7 @@ public class MIRReachable {
     }
 
     public MIRReachable(Function fn) {
-        reachable.add(fn.entryBlock());
-        dfs(fn.entryBlock());
+        reachable.add(fn.entryBlock);
+        dfs(fn.entryBlock);
     }
 }

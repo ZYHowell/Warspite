@@ -44,8 +44,8 @@ public class StrengthReduction extends Pass{
         loop.children().forEach(this::runForLoop);
         HashMap<Register, MIRInductVar> indVar = new HashMap<>();
         IRBlock preHead = loop.preHead();
-        IRBlock head = preHead.successors().get(0);
-        head.phiInst().forEach((reg, phi) -> {
+        IRBlock head = preHead.successors.get(0);
+        head.PhiInst.forEach((reg, phi) -> {
             Register innerReg = isInduct(phi, preHead);
             if (innerReg != null){
                 Binary innerDef = (Binary) innerReg.def();

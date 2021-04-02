@@ -144,25 +144,25 @@ public class IRBuilder implements ASTVisitor {
     public void visit(rootNode it) {
         classType stringType = (classType)gScope.getStringType();
         Function func = new Function("l_string_length");
-        func.setRetType(Root.i32T);
+        func.retType = Root.i32T;
         func.addParam(new Param(Root.stringT, "s"));
         irRoot.builtinFunctions().put("l_string_length", func);
         stringType.scope().getMethod("length", null, false).setFunction(func);
         func = new Function("l_string_substring");
-        func.setRetType(Root.stringT);
+        func.retType = Root.stringT;
         func.addParam(new Param(Root.stringT, "s"));
-        func.setRetType(Root.i32T);
+        func.retType = Root.i32T;
         func.addParam(new Param(Root.i32T, "left"));
         func.addParam(new Param(Root.i32T, "right"));
         irRoot.builtinFunctions().put("l_string_substring", func);
         stringType.scope().getMethod("substring", null, false).setFunction(func);
         func = new Function("l_string_parseInt");
-        func.setRetType(Root.i32T);
+        func.retType = Root.i32T;
         func.addParam(new Param(Root.stringT, "s"));
         irRoot.builtinFunctions().put("l_string_parseInt", func);
         stringType.scope().getMethod("parseInt", null, false).setFunction(func);
         func = new Function("l_string_ord");
-        func.setRetType(Root.charT);
+        func.retType = Root.charT;
         func.addParam(new Param(Root.stringT, "s"));
         func.addParam(new Param(Root.i32T, "ord"));
         irRoot.builtinFunctions().put("l_string_ord", func);
@@ -173,29 +173,34 @@ public class IRBuilder implements ASTVisitor {
                 if (!name.equals("main")) name = "c_" + name;
                 Function fun = new Function(name);
                 ((funDef)node).decl().setFunction(fun);
-                irRoot.addFunction(fun.name(), fun);
+                irRoot.addFunction(fun.name, fun);
             } else if (node instanceof classDef) {
                 String className = ((classDef)node).Identifier();
                 ((classDef)node).methods().forEach(method -> {
                     Function fun = new Function("l_" + className +
                                                 "_" + method.Identifier());
                     method.decl().setFunction(fun);
-                    irRoot.addFunction(fun.name(), fun);
+                    irRoot.addFunction(fun.name, fun);
                 });
                 int constructorCnt = 0;
                 for (funDef construct : ((classDef) node).constructors()) {
                     Function fun = new Function("l_" + className +
                             "_" + constructorCnt++);
                     construct.decl().setFunction(fun);
-                    irRoot.addFunction(fun.name(), fun);
+                    irRoot.addFunction(fun.name, fun);
                 }
             }
         });
-        it.allDef().forEach(node -> node.accept(this));
-        irRoot.getInit().exitBlock().addTerminator(new Return(irRoot.getInit().exitBlock(), null));
+        it.allDef().forEach(node -> {
+            if (node instanceof classDef) node.accept(this);
+        });
+        it.allDef().forEach(node -> {
+            if (!(node instanceof classDef)) node.accept(this);
+        });
+        irRoot.getInit().exitBlock.addTerminator(new Return(irRoot.getInit().exitBlock, null));
         currentFunction = irRoot.getInit();
         entryReachable = new HashSet<>(); returnVisited = new HashSet<>();
-        entryDFS(currentFunction.entryBlock());
+        entryDFS(currentFunction.entryBlock);
         for (Iterator<Return> iter = returnList.iterator();iter.hasNext();) {
             Return ret = iter.next();
             if (returnDFS(ret.block())) {
@@ -204,7 +209,7 @@ public class IRBuilder implements ASTVisitor {
             }
         }
         entryReachable.removeIf(block -> !block.terminated());
-        currentFunction.blocks().addAll(entryReachable);
+        currentFunction.blocks.addAll(entryReachable);
         entryReachable = null;returnVisited = null;
 
         new globLoc(irRoot).run();
@@ -224,18 +229,18 @@ public class IRBuilder implements ASTVisitor {
     private HashSet<IRBlock> entryReachable = new HashSet<>(), returnVisited = new HashSet<>();
     private void entryDFS(IRBlock it) {
         entryReachable.add(it);
-        it.successors().forEach(suc -> { if (!entryReachable.contains(suc)) entryDFS(suc); });
+        it.successors.forEach(suc -> { if (!entryReachable.contains(suc)) entryDFS(suc); });
     }
     private boolean returnDFS(IRBlock it) {
         returnVisited.add(it);
-        ArrayList<IRBlock> precursors = new ArrayList<>(it.precursors());
+        ArrayList<IRBlock> precursors = new ArrayList<>(it.precursors);
         for (IRBlock pre : precursors) {
             if (!returnVisited.contains(pre)) {
                 if (returnDFS(pre)) pre.removeTerminator();
             }
         }
         if (entryReachable.contains(it)) return false;
-        return it.precursors().isEmpty();
+        return it.precursors.isEmpty();
     }
 
     @Override
@@ -244,31 +249,31 @@ public class IRBuilder implements ASTVisitor {
         funcDecl func = it.decl();
         returnList.clear();
         currentFunction = func.function();
-        currentBlock = currentFunction.entryBlock();
+        currentBlock = currentFunction.entryBlock;
         if (it.isMethod()) currentFunction.setClassPtr(
                 new Param(irRoot.getIRType(currentClass, false), "this"));
 
-        currentFunction.setRetType(irRoot.getIRType(func.returnType(), false));
+        currentFunction.retType = irRoot.getIRType(func.returnType(), false);
 
         isParam = true;
         it.parameters().forEach(param -> param.accept(this));
         isParam = false;
 
-        if (currentFunction.name().equals("main"))
+        if (currentFunction.name.equals("main"))
             currentBlock.addInst(new Call(irRoot.getInit(), new ArrayList<>(), null, currentBlock));
         it.body().accept(this);
 
         if (!currentBlock.terminated()) {
             Return retInst;
-            if (currentFunction.name().equals("main"))
+            if (currentFunction.name.equals("main"))
                 retInst = new Return(currentBlock, new ConstInt(0, 32));
-            else if (currentFunction.retType() instanceof VoidType)
+            else if (currentFunction.retType instanceof VoidType)
                 retInst = new Return(currentBlock, null);
-            else if (currentFunction.retType() instanceof IntType)
-                retInst = new Return(currentBlock, new ConstInt(0, currentFunction.retType().size()));
-            else if (currentFunction.retType() instanceof BoolType)
+            else if (currentFunction.retType instanceof IntType)
+                retInst = new Return(currentBlock, new ConstInt(0, currentFunction.retType.size()));
+            else if (currentFunction.retType instanceof BoolType)
                 retInst = new Return(currentBlock, new ConstBool(false));
-            else if (currentFunction.retType() instanceof Pointer)
+            else if (currentFunction.retType instanceof Pointer)
                 retInst = new Return(currentBlock, new Null());
             else throw new internalError("return a class itself", it.pos());
             currentBlock.addTerminator(retInst);
@@ -276,7 +281,7 @@ public class IRBuilder implements ASTVisitor {
         }
 
         entryReachable = new HashSet<>(); returnVisited = new HashSet<>();
-        entryDFS(currentFunction.entryBlock());
+        entryDFS(currentFunction.entryBlock);
         for (Iterator<Return> iter = returnList.iterator();iter.hasNext();) {
             Return ret = iter.next();
             if (returnDFS(ret.block())) {
@@ -285,7 +290,7 @@ public class IRBuilder implements ASTVisitor {
             }
         }
         entryReachable.removeIf(block -> !block.terminated());
-        currentFunction.blocks().addAll(entryReachable);
+        currentFunction.blocks.addAll(entryReachable);
         entryReachable = null;returnVisited = null;
 
         if (returnList.size() > 1) {
@@ -314,7 +319,7 @@ public class IRBuilder implements ASTVisitor {
         } else {
             currentFunction.setExitBlock(returnList.get(0).currentBlock());
         }
-        IRBlock entryBlock = currentFunction.entryBlock();
+        IRBlock entryBlock = currentFunction.entryBlock;
         currentFunction.allocVars().forEach(var ->{
             if (((Pointer)var.type()).pointTo() instanceof Pointer)
                 entryBlock.addHeadInst(new Store(var, new Null(), entryBlock));
@@ -336,7 +341,7 @@ public class IRBuilder implements ASTVisitor {
             it.entity().setOperand(reg);
             irRoot.addGlobalVar((GlobalReg)reg);
             if (it.init() != null) {
-                currentBlock = irRoot.getInit().exitBlock();
+                currentBlock = irRoot.getInit().exitBlock;
                 currentFunction = irRoot.getInit();
                 assign(it.entity().asOperand(), it.init());
                 currentFunction.setExitBlock(currentBlock);
@@ -473,8 +478,8 @@ public class IRBuilder implements ASTVisitor {
         } else {
             it.retValue().accept(this);
             Operand ret;
-            if (it.retValue().operand().type().dim() > currentFunction.retType().dim()){
-                assert it.retValue().operand().type().dim() == currentFunction.retType().dim() + 1;
+            if (it.retValue().operand().type().dim() > currentFunction.retType.dim()){
+                assert it.retValue().operand().type().dim() == currentFunction.retType.dim() + 1;
                 ret = resolvePointer(currentBlock, it.retValue().operand());
             } else ret = it.retValue().operand();
             retInst = new Return(currentBlock, ret);
@@ -820,7 +825,7 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(thisExpr it) {
-        it.setOperand(currentFunction.getClassPtr());
+        it.setOperand(currentFunction.classPtr);
     }
 
     @Override
@@ -852,7 +857,7 @@ public class IRBuilder implements ASTVisitor {
                 params.add(resolvePointer(currentBlock, param.operand()));
             });
             currentBlock.addInst(new Call(calleeFunc.function(), params, (Register) it.operand(), currentBlock));
-            if (!(irRoot.isBuiltIn(calleeFunc.function().name())))
+            if (!(irRoot.isBuiltIn(calleeFunc.function().name)))
                 currentFunction.addCalleeFunction(calleeFunc.function());
         }
         if (it.operand() != null)
@@ -903,7 +908,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(funcNode it) {
         funcDecl func = (funcDecl)it.type();
         if (func.isMethod()) {
-            it.setOperand(currentFunction.getClassPtr());   //"this"
+            it.setOperand(currentFunction.classPtr);   //"this"
         }
     }
 
@@ -911,7 +916,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(varNode it) {
         varEntity entity = it.entity();
         if (it.entity().isMember()) {
-            Param classPtr = currentFunction.getClassPtr();  //this one does not need to load
+            Param classPtr = currentFunction.classPtr;  //this one does not need to load
             it.setOperand(new Register(it.entity().asOperand().type(),
                         "this." + it.name() + "_addr"));
             currentBlock.addInst(new GetElementPtr(((Pointer)classPtr.type()).pointTo(), classPtr,
@@ -953,7 +958,7 @@ public class IRBuilder implements ASTVisitor {
         ConstString str = irRoot.getStringByValue(realValue);
         String name;
         if (str == null) {
-            name = currentFunction.name() +"." + symbolCtr++;
+            name = currentFunction.name +"." + symbolCtr++;
             irRoot.addConstString(name, realValue);
             str = irRoot.getConstString(name);
         } else name = str.name;

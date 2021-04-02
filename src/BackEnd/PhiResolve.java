@@ -90,10 +90,10 @@ public class PhiResolve {
     private void runForFn(Function fn) {
         //split critical edge
         HashSet<blockPair> critical = new HashSet<>();
-        fn.blocks().forEach(block -> {
-            if (block.successors().size() > 1) {
-                block.successors().forEach(suc -> {
-                    if (suc.precursors().size() > 1) critical.add(new blockPair(block, suc));
+        fn.blocks.forEach(block -> {
+            if (block.successors.size() > 1) {
+                block.successors.forEach(suc -> {
+                    if (suc.precursors.size() > 1) critical.add(new blockPair(block, suc));
                 });
             }
         });
@@ -104,7 +104,7 @@ public class PhiResolve {
 
             mid.addTerminator(new Jump(suc, mid));
             //change the phi info in suc
-            suc.phiInst().forEach((reg, phi) -> {
+            suc.PhiInst.forEach((reg, phi) -> {
                 int size = phi.blocks().size();
                 for (int i = 0;i < size;++i)
                     if (phi.blocks().get(i) == pre) phi.blocks().set(i, mid);
@@ -114,8 +114,8 @@ public class PhiResolve {
         });
         //get parallel copy
         HashMap<IRBlock, paraCopy> copyMap = new HashMap<>();
-        fn.blocks().forEach(block -> copyMap.put(block, new paraCopy()));
-        fn.blocks().forEach(block -> block.phiInst().forEach((reg, phi) -> {
+        fn.blocks.forEach(block -> copyMap.put(block, new paraCopy()));
+        fn.blocks.forEach(block -> block.PhiInst.forEach((reg, phi) -> {
             int size = phi.blocks().size();
             for (int i = 0;i < size;++i) {
                 IRBlock pre = phi.blocks().get(i);
@@ -126,7 +126,7 @@ public class PhiResolve {
         copyMap.forEach(this::runForBlock);
         //mix blocks
         HashSet<IRBlock> canMix = new HashSet<>();
-        fn.blocks().forEach(block -> {
+        fn.blocks.forEach(block -> {
             if (block.headInst instanceof Jump) canMix.add(block);
         });
         canMix.forEach(block -> {
@@ -134,11 +134,11 @@ public class PhiResolve {
             do {
                 suc = ((Jump) suc.terminator()).destBlock();
             } while(canMix.contains(suc));
-            HashSet<IRBlock> precursors = new HashSet<>(block.precursors());
+            HashSet<IRBlock> precursors = new HashSet<>(block.precursors);
             for (IRBlock pre : precursors) pre.replaceSuccessor(block, suc);
-            if (block == fn.entryBlock()) fn.entryBlock = suc;
+            if (block == fn.entryBlock) fn.entryBlock = suc;
         });
-        fn.blocks().removeAll(canMix);
+        fn.blocks.removeAll(canMix);
     }
 
     public void run() {

@@ -7,12 +7,15 @@ import Assemb.RISCInst.RISCInst;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class LivenessAnalysis {
     private LFn fn;
     private HashMap<LIRBlock, HashSet<Reg>> blockUses = new HashMap<>(),
                                             blockDefs = new HashMap<>();
     private HashSet<LIRBlock> visited = new HashSet<>();
+    private Queue<LIRBlock> handleQueue = new LinkedList<>();
 
     public LivenessAnalysis(LFn fn) {
         this.fn = fn;
@@ -46,7 +49,10 @@ public class LivenessAnalysis {
             visited.removeAll(block.precursors);
         }
         block.precursors.forEach(pre -> {
-            if (!visited.contains(pre)) LiveIO(pre);
+            if (!visited.contains(pre)) {
+                handleQueue.offer(pre);
+                visited.add(pre);
+            }
         });
     }
 
@@ -54,7 +60,11 @@ public class LivenessAnalysis {
         //run the first round in each block: collect def and use in each block
         fn.blocks().forEach(this::runForBlock);
         //run to get the live-in and live-out of each block
-        LiveIO(fn.exitBlock());
+        handleQueue.offer(fn.exitBlock());
+        visited.add(fn.exitBlock());
+        while(!handleQueue.isEmpty()){
+            LiveIO(handleQueue.poll());
+        }
     }
 
 }
