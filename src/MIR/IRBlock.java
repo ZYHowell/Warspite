@@ -136,6 +136,7 @@ public class IRBlock {
     public void clearDomInfo() {
         domFrontiers.clear();
         iDom = null;
+        domEntranceID = domExitID = -1;
     }
 
     public void remove(Inst inst) {

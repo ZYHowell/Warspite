@@ -13,9 +13,13 @@ void g_printInt(int v) {
 void g_printlnInt(int v) {
     printf("%d\n", v);
 }
+char input[1000];
 char *g_getString() {
-    char *tmp = malloc(sizeof(char) * 1000);
-    scanf("%s", tmp);
+    // char *tmp = malloc(sizeof(char) * 1000);
+    // scanf("%s", tmp);
+    scanf("%s", input);
+    char *tmp = malloc(strlen(input) + 1);
+    strcpy(tmp, input);
     return tmp;
 }
 int g_getInt() {
@@ -51,7 +55,7 @@ int l_string_length(char *s) {
     return (int)strlen(s);
 }
 char * l_string_substring(char *it, int left, int right) {
-    char *tmp = malloc(sizeof(char) * 1000);
+    char *tmp = malloc(sizeof(char) * right - left + 1);
     return memcpy(tmp, it + left, right - left);
     tmp[right - left] = '\0';
     return tmp;

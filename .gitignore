@@ -22,6 +22,7 @@ IgnoreLexer.java~
 /out.ll
 /debug.s
 /output.s
+test/
 /debug.ll
 /asm/Assemb.interp
 /asm/Assemb.tokens

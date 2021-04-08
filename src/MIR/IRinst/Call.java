@@ -4,6 +4,7 @@ import MIR.Function;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import MIR.IRtype.BoolType;
 import Util.MIRMirror;
 
 import java.util.ArrayList;
@@ -44,7 +45,9 @@ public class Call extends Inst{
         if (params.size() == 0) ret.append("(");
         for (int i = 0;i < params.size();++i){
             ret.append((i == 0 ? "(" : ", "));
-            ret.append(params.get(i).type().toString());
+            String paramT = params.get(i).type().toString();
+            if (params.get(i).type() instanceof BoolType) paramT = "i8";
+            ret.append(paramT);
             ret.append(" ");
             ret.append(params.get(i).toString());
         }

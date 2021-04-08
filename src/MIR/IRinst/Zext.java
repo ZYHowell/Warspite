@@ -3,6 +3,7 @@ package MIR.IRinst;
 import MIR.IRBlock;
 import MIR.IRoperand.Operand;
 import MIR.IRoperand.Register;
+import MIR.IRtype.BoolType;
 import MIR.IRtype.IRBaseType;
 import Util.MIRMirror;
 
@@ -31,7 +32,11 @@ public class Zext extends Inst{
 
     @Override
     public String toString() {
-        return dest().toString()  + " = zext " + originType().toString() + " " + origin.toString() +
+        String key = "zext";
+        int org_size = origin.type() instanceof BoolType ? 1 : origin.type().size(),
+                dest_size = dest().type() instanceof BoolType ? 1 : dest().type().size();
+        if (org_size > dest_size) key = "trunc";
+        return dest().toString()  + " = " + key + " " + originType().toString() + " " + origin.toString() +
                 " to " + destType().toString();
     }
 

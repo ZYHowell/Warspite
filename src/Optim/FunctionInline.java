@@ -2,9 +2,7 @@ package Optim;
 
 import MIR.Function;
 import MIR.IRBlock;
-import MIR.IRinst.Call;
-import MIR.IRinst.Inst;
-import MIR.IRinst.Return;
+import MIR.IRinst.*;
 import MIR.IRoperand.Operand;
 import MIR.Root;
 import Util.DomGen;
@@ -19,6 +17,7 @@ public class FunctionInline extends Pass{
     private HashSet<Function> cannotInlineFun = new HashSet<>();
     private HashMap<Call, Function> canUnFold = new HashMap<>();
     private boolean forceInline;
+    private LinkedHashSet<Function> DFSOrder = new LinkedHashSet<>();
 
     public FunctionInline(Root irRoot, boolean forceInline) {
         super();
@@ -50,6 +49,7 @@ public class FunctionInline extends Pass{
         irRoot.functions().forEach((name, func) -> {
             if (!visited.contains(func)) DFS(func);
         });
+        visited.clear();
     }
 
     private void unfold(Call inst, Function fn) {
@@ -99,6 +99,7 @@ public class FunctionInline extends Pass{
         fn.removeBlock(mirEntry);  //no need to remove later block: not added into fn
         currentBlock.mergeBlock(mirEntry);
         if (fn.exitBlock == currentBlock && mirEntry != exitBlock) fn.setExitBlock(exitBlock);
+        inst.removeSelf(false);
     }
     private void checkInline(Function fn) {
         fn.blocks.forEach(block -> {
@@ -110,28 +111,81 @@ public class FunctionInline extends Pass{
         });
     }
     int round = 0;
+    private static int memBound = 10;
+    public boolean recheck_inline_fails;
+    private void recheck_inline() {
+        irRoot.functions().forEach((name, fn) -> {
+            if (!cannotInlineFun.contains(fn)) {
+                int memCnt = 0;
+                for (IRBlock block : fn.blocks) {
+                    for (Inst inst = block.headInst; inst != null; inst = inst.next) {
+                        if (inst instanceof Load || inst instanceof Store) {
+                            memCnt++;
+                            if (memCnt > memBound) {
+                                cannotInlineFun.add(fn);
+                                recheck_inline_fails = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    private void reorder_canUnFold() {
+        // TODO
+    }
+
     private void inlining() {
+        int inline_size_factor = 1000;
+        int inline_round_bound = 20;
         do {
             round++;
             newRound = false;
             canUnFold.clear();
             irRoot.functions().forEach((name, func) -> checkInline(func));
-            canUnFold.forEach(this::unfold);
+            reorder_canUnFold();
+            if (canUnFold.size() > irRoot.functions().size() * inline_size_factor
+                || round > inline_round_bound) {
+                recheck_inline_fails = true;
+                break;
+            } else {
+                canUnFold.forEach((c, f) -> {
+                    Function callee = c.callee();
+                    if (lineNumber.get(callee) < bound) {
+                        lineNumber.put(f, lineNumber.get(f) + lineNumber.get(callee));
+                        unfold(c, f);
+                    } else {
+                        recheck_inline_fails = true;
+                    }
+                });
+            }
+            recheck_inline();
             change = change || newRound;
         } while (newRound);
-        for (Iterator<Map.Entry<String, Function>> iter = irRoot.functions().entrySet().iterator(); iter.hasNext();) {
-            Map.Entry<String, Function> entry = iter.next();
-            Function fn = entry.getValue();
-            if (!cannotInlineFun.contains(fn)) iter.remove();
-            else if (caller.get(fn).size() == 1 && caller.get(fn).contains(fn)) iter.remove();
-        }   //remove inlined function
+        if (!recheck_inline_fails)
+            for (Iterator<Map.Entry<String, Function>> iter = irRoot.functions().entrySet().iterator(); iter.hasNext();) {
+                Map.Entry<String, Function> entry = iter.next();
+                Function fn = entry.getValue();
+                if (!cannotInlineFun.contains(fn)) iter.remove();
+                else if (caller.get(fn).size() == 1 && caller.get(fn).contains(fn)) iter.remove();
+            }   //remove inlined function
     }
 
     private static int bound = 150;
+    private HashMap<Function, Integer> lineNumber = new HashMap<>();
     @Override
     public boolean run() {
+        irRoot.functions().forEach((name, fn) -> {
+            int cnt = 0;
+            for (IRBlock block : fn.blocks) {
+                for (Inst inst = block.headInst; inst != null; inst = inst.next) cnt++;
+            }
+            lineNumber.put(fn, cnt);
+        });
         if (!forceInline){
             newRound = change = false;
+            recheck_inline_fails = false;
             visited.addAll(irRoot.builtinFunctions().values());
             cannotInlineFun.addAll(visited);
             cannotInlineFun.add(irRoot.getFunction("main"));
@@ -141,22 +195,14 @@ public class FunctionInline extends Pass{
             irRoot.functions().forEach((name, fn) -> new DomGen(fn).runForFn());
             return change;
         } else {
-            HashMap<Function, Integer> lineNumber = new HashMap<>();
             cannotInlineFun.addAll(irRoot.builtinFunctions().values());
             cannotInlineFun.add(irRoot.getFunction("main"));
-            irRoot.functions().forEach((name, fn) -> {
-                int cnt = 0;
-                for (IRBlock block : fn.blocks) {
-                    for (Inst inst = block.headInst; inst != null; inst = inst.next) cnt++;
-                }
-                lineNumber.put(fn, cnt);
-            });
             irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
                 for (Inst inst = block.headInst; inst != null; inst = inst.next)
                     if (inst instanceof Call) {
                         Call ca = (Call) inst;
                         Function callee = ca.callee();
-                        if (!cannotInlineFun.contains(callee) && lineNumber.get(callee) < bound){
+                        if (!cannotInlineFun.contains(callee) && lineNumber.get(fn) < bound){
                             canUnFold.put(ca, fn);
                             lineNumber.put(fn, lineNumber.get(fn) + lineNumber.get(callee));
                         }

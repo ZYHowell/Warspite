@@ -5,6 +5,7 @@ import FrontEnd.*;
 import MIR.Root;
 import Optim.Mem2Reg;
 import Optim.Optimization;
+import Optim.algSimplification;
 import Parser.MxErrorListener;
 import Parser.MxLexer;
 import Parser.MxParser;

@@ -63,7 +63,15 @@ public class instReplacement extends Pass {
                 } else if (bi.opCode() == sub) {
                     if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 0) src = bi.src1();
                 } else if (bi.opCode() == sdiv) {
-                    if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 1) src = bi.src1();
+                    if (bi.src2() instanceof ConstInt) {
+                        int value = ((ConstInt)bi.src2()).value();
+                        if (value == 1) src = bi.src1();
+                        else {
+                            int powNum = logTwo(value);
+                            if (powNum > 0)
+                                bi.strengthReduction(bi.src1(), new ConstInt(powNum, 32), ashr);
+                        }
+                    }
                 } else if (bi.opCode() == shl) {
                     if (bi.src2() instanceof ConstInt && ((ConstInt)bi.src2()).value() == 0) src = bi.src1();
                 }

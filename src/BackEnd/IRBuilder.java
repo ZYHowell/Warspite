@@ -45,6 +45,8 @@ public class IRBuilder implements ASTVisitor {
     private int symbolCtr = 0;
     private ArrayList<Return> returnList = new ArrayList<>();
     private HashMap<IRBlock, logicalPhi> logicalPhiMap = new HashMap<>();
+    private boolean set_operand;
+    private HashMap<classDef, Integer> symbol_cnt = new HashMap<>();
 
     private void setBuiltinMethod(String name) {
         gScope.getMethod(name, beginning, false)
@@ -191,11 +193,20 @@ public class IRBuilder implements ASTVisitor {
                 }
             }
         });
+        set_operand = true;
+        it.allDef().forEach(node -> {
+            if (node instanceof varDef) node.accept(this);
+        });
+        it.allDef().forEach(node -> {
+            if (node instanceof classDef) node.accept(this);
+        });
+        set_operand = false;
         it.allDef().forEach(node -> {
             if (node instanceof classDef) node.accept(this);
         });
         it.allDef().forEach(node -> {
-            if (!(node instanceof classDef)) node.accept(this);
+            if (!(node instanceof classDef) &&
+            !(node instanceof varDef)) node.accept(this);
         });
         irRoot.getInit().exitBlock.addTerminator(new Return(irRoot.getInit().exitBlock, null));
         currentFunction = irRoot.getInit();
@@ -219,10 +230,16 @@ public class IRBuilder implements ASTVisitor {
     public void visit(classDef it) {
         currentClass = (classType)gScope.getType(it.Identifier(), it.pos());
         symbolCtr = 0;
-        it.members().forEach(member -> member.accept(this));
-        it.methods().forEach(method -> method.accept(this));
-        if (it.hasConstructor())
-            it.constructors().forEach(constructor-> constructor.accept(this));
+        if (set_operand){
+            it.members().forEach(member -> member.accept(this));
+            symbol_cnt.put(it, symbolCtr);
+        }
+        else {
+            symbolCtr = symbol_cnt.get(it);
+            it.methods().forEach(method -> method.accept(this));
+            if (it.hasConstructor())
+                it.constructors().forEach(constructor-> constructor.accept(this));
+        }
         //to consider: it is better to add a default constructor, though not strictly required
     }
 
