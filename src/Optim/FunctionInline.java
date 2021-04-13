@@ -17,7 +17,6 @@ public class FunctionInline extends Pass{
     private HashSet<Function> cannotInlineFun = new HashSet<>();
     private HashMap<Call, Function> canUnFold = new HashMap<>();
     private boolean forceInline;
-    private LinkedHashSet<Function> DFSOrder = new LinkedHashSet<>();
 
     public FunctionInline(Root irRoot, boolean forceInline) {
         super();
@@ -197,18 +196,21 @@ public class FunctionInline extends Pass{
         } else {
             cannotInlineFun.addAll(irRoot.builtinFunctions().values());
             cannotInlineFun.add(irRoot.getFunction("main"));
-            irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
-                for (Inst inst = block.headInst; inst != null; inst = inst.next)
-                    if (inst instanceof Call) {
-                        Call ca = (Call) inst;
-                        Function callee = ca.callee();
-                        if (!cannotInlineFun.contains(callee) && lineNumber.get(fn) < bound){
-                            canUnFold.put(ca, fn);
-                            lineNumber.put(fn, lineNumber.get(fn) + lineNumber.get(callee));
+            do{
+                canUnFold.clear();
+                irRoot.functions().forEach((name, fn) -> fn.blocks.forEach(block -> {
+                    for (Inst inst = block.headInst; inst != null; inst = inst.next)
+                        if (inst instanceof Call) {
+                            Call ca = (Call) inst;
+                            Function callee = ca.callee();
+                            if (!cannotInlineFun.contains(callee) && lineNumber.get(fn) < bound){
+                                canUnFold.put(ca, fn);
+                                lineNumber.put(fn, lineNumber.get(fn) + lineNumber.get(callee));
+                            }
                         }
-                    }
-            }));
-            canUnFold.forEach(this::unfold);
+                }));
+                canUnFold.forEach(this::unfold);
+            } while(!canUnFold.isEmpty());
             irRoot.functions().forEach((name, fn) -> new DomGen(fn).runForFn());
             return true;
         }
