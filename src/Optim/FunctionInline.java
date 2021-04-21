@@ -110,7 +110,7 @@ public class FunctionInline extends Pass{
         });
     }
     int round = 0;
-    private static int memBound = 10;
+    private static int memBound = 100;
     public boolean recheck_inline_fails;
     private void recheck_inline() {
         irRoot.functions().forEach((name, fn) -> {
@@ -159,7 +159,7 @@ public class FunctionInline extends Pass{
                     }
                 });
             }
-            recheck_inline();
+            // recheck_inline();
             change = change || newRound;
         } while (newRound);
         if (!recheck_inline_fails)
@@ -171,7 +171,7 @@ public class FunctionInline extends Pass{
             }   //remove inlined function
     }
 
-    private static int bound = 150;
+    private static int bound = 300;
     private HashMap<Function, Integer> lineNumber = new HashMap<>();
     @Override
     public boolean run() {

@@ -36,8 +36,8 @@ public class ADCE extends Pass {
 
     private Root irRoot;
     private boolean change;
-    private HashSet<Inst> liveCode = new HashSet<>();
-    private HashSet<Operand> outerOp = new HashSet<>();
+    private HashSet<Inst> liveCode = new LinkedHashSet<>();
+    private HashSet<Operand> outerOp = new LinkedHashSet<>();
     private MIRFnGraph CallGraph;
     private Queue<Inst> handleQueue = new LinkedList<>();
 
@@ -101,7 +101,7 @@ public class ADCE extends Pass {
             fn.setSideEffect(false);
         });
 
-        HashSet<Operand> added = new HashSet<>();
+        HashSet<Operand> added = new LinkedHashSet<>();
         outerOp.forEach(op -> testOp(op, added));
         outerOp.addAll(added);
         //collect I/O and side effect functions and outer stores and returns

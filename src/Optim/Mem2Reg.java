@@ -10,7 +10,9 @@ import Util.DomGen;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 public class Mem2Reg extends Pass{
@@ -32,18 +34,18 @@ public class Mem2Reg extends Pass{
     //only a normal minimal SSA
         HashSet<Register> allocVars = fn.allocVars();
 
-        HashSet<IRBlock> defBlocks = new HashSet<>();
-        HashMap<IRBlock, HashSet<Load>> allocLoads = new HashMap<>();
-        HashMap<IRBlock, HashMap<Register, Phi>> allocPhiMap = new HashMap<>();
-        HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new HashMap<>();
-        HashMap<Operand, Operand> replaceMap = new HashMap<>();
+        HashSet<IRBlock> defBlocks = new LinkedHashSet<>();
+        HashMap<IRBlock, HashSet<Load>> allocLoads = new LinkedHashMap<>();
+        HashMap<IRBlock, HashMap<Register, Phi>> allocPhiMap = new LinkedHashMap<>();
+        HashMap<IRBlock, HashMap<Register, Operand>> allocStores = new LinkedHashMap<>();
+        HashMap<Operand, Operand> replaceMap = new LinkedHashMap<>();
 
         new DomGen(fn).runForFn();
 
         fn.blocks.forEach(block -> {
-            allocLoads.put(block, new HashSet<>());
-            allocStores.put(block, new HashMap<>());
-            allocPhiMap.put(block, new HashMap<>());
+            allocLoads.put(block, new LinkedHashSet<>());
+            allocStores.put(block, new LinkedHashMap<>());
+            allocPhiMap.put(block, new LinkedHashMap<>());
         });
 
         //collect load/store info.
@@ -77,7 +79,7 @@ public class Mem2Reg extends Pass{
         HashSet<IRBlock> runningSet;
         while(defBlocks.size() > 0){
             runningSet = defBlocks;
-            defBlocks = new HashSet<>();
+            defBlocks = new LinkedHashSet<>();
             for (IRBlock runner : runningSet) {
                 HashMap<Register, Operand> runnerDefAlloc = allocStores.get(runner);
                 if (runnerDefAlloc.size() != 0) {

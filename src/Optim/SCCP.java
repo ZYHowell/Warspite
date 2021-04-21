@@ -15,8 +15,8 @@ import java.util.*;
 public class SCCP extends Pass {
 
     private Root irRoot;
-    private HashMap<Operand, Operand> constMap = new HashMap<>();
-    private HashSet<IRBlock> visited = new HashSet<>();
+    private HashMap<Operand, Operand> constMap = new LinkedHashMap<>();
+    private HashSet<IRBlock> visited = new LinkedHashSet<>();
     private boolean change, changeFn;
     private Function currentFn;
 
@@ -237,7 +237,7 @@ public class SCCP extends Pass {
     }
     @Override
     public boolean run() {
-        constMap = new HashMap<>();
+        constMap = new LinkedHashMap<>();
         change = false;
 
         irRoot.functions().forEach((name, fn) -> runForFn(fn));

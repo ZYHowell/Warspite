@@ -10,6 +10,7 @@ import MIR.IRoperand.Operand;
 import MIR.Root;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -19,7 +20,7 @@ public class MemCSE extends Pass {
     private Root irRoot;
     private AliasAnalysis alias;
     private boolean change;
-    private HashSet<IRBlock> visited = new HashSet<>();
+    private HashSet<IRBlock> visited = new LinkedHashSet<>();
 
     public MemCSE(Root irRoot, AliasAnalysis alias) {
         this.irRoot = irRoot;
@@ -85,9 +86,9 @@ public class MemCSE extends Pass {
 
     private void runForFn(Function fn) {
         fn.blocks.forEach(block -> {
-            HashSet<IRBlock> domChildren = new HashSet<>();
+            HashSet<IRBlock> domChildren = new LinkedHashSet<>();
             Queue<IRBlock> runners = new LinkedList<>(block.successors);
-            HashSet<IRBlock> visited = new HashSet<>(block.successors);
+            HashSet<IRBlock> visited = new LinkedHashSet<>(block.successors);
             while(!runners.isEmpty()) {
                 IRBlock runner = runners.poll();
                 if (runner.isDomed(block)) {

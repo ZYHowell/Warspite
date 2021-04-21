@@ -66,7 +66,7 @@ public class Main {
                 new IRBuilder(gScope, irRoot).visit(ASTRoot);
                 new Mem2Reg(irRoot).run();
                 if (doOptimization) new Optimization(irRoot).run();
-                if (emitLL) new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
+                new IRPrinter(new PrintStream("out.ll"), true).run(irRoot);
                 new PhiResolve(irRoot).run();
 
                 LRoot lRoot = new InstSelection(irRoot).run();

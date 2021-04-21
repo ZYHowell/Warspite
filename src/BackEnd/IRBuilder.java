@@ -18,6 +18,7 @@ import Util.symbol.varEntity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 
 import static MIR.IRinst.Binary.BinaryOpCat.*;
@@ -210,7 +211,7 @@ public class IRBuilder implements ASTVisitor {
         });
         irRoot.getInit().exitBlock.addTerminator(new Return(irRoot.getInit().exitBlock, null));
         currentFunction = irRoot.getInit();
-        entryReachable = new HashSet<>(); returnVisited = new HashSet<>();
+        entryReachable = new LinkedHashSet<>(); returnVisited = new LinkedHashSet<>();
         entryDFS(currentFunction.entryBlock);
         for (Iterator<Return> iter = returnList.iterator();iter.hasNext();) {
             Return ret = iter.next();
@@ -243,7 +244,7 @@ public class IRBuilder implements ASTVisitor {
         //to consider: it is better to add a default constructor, though not strictly required
     }
 
-    private HashSet<IRBlock> entryReachable = new HashSet<>(), returnVisited = new HashSet<>();
+    private HashSet<IRBlock> entryReachable = new LinkedHashSet<>(), returnVisited = new LinkedHashSet<>();
     private void entryDFS(IRBlock it) {
         entryReachable.add(it);
         it.successors.forEach(suc -> { if (!entryReachable.contains(suc)) entryDFS(suc); });
@@ -297,7 +298,7 @@ public class IRBuilder implements ASTVisitor {
             returnList.add(retInst);
         }
 
-        entryReachable = new HashSet<>(); returnVisited = new HashSet<>();
+        entryReachable = new LinkedHashSet<>(); returnVisited = new LinkedHashSet<>();
         entryDFS(currentFunction.entryBlock);
         for (Iterator<Return> iter = returnList.iterator();iter.hasNext();) {
             Return ret = iter.next();

@@ -34,13 +34,13 @@ public class IRPrinter {
     }
     public void printBlock(IRBlock block) {
         out.println(block.name + ":");
-        out.print(";precursors: ");
-        block.precursors.forEach(pre -> out.print(pre.name + " "));
-        out.print("\n;successors: ");
-        block.successors.forEach(suc -> out.print(suc.name + " "));
-        out.print("\n;head: " + block.headInst);
-        out.print("\n;tail: " + block.tailInst);
-        out.print("\n");
+        // out.print(";precursors: ");
+        // block.precursors.forEach(pre -> out.print(pre.name + " "));
+        // out.print("\n;successors: ");
+        // block.successors.forEach(suc -> out.print(suc.name + " "));
+        // out.print("\n;head: " + block.headInst);
+        // out.print("\n;tail: " + block.tailInst);
+        // out.print("\n");
         block.PhiInst.forEach((reg, phi) -> out.println("\t" + phi.toString()));
         for (Inst inst = block.headInst; inst != null; inst = inst.next)
             out.println("\t" + inst.toString());

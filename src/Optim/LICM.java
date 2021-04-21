@@ -10,6 +10,7 @@ import MIR.Root;
 import Util.MIRLoop;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -49,7 +50,7 @@ public class LICM extends Pass{
         if (!loop.children().isEmpty())
             loop.children().forEach(this::runForLoop);
 
-        HashSet<Register> defInLoop = new HashSet<>();
+        HashSet<Register> defInLoop = new LinkedHashSet<>();
         Queue<Inst> canHoist = new LinkedList<>();
 
         loop.blocks().forEach(block -> {
